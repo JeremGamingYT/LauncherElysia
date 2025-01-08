@@ -11,6 +11,10 @@ const store = new Store();
 const authManager = new Auth("select_account");
 const launcher = new Client();
 
+// Variable pour stocker la référence au processus du jeu
+let gameProcess = null;
+let mainWindow = null;
+
 // Fonction pour obtenir le chemin par défaut du dossier de jeu
 function getDefaultGamePath() {
     const appDataPath = app.getPath('appData');
@@ -30,9 +34,24 @@ function ensureGameDirectory(gamePath) {
     }
 }
 
+// Fonction pour vérifier si le processus du jeu est toujours en cours
+function checkGameProcess() {
+    if (gameProcess) {
+        try {
+            // Vérifie si le processus existe toujours
+            process.kill(gameProcess.pid, 0);
+            return true;
+        } catch (e) {
+            gameProcess = null;
+            return false;
+        }
+    }
+    return false;
+}
+
 function createWindow() {
     // Création de la fenêtre principale
-    const mainWindow = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         width: 1280,
         height: 720,
         minWidth: 940,
@@ -112,6 +131,15 @@ function createWindow() {
     mainWindow.webContents.on('did-finish-load', () => {
         mainWindow.webContents.send('game-path', savedGamePath);
     });
+
+    // Vérification périodique de l'état du jeu
+    setInterval(() => {
+        const isRunning = checkGameProcess();
+        if (!isRunning && gameProcess !== null) {
+            gameProcess = null;
+            mainWindow.webContents.send('game-closed');
+        }
+    }, 5000);
 }
 
 // Gestion de la sélection du dossier
@@ -200,7 +228,7 @@ ipcMain.handle('logout', async () => {
   }
 });
 
-// Mise à jour de la gestion du lancement du jeu pour utiliser le bon chemin
+// Mise à jour de la gestion du lancement du jeu
 ipcMain.handle('launch-minecraft', async (event, options) => {
     try {
         const savedToken = store.get('minecraft-token');
@@ -221,17 +249,81 @@ ipcMain.handle('launch-minecraft', async (event, options) => {
             memory: {
                 max: options.maxMemory || "2G",
                 min: options.minMemory || "1G"
-            }
+            },
+            window: {
+                width: 1280,
+                height: 720,
+                fullscreen: false
+            },
+            overrides: {
+                detached: false, // Empêche le détachement du processus
+                stdio: 'pipe' // Redirige les sorties
+            },
+            hideWindow: true // Cache la fenêtre de terminal
         };
 
+        // Lancement du jeu
         launcher.launch(opts);
 
-        launcher.on('debug', (e) => console.log(e));
-        launcher.on('data', (e) => console.log(e));
+        // Gestion des événements du launcher
+        launcher.on('debug', (e) => {
+            // Stockage des logs dans un fichier au lieu de les afficher
+            const logPath = path.join(gamePath, 'launcher.log');
+            fs.appendFileSync(logPath, `${e}\n`);
+        });
+        
+        launcher.on('data', (e) => {
+            // Stockage des données dans un fichier au lieu de les afficher
+            const logPath = path.join(gamePath, 'minecraft.log');
+            fs.appendFileSync(logPath, `${e}\n`);
+        });
         
         launcher.on('progress', (e) => {
             event.sender.send('download-progress', e);
         });
+
+        // Gestion du processus du jeu
+        launcher.on('game-started', (proc) => {
+            gameProcess = proc;
+            event.sender.send('game-started');
+
+            // Écoute de la fermeture du processus
+            proc.on('close', () => {
+                gameProcess = null;
+                event.sender.send('game-closed');
+            });
+
+            proc.on('error', (err) => {
+                console.error('Erreur du processus:', err);
+                gameProcess = null;
+                event.sender.send('game-closed');
+            });
+
+            // Redirection des sorties vers des fichiers
+            if (proc.stdout) {
+                proc.stdout.on('data', (data) => {
+                    const logPath = path.join(gamePath, 'minecraft.log');
+                    fs.appendFileSync(logPath, data);
+                });
+            }
+            if (proc.stderr) {
+                proc.stderr.on('data', (data) => {
+                    const logPath = path.join(gamePath, 'minecraft-error.log');
+                    fs.appendFileSync(logPath, data);
+                });
+            }
+        });
+
+        // Vérification périodique de l'état du jeu
+        const checkInterval = setInterval(() => {
+            if (!checkGameProcess()) {
+                clearInterval(checkInterval);
+                if (gameProcess) {
+                    gameProcess = null;
+                    event.sender.send('game-closed');
+                }
+            }
+        }, 1000);
 
         return { success: true };
     } catch (error) {

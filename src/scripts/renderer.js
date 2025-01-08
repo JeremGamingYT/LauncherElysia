@@ -17,9 +17,10 @@ const gamePathInput = document.getElementById('game-path');
 const browseBtn = document.getElementById('browse-btn');
 const resetPathBtn = document.getElementById('reset-path');
 
-// État de l'authentification
+// États
 let isAuthenticated = false;
 let currentUser = null;
+let isGameRunning = false;
 
 // Gestion des contrôles de fenêtre
 minimizeBtn.addEventListener('click', () => {
@@ -55,10 +56,12 @@ function updateLaunchUI(isLaunching, status = '') {
         progressBar.parentElement.classList.add('downloading');
         statusText.textContent = status || 'Téléchargement des fichiers...';
     } else {
-        launchButton.disabled = false;
-        launchButton.textContent = isAuthenticated ? 'JOUER' : 'SE CONNECTER';
+        launchButton.disabled = isGameRunning;
+        launchButton.textContent = isAuthenticated ? (isGameRunning ? 'EN COURS...' : 'JOUER') : 'SE CONNECTER';
         progressBar.parentElement.classList.remove('downloading');
-        statusText.textContent = isAuthenticated ? 'Prêt à jouer' : 'Connectez-vous pour jouer';
+        statusText.textContent = isAuthenticated ? 
+            (isGameRunning ? 'Minecraft est en cours d\'exécution' : 'Prêt à jouer') : 
+            'Connectez-vous pour jouer';
         progressBar.style.width = '0%';
     }
 }
@@ -86,6 +89,29 @@ function resetAuthUI() {
     logoutBtn.style.display = 'none';
     updateLaunchUI(false);
 }
+
+// Gestion des événements du jeu
+ipcRenderer.on('game-started', () => {
+    isGameRunning = true;
+    updateLaunchUI(false);
+    
+    // Désactiver les contrôles pendant que le jeu est en cours
+    versionSelect.disabled = true;
+    memorySlider.disabled = true;
+    browseBtn.disabled = true;
+    resetPathBtn.disabled = true;
+});
+
+ipcRenderer.on('game-closed', () => {
+    isGameRunning = false;
+    updateLaunchUI(false);
+    
+    // Réactiver les contrôles
+    versionSelect.disabled = false;
+    memorySlider.disabled = false;
+    browseBtn.disabled = false;
+    resetPathBtn.disabled = false;
+});
 
 // Gestion de la progression du téléchargement
 ipcRenderer.on('download-progress', (event, progress) => {
@@ -144,6 +170,11 @@ resetPathBtn.addEventListener('click', async () => {
 
 // Gestion du bouton de déconnexion
 logoutBtn.addEventListener('click', async () => {
+    if (isGameRunning) {
+        alert('Veuillez fermer le jeu avant de vous déconnecter');
+        return;
+    }
+
     try {
         const result = await ipcRenderer.invoke('logout');
         if (result.success) {
@@ -186,7 +217,7 @@ launchButton.addEventListener('click', async () => {
             throw new Error(result.error || 'Erreur lors du lancement');
         }
 
-        statusText.textContent = 'Minecraft est en cours d\'exécution...';
+        statusText.textContent = 'Démarrage de Minecraft...';
     } catch (error) {
         alert(`Erreur: ${error.message}`);
         updateLaunchUI(false);
