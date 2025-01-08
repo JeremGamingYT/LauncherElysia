@@ -232,27 +232,150 @@ ipcMain.handle('logout', async () => {
   }
 });
 
-// Fonction pour vérifier l'intégrité des fichiers
+// Fonction pour calculer le hash SHA-256 d'un fichier
+async function calculateFileHash(filePath) {
+    try {
+        const fileBuffer = await fs.readFile(filePath);
+        return crypto.createHash('sha256').update(fileBuffer).digest('hex');
+    } catch (error) {
+        console.error(`Erreur lors du calcul du hash pour ${filePath}:`, error);
+        return null;
+    }
+}
+
+// Fonction pour vérifier l'intégrité d'un seul mod
+async function verifyMod(modUrl, modPath) {
+    try {
+        // Vérifier si le fichier existe
+        if (!await fs.pathExists(modPath)) {
+            console.log(`Mod manquant: ${path.basename(modPath)}`);
+            return { exists: false, needsUpdate: true };
+        }
+
+        // Télécharger temporairement les informations du fichier distant pour comparer la taille
+        const response = await axios.head(modUrl);
+        const remoteSize = parseInt(response.headers['content-length']);
+        const localStats = await fs.stat(modPath);
+
+        // Si les tailles sont différentes, le fichier doit être mis à jour
+        if (remoteSize !== localStats.size) {
+            console.log(`Taille différente pour ${path.basename(modPath)}`);
+            return { exists: true, needsUpdate: true };
+        }
+
+        return { exists: true, needsUpdate: false };
+    } catch (error) {
+        console.error(`Erreur lors de la vérification de ${path.basename(modPath)}:`, error);
+        return { exists: false, needsUpdate: true };
+    }
+}
+
+// Fonction pour vérifier tous les mods
 async function verifyFiles(fileList, basePath) {
+    const verificationResults = {
+        missingFiles: [],
+        modifiedFiles: [],
+        validFiles: []
+    };
+
     for (const fileUrl of fileList) {
         const fileName = path.basename(fileUrl);
         const filePath = path.join(basePath, fileName);
         
-        try {
-            await fs.access(filePath);
-        } catch (error) {
-            console.log(`Fichier manquant: ${fileName}, retéléchargement nécessaire.`);
-            return false;
+        const result = await verifyMod(fileUrl, filePath);
+        
+        if (!result.exists) {
+            verificationResults.missingFiles.push(fileUrl);
+        } else if (result.needsUpdate) {
+            verificationResults.modifiedFiles.push(fileUrl);
+        } else {
+            verificationResults.validFiles.push(fileUrl);
         }
     }
-    return true;
+
+    return verificationResults;
 }
 
+// Fonction pour installer un seul mod
+async function installSingleMod(modUrl, modPath, event) {
+    try {
+        const response = await axios.get(modUrl, { responseType: 'stream' });
+        const writer = fs.createWriteStream(modPath);
+
+        return new Promise((resolve, reject) => {
+            response.data.pipe(writer);
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+        });
+    } catch (error) {
+        console.error(`Erreur lors de l'installation du mod ${path.basename(modPath)}:`, error);
+        throw error;
+    }
+}
+
+// Fonction optimisée pour installer uniquement les mods nécessaires
+async function installMissingMods(modsToInstall, modsDestPath, event) {
+    try {
+        await fs.ensureDir(modsDestPath);
+        const totalMods = modsToInstall.length;
+        
+        for (let i = 0; i < modsToInstall.length; i++) {
+            const modUrl = modsToInstall[i];
+            const modName = path.basename(modUrl);
+            const modPath = path.join(modsDestPath, modName);
+
+            event.sender.send('install-progress', {
+                stage: 'downloading-mod',
+                modName,
+                progress: Math.round((i / totalMods) * 100)
+            });
+
+            await installSingleMod(modUrl, modPath, event);
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Erreur lors de l\'installation des mods:', error);
+        return false;
+    }
+}
+
+// Fonction améliorée pour vérifier l'intégrité du jeu
 async function checkFileIntegrity(event) {
-    const modsList = await fs.readJson(path.join(__dirname, 'mods.json'));
-    const modsPath = path.join(app.getPath('appData'), '.elysia', 'mods');
-    const modsValid = await verifyFiles(modsList, modsPath);
-    return modsValid;
+    try {
+        const modsList = await fs.readJson(path.join(__dirname, 'mods.json'));
+        const modsPath = path.join(app.getPath('appData'), '.elysia', 'mods');
+        
+        event.sender.send('install-progress', { 
+            stage: 'verifying-files',
+            message: 'Vérification des fichiers...'
+        });
+
+        const verificationResults = await verifyFiles(modsList, modsPath);
+        
+        const needsUpdate = verificationResults.missingFiles.length > 0 || 
+                           verificationResults.modifiedFiles.length > 0;
+
+        if (needsUpdate) {
+            const modsToInstall = [
+                ...verificationResults.missingFiles,
+                ...verificationResults.modifiedFiles
+            ];
+
+            event.sender.send('install-progress', {
+                stage: 'updating-files',
+                message: `Installation de ${modsToInstall.length} fichiers...`
+            });
+
+            const installSuccess = await installMissingMods(modsToInstall, modsPath, event);
+            return installSuccess;
+        }
+
+        return true; // Si aucune mise à jour n'est nécessaire
+    } catch (error) {
+        console.error('Erreur lors de la vérification des fichiers:', error);
+        return false;
+    }
 }
 
 // Fonction pour télécharger Forge
@@ -391,31 +514,37 @@ async function installVanilla(event) {
 
 // Handler d'installation de Forge modifié
 ipcMain.handle('install-game', async (event) => {
-    if (gameInstalled) {
-        return { success: true, message: 'Le jeu est déjà installé.' };
-    }
-
     try {
-        await fs.ensureDir(GAME_PATH);
-        
-        // Installer Minecraft vanilla d'abord
-        event.sender.send('install-progress', { stage: 'installing-vanilla', message: 'Installation de Minecraft...' });
-        await installVanilla(event);
+        // Vérifier l'installation de Minecraft
+        const minecraftValid = await verifyMinecraftInstallation();
+        if (!minecraftValid) {
+            event.sender.send('install-progress', { stage: 'installing-minecraft', message: 'Installation de Minecraft...' });
+            await installVanilla(event);
+        } else {
+            console.log('Minecraft is already installed, skipping reinstallation.');
+        }
 
-        // Puis installer Forge
-        event.sender.send('install-progress', { stage: 'downloading-forge', message: 'Téléchargement de Forge...' });
-        await downloadForge(event);
-        
-        event.sender.send('install-progress', { stage: 'installing-forge', message: 'Installation de Forge...' });
-        await installForge(event);
+        // Vérifier l'installation de Forge
+        const forgeValid = await verifyForgeInstallation();
+        if (!forgeValid) {
+            event.sender.send('install-progress', { stage: 'installing-forge', message: 'Installation de Forge...' });
+            await downloadForge(event);
+            await installForge(event);
+        } else {
+            console.log('Forge is already installed, skipping reinstallation.');
+        }
 
-        // Enfin installer les mods
-        event.sender.send('install-progress', { stage: 'installing-mods', message: 'Installation des mods...' });
-        await installMods(event);
+        // Vérifier l'installation des mods
+        const modsValid = await verifyModsInstallation();
+        if (!modsValid) {
+            event.sender.send('install-progress', { stage: 'installing-mods', message: 'Installation des mods...' });
+            await installMods(event);
+        } else {
+            console.log('Mods are already installed and up to date, skipping reinstallation.');
+        }
 
         gameInstalled = true;
         store.set('gameInstalled', true);
-
         return { success: true, message: 'Installation terminée avec succès.' };
     } catch (error) {
         console.error('Erreur lors de l\'installation:', error);
@@ -423,24 +552,129 @@ ipcMain.handle('install-game', async (event) => {
     }
 });
 
-// Mise à jour de la gestion du lancement du jeu
+// Fonction pour vérifier l'installation de Minecraft
+async function verifyMinecraftInstallation() {
+    try {
+        const minecraftPath = path.join(GAME_PATH, 'versions', '1.20.1');
+        const requiredFiles = [
+            path.join(minecraftPath, '1.20.1.json'),
+            path.join(minecraftPath, '1.20.1.jar')
+        ];
+
+        for (const file of requiredFiles) {
+            if (!await fs.pathExists(file)) {
+                console.log(`Fichier Minecraft manquant: ${file}`);
+                return false;
+            }
+        }
+        return true;
+    } catch (error) {
+        console.error('Erreur lors de la vérification de Minecraft:', error);
+        return false;
+    }
+}
+
+// Fonction pour vérifier l'installation de Forge
+async function verifyForgeInstallation() {
+    try {
+        // Vérifier les fichiers de version Forge
+        const forgeVersionPath = path.join(GAME_PATH, 'versions', `${FORGE_VERSION_LAUNCHER}`);
+        const requiredForgeFiles = [
+            path.join(GAME_PATH, 'versions', '1.20.1', '1.20.1.json'),
+            path.join(forgeVersionPath, `${FORGE_VERSION_LAUNCHER}.jar`),
+            path.join(forgeVersionPath, `${FORGE_VERSION_LAUNCHER}.json`)
+        ];
+
+        // Vérifier les libraries Forge
+        const forgeLibPath = path.join(GAME_PATH, 'libraries', 'net', 'minecraftforge');
+        
+        const allChecks = await Promise.all([
+            ...requiredForgeFiles.map(file => fs.pathExists(file)),
+            fs.pathExists(forgeLibPath)
+        ]);
+
+        return allChecks.every(result => result === true);
+    } catch (error) {
+        console.error('Erreur lors de la vérification de Forge:', error);
+        return false;
+    }
+}
+
+// Adding a new function for verifying mods
+async function verifyModsInstallation() {
+    try {
+        // Charger la liste des mods depuis mods.json
+        const modsListPath = path.join(__dirname, '..', 'mods.json'); 
+        // Adjust the above path if your mods.json location differs
+        const modsList = JSON.parse(fs.readFileSync(modsListPath, 'utf-8'));
+
+        // Chemin du dossier des mods
+        const modsDir = path.join(GAME_PATH, 'mods');
+        if (!fs.existsSync(modsDir)) {
+            return false; 
+        }
+
+        // Vérifier que chaque mod de la liste est présent
+        for (const modUrl of modsList) {
+            const fileName = modUrl.split('/').pop(); 
+            const modFilePath = path.join(modsDir, fileName);
+            if (!fs.existsSync(modFilePath)) {
+                return false;
+            }
+            // Optional: If you also want a hash check, compute file hash here
+        }
+
+        // Tous les mods nécessaires sont là
+        return true;
+    } catch (error) {
+        console.error('Erreur lors de la vérification des mods:', error);
+        return false;
+    }
+}
+
+// Mise à jour du handler de lancement
 ipcMain.handle('launch-minecraft', async (event, options) => {
     try {
-        // Vérification des fichiers avant de lancer le jeu
-        const filesValid = await checkFileIntegrity(event);
-        
-        if (!filesValid) {
-            event.sender.send('install-play-message', { message: 'Des fichiers sont manquants ou corrompus, retéléchargement...' });
+        // Vérifier l'installation de Minecraft
+        const minecraftValid = await verifyMinecraftInstallation();
+        if (!minecraftValid) {
+            event.sender.send('install-progress', {
+                stage: 'installing-minecraft',
+                message: 'Installation de Minecraft nécessaire...'
+            });
+            await installVanilla(event);
+        }
+
+        // Vérifier l'installation de Forge
+        const forgeValid = await verifyForgeInstallation();
+        if (!forgeValid) {
+            event.sender.send('install-progress', {
+                stage: 'installing-forge',
+                message: 'Installation de Forge nécessaire...'
+            });
             await downloadForge(event);
             await installForge(event);
-            await installMods(event);
+        }
+
+        // Vérifier les mods
+        const modsValid = await checkFileIntegrity(event);
+        if (!modsValid) {
+            event.sender.send('install-progress', {
+                stage: 'verifying-mods',
+                message: 'Vérification des mods...'
+            });
+            const retryValid = await checkFileIntegrity(event);
+            if (!retryValid) {
+                throw new Error('Impossible de réparer les mods');
+            }
         }
 
         const savedToken = store.get('minecraft-token');
         if (!savedToken) {
             throw new Error('Veuillez vous connecter avec votre compte Microsoft');
         }
-        
+
+        // Configuration du lancement
         const opts = {
             clientPackage: null,
             authorization: savedToken,
@@ -449,7 +683,6 @@ ipcMain.handle('launch-minecraft', async (event, options) => {
                 number: '1.20.1',
                 type: "release"
             },
-            java: javaPath,
             forge: forgePath,
             memory: {
                 max: options.maxMemory || "2G",
@@ -459,7 +692,12 @@ ipcMain.handle('launch-minecraft', async (event, options) => {
                 width: 1280,
                 height: 720,
                 fullscreen: false
-            }
+            },
+            overrides: {
+                detached: false,
+                stdio: 'pipe'
+            },
+            hideWindow: true
         };
 
         const launcher = new Client();
