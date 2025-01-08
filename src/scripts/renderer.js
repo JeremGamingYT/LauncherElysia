@@ -4,12 +4,14 @@ const { ipcRenderer } = require('electron');
 const launchButton = document.getElementById('launch-btn');
 const usernameInput = document.getElementById('username');
 const versionSelect = document.getElementById('version');
-const memorySelect = document.getElementById('memory');
+const memorySlider = document.getElementById('memory-slider');
+const memoryValue = document.getElementById('memory-value');
 const progressBar = document.querySelector('.progress');
 const statusText = document.querySelector('.status-text');
 const minimizeBtn = document.querySelector('.minimize-btn');
 const closeBtn = document.querySelector('.close-btn');
 const avatar = document.querySelector('.avatar');
+const avatarStatus = document.querySelector('.avatar-status');
 const logoutBtn = document.getElementById('logout-btn');
 const gamePathInput = document.getElementById('game-path');
 const browseBtn = document.getElementById('browse-btn');
@@ -27,6 +29,23 @@ minimizeBtn.addEventListener('click', () => {
 closeBtn.addEventListener('click', () => {
     ipcRenderer.send('close-window');
 });
+
+// Gestion du slider de mémoire
+memorySlider.addEventListener('input', (e) => {
+    const value = e.target.value;
+    memoryValue.textContent = value;
+    
+    // Animation du slider
+    const percent = ((value - memorySlider.min) / (memorySlider.max - memorySlider.min)) * 100;
+    memorySlider.style.background = `linear-gradient(to right, var(--primary) ${percent}%, var(--bg-light) ${percent}%)`;
+});
+
+// Initialisation du slider
+const initSlider = () => {
+    const value = memorySlider.value;
+    const percent = ((value - memorySlider.min) / (memorySlider.max - memorySlider.min)) * 100;
+    memorySlider.style.background = `linear-gradient(to right, var(--primary) ${percent}%, var(--bg-light) ${percent}%)`;
+};
 
 // Fonction pour mettre à jour l'interface pendant le lancement
 function updateLaunchUI(isLaunching, status = '') {
@@ -51,7 +70,8 @@ function updateAuthUI(profile) {
     usernameInput.value = profile.name;
     usernameInput.disabled = true;
     avatar.style.backgroundImage = `url('https://minotar.net/avatar/${profile.name}')`;
-    logoutBtn.style.display = 'block';
+    avatarStatus.classList.add('online');
+    logoutBtn.style.display = 'flex';
     updateLaunchUI(false);
 }
 
@@ -62,6 +82,7 @@ function resetAuthUI() {
     usernameInput.value = '';
     usernameInput.disabled = true;
     avatar.style.backgroundImage = `url('https://minotar.net/avatar/steve')`;
+    avatarStatus.classList.remove('online');
     logoutBtn.style.display = 'none';
     updateLaunchUI(false);
 }
@@ -94,7 +115,7 @@ browseBtn.addEventListener('click', async () => {
         if (result.success) {
             gamePathInput.value = result.path;
             // Animation de confirmation
-            gamePathInput.style.borderColor = '#55ff55';
+            gamePathInput.style.borderColor = 'var(--success)';
             setTimeout(() => {
                 gamePathInput.style.borderColor = '';
             }, 1000);
@@ -111,7 +132,7 @@ resetPathBtn.addEventListener('click', async () => {
         if (result.success) {
             gamePathInput.value = result.path;
             // Animation de confirmation
-            gamePathInput.style.borderColor = '#55ff55';
+            gamePathInput.style.borderColor = 'var(--success)';
             setTimeout(() => {
                 gamePathInput.style.borderColor = '';
             }, 1000);
@@ -155,7 +176,7 @@ launchButton.addEventListener('click', async () => {
         updateLaunchUI(true);
         const options = {
             version: versionSelect.value,
-            maxMemory: `${memorySelect.value}G`,
+            maxMemory: `${memorySlider.value}G`,
             minMemory: '1G'
         };
 
@@ -174,3 +195,4 @@ launchButton.addEventListener('click', async () => {
 
 // Initialisation de l'interface
 updateLaunchUI(false);
+initSlider();
