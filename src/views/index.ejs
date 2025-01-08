@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="<%= cssPath %>">
+</head>
+<body>
+    <div class="titlebar">
+        <div class="titlebar-title"><%= title %></div>
+        <div class="titlebar-controls">
+            <button class="minimize-btn" title="Réduire">─</button>
+            <button class="close-btn" title="Fermer">✕</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="profile-section">
+                <div class="avatar"></div>
+                <input type="text" id="username" placeholder="Non connecté" class="username-input" readonly>
+                <button id="logout-btn" class="logout-button" style="display: none;">Se déconnecter</button>
+            </div>
+            <div class="settings-section">
+                <h3>Paramètres</h3>
+                <div class="setting-item">
+                    <label for="version">Version:</label>
+                    <select id="version" class="version-select">
+                        <% versions.forEach(function(version) { %>
+                            <option value="<%= version %>"><%= version %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="memory">RAM (Go):</label>
+                    <select id="memory" class="memory-select">
+                        <% memoryOptions.forEach(function(memory) { %>
+                            <option value="<%= memory %>"><%= memory %> Go</option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="setting-item game-directory">
+                    <label for="game-path">Dossier du jeu:</label>
+                    <div class="directory-input">
+                        <input type="text" id="game-path" readonly>
+                        <button id="browse-btn" title="Choisir un dossier">
+                            <span class="folder-icon">📁</span>
+                        </button>
+                    </div>
+                    <button id="reset-path" class="reset-button" title="Réinitialiser l'emplacement par défaut">
+                        <span class="reset-icon">↺</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="news-section">
+                <h2>Actualités</h2>
+                <div class="news-container">
+                    <% news.forEach(function(item) { %>
+                        <div class="news-item">
+                            <h3><%= item.title %></h3>
+                            <p><%= item.content %></p>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+
+            <div class="launch-section">
+                <div class="progress-bar">
+                    <div class="progress"></div>
+                </div>
+                <div class="status-text">Connectez-vous pour jouer</div>
+                <button id="launch-btn" class="launch-button">SE CONNECTER</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="<%= jsPath %>"></script>
+</body>
+</html>

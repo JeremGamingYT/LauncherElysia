@@ -1,0 +1,28 @@
+{
+  "name": "launcherelysia",
+  "version": "1.0.0",
+  "description": "Launcher Minecraft Elysia",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder"
+  },
+  "keywords": [
+    "minecraft",
+    "launcher",
+    "electron"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^3.1.9",
+    "electron-store": "^8.1.0",
+    "minecraft-launcher-core": "^3.17.1",
+    "msmc": "^5.0.5"
+  },
+  "devDependencies": {
+    "electron": "^25.8.4",
+    "electron-builder": "^24.6.4"
+  }
+}
