@@ -34,13 +34,13 @@ const rpc = new RPC.Client({ transport: 'ipc' });
 // Constantes pour Forge et chemins
 const GAME_PATH = path.join(app.getPath('appData'), '.elysia');
 const javaPath = store.get('java.path', 'C:\\Program Files\\Java\\jdk-17\\bin\\javaw.exe')
-const FORGE_VERSION = '1.20.1-47.3.2';
-const FORGE_VERSION_LAUNCHER = '1.20.1-forge-47.3.2';
+const FORGE_VERSION = '1.20.1-47.2.20';
+const FORGE_VERSION_LAUNCHER = '1.20.1-forge-47.2.20';
 const FORGE_INSTALLER_URL = `https://maven.minecraftforge.net/net/minecraftforge/forge/${FORGE_VERSION}/forge-${FORGE_VERSION}-installer.jar`;
 const FORGE_INSTALLER_PATH = path.join(app.getPath('temp'), `forge-${FORGE_VERSION}-installer.jar`);
 
 const tempDir = path.join(app.getPath('temp')); // Récupère le dossier Temp
-const forgeInstallerName = 'forge-1.20.1-47.3.2-installer.jar'; // Nom du fichier
+const forgeInstallerName = 'forge-1.20.1-47.2.20-installer.jar'; // Nom du fichier
 const forgePath = path.join(tempDir, forgeInstallerName); // Combine le chemin et le nom du fichier
 
 // Fonction pour obtenir le chemin par défaut du dossier de jeu
@@ -100,7 +100,7 @@ function createWindow() {
 
     const html = ejs.render(template, {
         title: 'Launcher Elysia',
-        versions: ['1.20.1', '1.19.4', '1.18.2'],
+        versions: ['Beta'],
         memoryOptions: [2, 4, 6, 8],
         news: [
             {
@@ -345,17 +345,31 @@ async function checkFileIntegrity(event) {
     try {
         const modsList = await fs.readJson(path.join(__dirname, 'mods.json'));
         const modsPath = path.join(app.getPath('appData'), '.elysia', 'mods');
-        
+
         event.sender.send('install-progress', { 
             stage: 'verifying-files',
             message: 'Vérification des fichiers...'
         });
 
+        // 1) Vérifier l'état des fichiers requis (existant, modifié, etc.)
         const verificationResults = await verifyFiles(modsList, modsPath);
         
+        // 2) Déterminer si une mise à jour est nécessaire (fichiers manquants ou modifiés)
         const needsUpdate = verificationResults.missingFiles.length > 0 || 
                            verificationResults.modifiedFiles.length > 0;
 
+        // 3) Supprimer les mods qui ne figurent pas dans mods.json (fichiers en trop)
+        const allLocalMods = await fs.readdir(modsPath); 
+        const allRequiredModNames = modsList.map((url) => path.basename(url));
+        for (const localMod of allLocalMods) {
+            if (!allRequiredModNames.includes(localMod) && localMod.endsWith('.jar')) {
+                const extraneousModPath = path.join(modsPath, localMod);
+                console.log(`Fichier mod extraneous détecté et supprimé : ${localMod}`);
+                await fs.remove(extraneousModPath);
+            }
+        }
+
+        // 4) Installer les fichiers manquants ou modifiés, si nécessaire
         if (needsUpdate) {
             const modsToInstall = [
                 ...verificationResults.missingFiles,
@@ -364,14 +378,14 @@ async function checkFileIntegrity(event) {
 
             event.sender.send('install-progress', {
                 stage: 'updating-files',
-                message: `Installation de ${modsToInstall.length} fichiers...`
+                message: `Installation de ${modsToInstall.length} fichier(s)...`
             });
 
             const installSuccess = await installMissingMods(modsToInstall, modsPath, event);
             return installSuccess;
         }
 
-        return true; // Si aucune mise à jour n'est nécessaire
+        return true; // Aucun changement requis
     } catch (error) {
         console.error('Erreur lors de la vérification des fichiers:', error);
         return false;
@@ -578,22 +592,34 @@ async function verifyMinecraftInstallation() {
 async function verifyForgeInstallation() {
     try {
         // Vérifier les fichiers de version Forge
-        const forgeVersionPath = path.join(GAME_PATH, 'versions', `${FORGE_VERSION_LAUNCHER}`);
-        const requiredForgeFiles = [
-            path.join(GAME_PATH, 'versions', '1.20.1', '1.20.1.json'),
-            path.join(forgeVersionPath, `${FORGE_VERSION_LAUNCHER}.jar`),
-            path.join(forgeVersionPath, `${FORGE_VERSION_LAUNCHER}.json`)
+        const forgeVersionPath = path.join(GAME_PATH, 'versions', FORGE_VERSION_LAUNCHER);
+        const forgeLibPath = path.join(GAME_PATH, 'libraries', 'net', 'minecraftforge', 'forge', FORGE_VERSION);
+        
+        // Liste complète des fichiers requis
+        const requiredFiles = [
+            // Fichiers de version
+            path.join(forgeVersionPath, `${FORGE_VERSION_LAUNCHER}.json`),
+            // Fichiers de bibliothèque
+            path.join(forgeLibPath, `forge-${FORGE_VERSION}-universal.jar`),
+            path.join(forgeLibPath, `forge-${FORGE_VERSION}-client.jar`)
         ];
 
-        // Vérifier les libraries Forge
-        const forgeLibPath = path.join(GAME_PATH, 'libraries', 'net', 'minecraftforge');
-        
-        const allChecks = await Promise.all([
-            ...requiredForgeFiles.map(file => fs.pathExists(file)),
-            fs.pathExists(forgeLibPath)
-        ]);
+        // Vérifier l'existence de tous les fichiers requis
+        for (const file of requiredFiles) {
+            if (!await fs.pathExists(file)) {
+                console.log(`Fichier Forge manquant: ${file}`);
+                return false;
+            }
+            
+            // Vérifier que les fichiers ne sont pas vides
+            const stats = await fs.stat(file);
+            if (stats.size === 0) {
+                console.log(`Fichier Forge corrompu (taille 0): ${file}`);
+                return false;
+            }
+        }
 
-        return allChecks.every(result => result === true);
+        return true;
     } catch (error) {
         console.error('Erreur lors de la vérification de Forge:', error);
         return false;
@@ -603,12 +629,11 @@ async function verifyForgeInstallation() {
 // Adding a new function for verifying mods
 async function verifyModsInstallation() {
     try {
-        // Charger la liste des mods depuis mods.json
-        const modsListPath = path.join(__dirname, '..', 'mods.json'); 
-        // Adjust the above path if your mods.json location differs
+        // Load the mods list from mods.json
+        const modsListPath = path.join(__dirname, 'mods.json'); 
         const modsList = JSON.parse(fs.readFileSync(modsListPath, 'utf-8'));
 
-        // Chemin du dossier des mods
+        // Path to the mods folder
         const modsDir = path.join(GAME_PATH, 'mods');
         if (!fs.existsSync(modsDir)) {
             return false; 
@@ -635,6 +660,13 @@ async function verifyModsInstallation() {
 // Mise à jour du handler de lancement
 ipcMain.handle('launch-minecraft', async (event, options) => {
     try {
+        // Vérifier l'authentification
+        const savedToken = store.get('minecraft-token');
+        if (!savedToken) {
+            throw new Error('Veuillez vous connecter avec votre compte Microsoft');
+        }
+
+        // Partie 1: Vérification des installations
         // Vérifier l'installation de Minecraft
         const minecraftValid = await verifyMinecraftInstallation();
         if (!minecraftValid) {
@@ -669,12 +701,7 @@ ipcMain.handle('launch-minecraft', async (event, options) => {
             }
         }
 
-        const savedToken = store.get('minecraft-token');
-        if (!savedToken) {
-            throw new Error('Veuillez vous connecter avec votre compte Microsoft');
-        }
-
-        // Configuration du lancement
+        // Partie 2: Logique de lancement
         const opts = {
             clientPackage: null,
             authorization: savedToken,
@@ -683,6 +710,7 @@ ipcMain.handle('launch-minecraft', async (event, options) => {
                 number: '1.20.1',
                 type: "release"
             },
+            java: javaPath,
             forge: forgePath,
             memory: {
                 max: options.maxMemory || "2G",
@@ -739,7 +767,7 @@ ipcMain.handle('check-game-installation', async () => {
     }
 
     try {
-        await fs.access(path.join(GAME_PATH, 'versions', `1.20.1-forge-${FORGE_VERSION}`));
+        await fs.access(path.join(GAME_PATH, 'versions', `${FORGE_VERSION_LAUNCHER}`));
         gameInstalled = true;
         store.set('gameInstalled', true);
         return { installed: true };

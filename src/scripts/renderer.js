@@ -312,7 +312,7 @@ launchButton.addEventListener('click', async () => {
             return;
         }
 
-        // Installation du jeu si nécessaire
+        // Vérification et installation si nécessaire
         const installResult = await ipcRenderer.invoke('install-game');
         if (!installResult.success) {
             throw new Error(installResult.message || 'Erreur lors de l\'installation');
