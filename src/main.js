@@ -26,6 +26,7 @@ let mainWindow = null;
 let authData = null;
 let gameRunning = false;
 let gameInstalled = false;
+let splashWindow = null;
 
 // Discord 'Rich presence'
 const RPC = require('discord-rpc');
@@ -72,9 +73,9 @@ function createWindow() {
     // Création de la fenêtre principale
     mainWindow = new BrowserWindow({
         width: 1280,
-        height: 720,
-        minWidth: 940,
-        minHeight: 600,
+        height: 800,
+        minWidth: 1280,
+        minHeight: 800,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
@@ -152,6 +153,39 @@ function createWindow() {
     });
 }
 
+async function createSplashWindow() {
+    splashWindow = new BrowserWindow({
+        width: 400,
+        height: 400,
+        frame: false,
+        transparent: true,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        },
+        center: true,
+        resizable: false,
+        skipTaskbar: true,
+        backgroundColor: '#00000000'
+    });
+
+    const templatePath = path.join(__dirname, 'views', 'splash.ejs');
+    const template = fs.readFileSync(templatePath, 'utf-8');
+    const logoPath = path.join(__dirname, 'assets', 'logo.png').replace(/\\/g, '/');
+    
+    const html = ejs.render(template, {
+        version: app.getVersion(),
+        logoPath: `file://${logoPath}`
+    });
+
+    const tempPath = path.join(app.getPath('temp'), 'splash.html');
+    fs.writeFileSync(tempPath, html);
+    splashWindow.loadFile(tempPath);
+
+    // Attendre que la fenêtre soit prête
+    await new Promise(resolve => splashWindow.once('ready-to-show', resolve));
+}
+
 // Gestion de la sélection du dossier
 ipcMain.handle('select-directory', async () => {
     const result = await dialog.showOpenDialog({
@@ -213,8 +247,79 @@ async function checkForUpdates() {
 
 // Ajouter la vérification des mises à jour au démarrage de l'application
 app.whenReady().then(async () => {
-    await checkForUpdates();
-    createWindow();
+    await createSplashWindow();
+
+    try {
+        // Vérification des mises à jour
+        splashWindow.webContents.send('splash-status', {
+            message: 'Recherche de mises à jour...',
+            progress: 10
+        });
+
+        const updateInfo = await autoUpdater.checkForUpdates();
+        
+        if (updateInfo.hasUpdate && updateInfo.downloadUrl) {
+            splashWindow.webContents.send('splash-status', {
+                message: 'Téléchargement de la mise à jour...',
+                progress: 20
+            });
+
+            // Écoutez les événements de progression du téléchargement
+            autoUpdater.on('download-progress', (progressObj) => {
+                splashWindow.webContents.send('splash-status', {
+                    message: `Téléchargement: ${Math.round(progressObj.percent)}%`,
+                    progress: 20 + (progressObj.percent * 0.6)
+                });
+            });
+
+            const setupPath = await autoUpdater.downloadUpdate(updateInfo.downloadUrl);
+
+            splashWindow.webContents.send('splash-status', {
+                message: 'Installation de la mise à jour...',
+                progress: 80
+            });
+
+            await autoUpdater.installUpdate(setupPath);
+        }
+
+        // Initialisation des composants
+        splashWindow.webContents.send('splash-status', {
+            message: 'Vérification des fichiers...',
+            progress: 85
+        });
+        await verifyGameFiles();
+
+        splashWindow.webContents.send('splash-status', {
+            message: 'Chargement des configurations...',
+            progress: 90
+        });
+        await loadConfigurations();
+
+        splashWindow.webContents.send('splash-status', {
+            message: 'Préparation du launcher...',
+            progress: 95
+        });
+        await createWindow();
+
+        // Finalisation
+        splashWindow.webContents.send('splash-status', {
+            message: 'Démarrage...',
+            progress: 100
+        });
+
+        // Attendre un court instant pour montrer 100%
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Fermer le splash screen et afficher la fenêtre principale
+        splashWindow.close();
+        mainWindow.show();
+
+    } catch (error) {
+        console.error('Erreur lors du démarrage:', error);
+        splashWindow.webContents.send('splash-error', {
+            message: `Erreur: ${error.message}`
+        });
+    }
 });
 
 // Gestion de la fermeture de l'application
@@ -984,3 +1089,36 @@ ipcMain.handle('launch-minecraft', async (event, options) => {
         return { success: false, error: error.message };
     }
 });
+
+// Ajoutez ces nouvelles fonctions d'initialisation
+async function verifyGameFiles() {
+    // Vérification des fichiers du jeu
+    const gameFiles = [
+        { path: GAME_PATH, type: 'directory' },
+        { path: path.join(GAME_PATH, 'versions'), type: 'directory' },
+        { path: path.join(GAME_PATH, 'assets'), type: 'directory' },
+        { path: path.join(GAME_PATH, 'libraries'), type: 'directory' }
+    ];
+
+    for (const file of gameFiles) {
+        if (file.type === 'directory' && !fs.existsSync(file.path)) {
+            await fs.mkdir(file.path, { recursive: true });
+        }
+    }
+}
+
+async function loadConfigurations() {
+    // Chargement des configurations
+    const configs = {
+        'java-path': javaPath,
+        'game-directory': GAME_PATH,
+        'forge-version': FORGE_VERSION,
+        'minecraft-version': '1.20.1'
+    };
+
+    Object.entries(configs).forEach(([key, value]) => {
+        if (!store.has(key)) {
+            store.set(key, value);
+        }
+    });
+}

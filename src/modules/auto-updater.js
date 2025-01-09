@@ -4,9 +4,11 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { spawn } = require('child_process');
+const EventEmitter = require('events');
 
-class AutoUpdater {
+class AutoUpdater extends EventEmitter {
     constructor(owner, repo) {
+        super();
         this.owner = owner;
         this.repo = repo;
         this.octokit = new Octokit();
@@ -22,7 +24,6 @@ class AutoUpdater {
 
             const latestVersion = latestRelease.tag_name.replace('v', '');
             
-            // Vérification stricte de la version
             if (latestVersion === this.currentVersion) {
                 return { hasUpdate: false };
             }
@@ -38,14 +39,19 @@ class AutoUpdater {
                     return { hasUpdate: false };
                 }
 
-                // Utiliser l'URL de téléchargement directe fournie par GitHub
-                console.log('URL de téléchargement:', exeAsset.browser_download_url);
+                const downloadUrl = exeAsset.browser_download_url;
+                console.log('URL de téléchargement:', downloadUrl);
                 console.log('Taille du fichier:', exeAsset.size);
+
+                if (!downloadUrl) {
+                    console.error('URL de téléchargement non trouvée');
+                    return { hasUpdate: false };
+                }
 
                 return {
                     hasUpdate: true,
                     version: latestVersion,
-                    downloadUrl: exeAsset.browser_download_url,
+                    downloadUrl: downloadUrl,
                     fileSize: exeAsset.size
                 };
             }
@@ -72,14 +78,16 @@ class AutoUpdater {
     }
 
     async downloadUpdate(downloadUrl) {
-        // Extraire le nom du fichier de l'URL
+        if (!downloadUrl) {
+            throw new Error('URL de téléchargement non définie');
+        }
+
         const originalFileName = downloadUrl.split('/').pop();
         const setupPath = path.join(app.getPath('temp'), originalFileName);
         
         console.log('Début du téléchargement:', downloadUrl);
         console.log('Chemin de destination:', setupPath);
 
-        // Supprimer l'ancien fichier s'il existe
         if (fs.existsSync(setupPath)) {
             try {
                 await fs.promises.unlink(setupPath);
@@ -101,10 +109,8 @@ class AutoUpdater {
                 console.log('Code de statut HTTP:', response.statusCode);
 
                 if (response.statusCode === 302 || response.statusCode === 301) {
-                    // Fermer le fichier actuel
                     file.close();
                     
-                    // Créer une nouvelle requête pour la redirection
                     const redirectRequest = https.get(response.headers.location, {
                         headers: {
                             'User-Agent': 'Elysia-Launcher',
@@ -116,13 +122,19 @@ class AutoUpdater {
                             return;
                         }
 
-                        let downloadedBytes = 0;
+                        const totalSize = parseInt(redirectResponse.headers['content-length'], 10);
+                        let downloadedSize = 0;
+
                         redirectResponse.on('data', chunk => {
-                            downloadedBytes += chunk.length;
-                            console.log(`Téléchargement en cours: ${downloadedBytes} bytes`);
+                            downloadedSize += chunk.length;
+                            const percent = (downloadedSize / totalSize) * 100;
+                            this.emit('download-progress', {
+                                percent: percent,
+                                downloaded: downloadedSize,
+                                total: totalSize
+                            });
                         });
 
-                        // Créer un nouveau writeStream
                         const redirectFile = fs.createWriteStream(setupPath);
                         redirectResponse.pipe(redirectFile);
 
@@ -132,39 +144,45 @@ class AutoUpdater {
                             
                             try {
                                 const stats = fs.statSync(setupPath);
-                                console.log('Taille du fichier téléchargé:', stats.size);
-                                
                                 if (stats.size === 0) {
                                     reject(new Error('Le fichier téléchargé est vide'));
                                     return;
                                 }
-                                
-                                console.log('Téléchargement terminé avec succès');
                                 resolve(setupPath);
                             } catch (error) {
                                 reject(error);
                             }
                         });
+                    });
+                } else if (response.statusCode === 200) {
+                    const totalSize = parseInt(response.headers['content-length'], 10);
+                    let downloadedSize = 0;
 
-                        redirectFile.on('error', err => {
-                            console.error('Erreur lors de l\'écriture après redirection:', err);
-                            reject(err);
+                    response.on('data', chunk => {
+                        downloadedSize += chunk.length;
+                        const percent = (downloadedSize / totalSize) * 100;
+                        this.emit('download-progress', {
+                            percent: percent,
+                            downloaded: downloadedSize,
+                            total: totalSize
                         });
                     });
 
-                    redirectRequest.on('error', err => {
-                        console.error('Erreur lors de la redirection:', err);
-                        reject(err);
+                    response.pipe(file);
+
+                    file.on('finish', () => {
+                        file.close();
+                        resolve(setupPath);
                     });
-                } else if (response.statusCode !== 200) {
+                } else {
                     reject(new Error(`Erreur HTTP: ${response.statusCode}`));
-                    return;
                 }
             });
 
-            request.on('error', err => {
-                console.error('Erreur lors de la requête initiale:', err);
-                reject(err);
+            request.on('error', error => {
+                fs.unlink(setupPath, () => {
+                    reject(error);
+                });
             });
         });
     }

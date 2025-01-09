@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Elysia - Chargement</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.3);
+            --bg-darker: #020617;
+            --text-primary: #f8fafc;
+            --border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: transparent;
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            -webkit-app-region: drag;
+        }
+
+        .splash-container {
+            background: var(--bg-darker);
+            padding: 32px;
+            border-radius: 24px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5),
+                        0 0 20px var(--primary-glow);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 24px;
+            animation: pulse 2s infinite;
+            border-radius: 20px;
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .loading-bar {
+            width: 240px;
+            height: 4px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 24px auto;
+            position: relative;
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .loading-progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(
+                90deg,
+                var(--primary) 0%,
+                #818cf8 50%,
+                var(--primary) 100%
+            );
+            animation: loading 2s infinite;
+            border-radius: 4px;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .status-text {
+            font-size: 14px;
+            color: var(--text-primary);
+            opacity: 0.9;
+            margin-top: 16px;
+            font-weight: 500;
+            text-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .version-text {
+            font-size: 12px;
+            color: var(--text-primary);
+            opacity: 0.6;
+            margin-top: 8px;
+            font-weight: 400;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes loading {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Ajout d'un effet de brillance */
+        .splash-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(
+                circle,
+                var(--primary-glow) 0%,
+                transparent 70%
+            );
+            opacity: 0.1;
+            animation: rotate 10s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .error-message.visible {
+            opacity: 1;
+        }
+
+        .loading-progress {
+            transition: transform 0.3s ease;
+        }
+
+        .status-text {
+            transition: color 0.3s ease;
+        }
+
+        .status-text.error {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="splash-container">
+        <img src="<%= logoPath %>" alt="Elysia" class="logo">
+        <div class="loading-bar">
+            <div class="loading-progress"></div>
+        </div>
+        <div class="status-text">Initialisation...</div>
+        <div class="version-text">Version <%= version %></div>
+        <div class="error-message"></div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const statusText = document.querySelector('.status-text');
+        const loadingProgress = document.querySelector('.loading-progress');
+        const errorMessage = document.querySelector('.error-message');
+
+        ipcRenderer.on('splash-status', (event, data) => {
+            statusText.textContent = data.message;
+            statusText.classList.remove('error');
+            errorMessage.classList.remove('visible');
+            
+            if (data.progress) {
+                loadingProgress.style.transform = `translateX(${data.progress - 100}%)`;
+            }
+        });
+
+        ipcRenderer.on('splash-error', (event, data) => {
+            statusText.textContent = 'Erreur de démarrage';
+            statusText.classList.add('error');
+            errorMessage.textContent = data.message;
+            errorMessage.classList.add('visible');
+            loadingProgress.style.transform = 'translateX(-100%)';
+        });
+    </script>
+</body>
+</html> 
