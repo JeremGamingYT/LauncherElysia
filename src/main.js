@@ -13,10 +13,12 @@ const os = require('os');
 const { install, getVersionList, installDependencies } = require('@xmcl/installer');
 const { MinecraftLocation, Version } = require('@xmcl/core');
 const { Agent } = require('undici');
+const AutoUpdater = require('./modules/auto-updater');
 
 // Configuration du stockage local
 const store = new Store();
 const authManager = new Auth("select_account");
+const autoUpdater = new AutoUpdater('JeremGamingYT', 'LauncherElysia');
 
 // Variables globales pour la gestion des processus
 let gameProcess = null;
@@ -178,8 +180,42 @@ ipcMain.handle('reset-directory', () => {
     return { success: false };
 });
 
-// Création de la fenêtre quand l'app est prête
-app.whenReady().then(createWindow);
+// Fonction pour vérifier les mises à jour au démarrage
+async function checkForUpdates() {
+    try {
+        const updateInfo = await autoUpdater.checkForUpdates();
+        if (updateInfo.hasUpdate) {
+            const { response } = await dialog.showMessageBox({
+                type: 'info',
+                title: 'Mise à jour disponible',
+                message: `Une nouvelle version (${updateInfo.version}) est disponible. Voulez-vous la télécharger et l'installer ?`,
+                buttons: ['Oui', 'Non']
+            });
+
+            if (response === 0) {
+                try {
+                    const setupPath = await autoUpdater.downloadUpdate(updateInfo.downloadUrl);
+                    await autoUpdater.installUpdate(setupPath);
+                } catch (error) {
+                    await dialog.showMessageBox({
+                        type: 'error',
+                        title: 'Erreur de mise à jour',
+                        message: 'Une erreur est survenue lors de la mise à jour. Veuillez réessayer plus tard.',
+                        buttons: ['OK']
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Erreur lors de la vérification des mises à jour:', error);
+    }
+}
+
+// Ajouter la vérification des mises à jour au démarrage de l'application
+app.whenReady().then(async () => {
+    await checkForUpdates();
+    createWindow();
+});
 
 // Gestion de la fermeture de l'application
 app.on('window-all-closed', () => {
@@ -232,6 +268,16 @@ ipcMain.handle('logout', async () => {
     return { success: true };
   } catch (error) {
     console.error('Erreur lors de la déconnexion:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Vérification manuelle des mises à jour
+ipcMain.handle('check-updates', async () => {
+  try {
+    return await checkForUpdates();
+  } catch (error) {
+    console.error('Erreur lors de la vérification des mises à jour:', error);
     return { success: false, error: error.message };
   }
 });

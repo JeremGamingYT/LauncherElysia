@@ -22,6 +22,7 @@
   },
   "license": "ISC",
   "dependencies": {
+    "@octokit/rest": "^20.1.1",
     "@xmcl/core": "^2.12.0",
     "@xmcl/installer": "^5.4.0",
     "axios": "^1.7.9",
