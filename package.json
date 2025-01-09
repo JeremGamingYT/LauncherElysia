@@ -1,35 +1,99 @@
 {
-  "name": "launcherelysia",
+  "name": "elysia",
   "version": "1.0.0",
-  "description": "Launcher Minecraft Elysia",
+  "description": "Launcher Minecraft Elysia - Un launcher Minecraft moderne et sécurisé",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "test": "electron ./src/test.js",
     "dev": "electron . --dev",
-    "build": "electron-builder"
+    "build": "electron-builder",
+    "postinstall": "electron-builder install-app-deps",
+    "clean": "rimraf dist node_modules"
   },
   "keywords": [
     "minecraft",
     "launcher",
     "electron"
   ],
-  "author": "",
+  "author": {
+    "name": "Elysia",
+    "email": "contact@elysia.fr"
+  },
   "license": "ISC",
   "dependencies": {
     "@xmcl/core": "^2.12.0",
-    "@xmcl/installer": "^5.2.0",
+    "@xmcl/installer": "^5.4.0",
     "axios": "^1.7.9",
     "discord": "^0.8.2",
     "discord-rpc": "^4.0.1",
     "ejs": "^3.1.9",
     "electron-store": "^8.1.0",
+    "fs-extra": "^11.2.0",
     "minecraft-launcher-core": "^3.17.1",
     "msmc": "^5.0.5",
-    "progress-stream": "^2.0.0"
+    "progress-stream": "^2.0.0",
+    "undici": "^5.28.2"
   },
   "devDependencies": {
     "electron": "^25.8.4",
-    "electron-builder": "^24.6.4"
+    "electron-builder": "^24.6.4",
+    "rimraf": "^5.0.5"
+  },
+  "build": {
+    "appId": "fr.elysia.launcher",
+    "productName": "Elysia",
+    "copyright": "Copyright © 2026 Elysia",
+    "asar": false,
+    "files": [
+      "**/*",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/node_modules/*.d.ts",
+      "!**/node_modules/.bin",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!.editorconfig",
+      "!**/._*",
+      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+      "!**/{appveyor.yml,.travis.yml,circle.yml}",
+      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+    ],
+    "extraFiles": [
+      {
+        "from": "node_modules",
+        "to": "node_modules",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "src/assets/icon.ico",
+      "publisherName": "Elysia",
+      "requestedExecutionLevel": "asInvoker",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Elysia",
+      "installerIcon": "src/assets/icon.ico",
+      "uninstallerIcon": "src/assets/icon.ico",
+      "installerHeaderIcon": "src/assets/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "license": "LICENSE",
+      "deleteAppDataOnUninstall": true
+    }
   }
 }

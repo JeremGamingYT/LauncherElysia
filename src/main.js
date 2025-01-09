@@ -10,8 +10,9 @@ const axios = require('axios');
 const progress = require('progress-stream');
 const crypto = require('crypto');
 const os = require('os');
-const { install, getVersionList } = require('@xmcl/installer');
-const { MinecraftLocation } = require('@xmcl/core');
+const { install, getVersionList, installDependencies } = require('@xmcl/installer');
+const { MinecraftLocation, Version } = require('@xmcl/core');
+const { Agent } = require('undici');
 
 // Configuration du stockage local
 const store = new Store();
@@ -42,6 +43,9 @@ const FORGE_INSTALLER_PATH = path.join(app.getPath('temp'), `forge-${FORGE_VERSI
 const tempDir = path.join(app.getPath('temp')); // Récupère le dossier Temp
 const forgeInstallerName = 'forge-1.20.1-47.2.20-installer.jar'; // Nom du fichier
 const forgePath = path.join(tempDir, forgeInstallerName); // Combine le chemin et le nom du fichier
+
+const JAVA_DOWNLOAD_URL = 'download.oracle.com/java/17/archive/jdk-17.0.12_windows-x64_bin.exe';
+const JAVA_INSTALLER_PATH = path.join(app.getPath('temp'), 'jdk-17-installer.exe');
 
 // Fonction pour obtenir le chemin par défaut du dossier de jeu
 function getDefaultGamePath() {
@@ -99,17 +103,17 @@ function createWindow() {
     ensureGameDirectory(savedGamePath);
 
     const html = ejs.render(template, {
-        title: 'Launcher Elysia',
+        title: 'Elysia',
         versions: ['Beta'],
         memoryOptions: [2, 4, 6, 8],
         news: [
             {
-                title: 'Bienvenue sur le Launcher Elysia!',
-                content: 'Votre nouveau launcher Minecraft moderne et efficace.'
+                title: 'À venir: Nouvelle interface.',
+                content: 'Une nouvelle interface est en cours de développement.'
             },
             {
-                title: 'Comment utiliser le launcher',
-                content: 'Connectez-vous avec votre compte Microsoft, choisissez votre version et cliquez sur JOUER!'
+                title: 'Version Beta 1.0.0',
+                content: 'Nouvelle version du launcher Elysia.'
             }
         ],
         cssPath: `file://${cssPath}`,
@@ -499,36 +503,190 @@ async function installMods(event) {
     }
 }
 
-// Fonction pour installer Minecraft vanilla
+// Fonction pour lancer Minecraft vanilla temporairement
+async function launchVanillaTemporary(event) {
+    try {
+        event.sender.send('install-progress', { stage: 'launching-vanilla', message: 'Lancement de Minecraft vanilla...' });
+        
+        const opts = {
+            clientPackage: null,
+            authorization: store.get('minecraft-token'),
+            root: GAME_PATH,
+            version: {
+                number: '1.20.1',
+                type: "release"
+            },
+            memory: {
+                max: "2G",
+                min: "1G"
+            }
+        };
+
+        const launcher = new Client();
+        
+        return new Promise((resolve, reject) => {
+            let gameStarted = false;
+            
+            launcher.on('data', (data) => {
+                console.log('Minecraft output:', data);
+                // Détecter quand le jeu est complètement chargé
+                if (data.includes('Setting user:') && !gameStarted) {
+                    gameStarted = true;
+                    // Attendre 10 secondes puis fermer le jeu
+                    setTimeout(() => {
+                        event.sender.send('install-progress', { stage: 'closing-vanilla', message: 'Fermeture de Minecraft...' });
+                        process.kill(launcher.pid);
+                        resolve();
+                    }, 10000);
+                }
+            });
+
+            launcher.on('close', (code) => {
+                if (!gameStarted) {
+                    reject(new Error('Le jeu s\'est fermé avant d\'être complètement chargé'));
+                }
+            });
+
+            launcher.launch(opts);
+        });
+    } catch (error) {
+        console.error('Erreur lors du lancement temporaire de Minecraft:', error);
+        throw error;
+    }
+}
+
+// Modification de la fonction installVanilla
 async function installVanilla(event) {
     try {
-        const versionList = await getVersionList();
-        const version = versionList.versions.find(v => v.id === "1.20.1");
+        const version = await getVersionList().then(list => list.versions.find(v => v.id === '1.20.1'));
         
-        if (!version) {
-            throw new Error('Version 1.20.1 non trouvée');
-        }
-
-        event.sender.send('install-progress', { stage: 'installing-vanilla', message: 'Installation de Minecraft...' });
-        
-        await install(version, GAME_PATH, {
-            onProgress: (task) => {
-                const progress = Math.round((task.progress / task.total) * 100);
-                event.sender.send('download-progress', progress);
-            }
+        // Configuration de l'agent de téléchargement
+        const agent = new Agent({
+            connections: 16,
+            pipelining: 1
         });
+
+        const downloadOptions = {
+            agent: {
+                dispatcher: agent
+            },
+            maxConcurrency: 16,
+            side: 'client'
+        };
+
+        console.log('Début de l\'installation de Minecraft vanilla');
+        event.sender.send('installation-progress', 'Installation de Minecraft vanilla en cours...');
+
+        // Installation de la version
+        await install(version, GAME_PATH, downloadOptions);
+        
+        // Installation des dépendances (bibliothèques et assets)
+        const resolvedVersion = await Version.parse(GAME_PATH, '1.20.1');
+        await installDependencies(resolvedVersion, downloadOptions);
 
         console.log('Installation de Minecraft vanilla terminée');
         return true;
     } catch (error) {
         console.error('Erreur lors de l\'installation de Minecraft vanilla:', error);
+        
+        if (error.name === 'DownloadAggregateError') {
+            console.error('Détails des erreurs de téléchargement:', error.errors);
+            throw new Error('Erreur lors du téléchargement des fichiers Minecraft. Veuillez vérifier votre connexion internet et réessayer.');
+        }
+        
         throw error;
     }
 }
 
-// Handler d'installation de Forge modifié
+// Fonction pour vérifier l'installation de Java
+async function verifyJavaInstallation() {
+    const defaultJavaPath = 'C:\\Program Files\\Java\\jdk-17\\bin\\javaw.exe';
+    const storedJavaPath = store.get('java.path', defaultJavaPath);
+
+    try {
+        await fs.access(storedJavaPath);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+// Fonction pour télécharger et installer Java
+async function downloadAndInstallJava(event) {
+    try {
+        event.sender.send('install-progress', { stage: 'downloading-java', message: 'Téléchargement de Java...' });
+        
+        // Téléchargement de Java
+        const writer = fs.createWriteStream(JAVA_INSTALLER_PATH);
+        const response = await axios({
+            url: `https://${JAVA_DOWNLOAD_URL}`,
+            method: 'GET',
+            responseType: 'stream'
+        });
+
+        await new Promise((resolve, reject) => {
+            response.data.pipe(writer);
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+        });
+
+        event.sender.send('install-progress', { stage: 'installing-java', message: 'Installation de Java...' });
+
+        // Installation silencieuse de Java
+        await new Promise((resolve, reject) => {
+            const child = exec(`"${JAVA_INSTALLER_PATH}" /s`, { windowsHide: true });
+            child.on('close', (code) => {
+                if (code === 0) resolve();
+                else reject(new Error(`L'installation de Java a échoué avec le code ${code}`));
+            });
+        });
+
+        // Mise à jour du chemin Java dans le store
+        store.set('java.path', 'C:\\Program Files\\Java\\jdk-17\\bin\\javaw.exe');
+        return true;
+    } catch (error) {
+        console.error('Erreur lors de l\'installation de Java:', error);
+        throw error;
+    }
+}
+
+// Fonction pour copier le launcher_profiles.json
+async function copyLauncherProfiles() {
+    try {
+        const minecraftPath = path.join(os.homedir(), 'AppData', 'Roaming', '.minecraft');
+        const sourcePath = path.join(minecraftPath, 'launcher_profiles.json');
+        const destPath = path.join(GAME_PATH, 'launcher_profiles.json');
+
+        // Vérifier si le fichier source existe
+        if (await fs.pathExists(sourcePath)) {
+            // Vérifier si le fichier de destination n'existe pas déjà
+            if (!await fs.pathExists(destPath)) {
+                await fs.copy(sourcePath, destPath);
+                console.log('launcher_profiles.json copié avec succès');
+            } else {
+                console.log('launcher_profiles.json existe déjà dans la destination');
+            }
+        } else {
+            console.log('launcher_profiles.json non trouvé dans .minecraft');
+        }
+    } catch (error) {
+        console.error('Erreur lors de la copie de launcher_profiles.json:', error);
+    }
+}
+
+// Modification du handler d'installation
 ipcMain.handle('install-game', async (event) => {
     try {
+        // Vérifier et installer Java si nécessaire
+        const javaValid = await verifyJavaInstallation();
+        if (!javaValid) {
+            event.sender.send('install-progress', { stage: 'java-setup', message: 'Installation de Java...' });
+            await downloadAndInstallJava(event);
+        }
+
+        // Copier launcher_profiles.json avant l'installation
+        await copyLauncherProfiles();
+
         // Vérifier l'installation de Minecraft
         const minecraftValid = await verifyMinecraftInstallation();
         if (!minecraftValid) {
@@ -657,7 +815,80 @@ async function verifyModsInstallation() {
     }
 }
 
-// Mise à jour du handler de lancement
+// Modification des options de lancement pour masquer le terminal
+async function launchMinecraft(event, options) {
+    const opts = {
+        clientPackage: null,
+        authorization: store.get('minecraft-token'),
+        root: GAME_PATH,
+        version: {
+            number: '1.20.1',
+            type: "release"
+        },
+        java: javaPath,
+        forge: forgePath,
+        memory: {
+            max: options.maxMemory || "2G",
+            min: options.minMemory || "1G"
+        },
+        window: {
+            width: 1280,
+            height: 720,
+            fullscreen: false
+        },
+        overrides: {
+            detached: false,
+            stdio: 'pipe'
+        },
+        hideWindow: true
+    };
+
+    const launcher = new Client();
+    launcher.launch(opts);
+
+    launcher.on('debug', (e) => {
+        const logPath = path.join(GAME_PATH, 'launcher.log');
+        fs.appendFileSync(logPath, `${new Date().toISOString()} - ${e}\n`);
+    });
+
+    launcher.on('data', (e) => {
+        const logPath = path.join(GAME_PATH, 'minecraft.log');
+        fs.appendFileSync(logPath, `${new Date().toISOString()} - ${e}\n`);
+    });
+
+    launcher.on('progress', (e) => {
+        if (e.type === 'download') {
+            const progressPercent = Math.round((e.task / e.total) * 100);
+            event.sender.send('download-progress', progressPercent);
+        }
+    });
+
+    gameRunning = true;
+    mainWindow.minimize();
+
+    return { success: true };
+}
+
+ipcMain.handle('check-game-installation', async () => {
+    const storedGameInstalled = store.get('gameInstalled', false);
+
+    if (storedGameInstalled) {
+        gameInstalled = true;
+        return { installed: true };
+    }
+
+    try {
+        await fs.access(path.join(GAME_PATH, 'versions', `${FORGE_VERSION_LAUNCHER}`));
+        gameInstalled = true;
+        store.set('gameInstalled', true);
+        return { installed: true };
+    } catch (error) {
+        gameInstalled = false;
+        store.set('gameInstalled', false);
+        return { installed: false };
+    }
+});
+
 ipcMain.handle('launch-minecraft', async (event, options) => {
     try {
         // Vérifier l'authentification
@@ -666,8 +897,7 @@ ipcMain.handle('launch-minecraft', async (event, options) => {
             throw new Error('Veuillez vous connecter avec votre compte Microsoft');
         }
 
-        // Partie 1: Vérification des installations
-        // Vérifier l'installation de Minecraft
+        // Vérifier les installations
         const minecraftValid = await verifyMinecraftInstallation();
         if (!minecraftValid) {
             event.sender.send('install-progress', {
@@ -701,79 +931,10 @@ ipcMain.handle('launch-minecraft', async (event, options) => {
             }
         }
 
-        // Partie 2: Logique de lancement
-        const opts = {
-            clientPackage: null,
-            authorization: savedToken,
-            root: GAME_PATH,
-            version: {
-                number: '1.20.1',
-                type: "release"
-            },
-            java: javaPath,
-            forge: forgePath,
-            memory: {
-                max: options.maxMemory || "2G",
-                min: options.minMemory || "1G"
-            },
-            window: {
-                width: 1280,
-                height: 720,
-                fullscreen: false
-            },
-            overrides: {
-                detached: false,
-                stdio: 'pipe'
-            },
-            hideWindow: true
-        };
-
-        const launcher = new Client();
-        launcher.launch(opts);
-
-        launcher.on('debug', (e) => {
-            const logPath = path.join(GAME_PATH, 'launcher.log');
-            fs.appendFileSync(logPath, `${new Date().toISOString()} - ${e}\n`);
-        });
-
-        launcher.on('data', (e) => {
-            const logPath = path.join(GAME_PATH, 'minecraft.log');
-            fs.appendFileSync(logPath, `${new Date().toISOString()} - ${e}\n`);
-        });
-
-        launcher.on('progress', (e) => {
-            if (e.type === 'download') {
-                const progressPercent = Math.round((e.task / e.total) * 100);
-                event.sender.send('download-progress', progressPercent);
-            }
-        });
-
-        gameRunning = true;
-        mainWindow.minimize();
-
-        return { success: true };
+        // Lancer le jeu
+        return await launchMinecraft(event, options);
     } catch (error) {
         console.error('Erreur lors du lancement:', error);
         return { success: false, error: error.message };
     }
 });
-
-ipcMain.handle('check-game-installation', async () => {
-    const storedGameInstalled = store.get('gameInstalled', false);
-
-    if (storedGameInstalled) {
-        gameInstalled = true;
-        return { installed: true };
-    }
-
-    try {
-        await fs.access(path.join(GAME_PATH, 'versions', `${FORGE_VERSION_LAUNCHER}`));
-        gameInstalled = true;
-        store.set('gameInstalled', true);
-        return { installed: true };
-    } catch (error) {
-        gameInstalled = false;
-        store.set('gameInstalled', false);
-        return { installed: false };
-    }
-}); 
