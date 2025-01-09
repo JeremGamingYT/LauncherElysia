@@ -12,20 +12,36 @@ class AutoUpdater extends EventEmitter {
         this.owner = owner;
         this.repo = repo;
         this.octokit = new Octokit();
-        this.currentVersion = app.getVersion();
+        try {
+            const packageJson = require('../../package.json');
+            this.currentVersion = packageJson.version;
+            console.log('Version actuelle du launcher:', this.currentVersion);
+        } catch (error) {
+            console.error('Erreur lors de la lecture de la version:', error);
+            this.currentVersion = '0.0.0';
+        }
     }
 
     async checkForUpdates() {
         try {
+            console.log('Vérification des mises à jour...');
+            console.log('Version actuelle:', this.currentVersion);
+
             const { data: latestRelease } = await this.octokit.repos.getLatestRelease({
                 owner: this.owner,
                 repo: this.repo
             });
 
             const latestVersion = latestRelease.tag_name.replace('v', '');
+            console.log('Dernière version disponible:', latestVersion);
             
             if (latestVersion === this.currentVersion) {
-                return { hasUpdate: false };
+                console.log('Le launcher est à jour');
+                return { 
+                    hasUpdate: false,
+                    currentVersion: this.currentVersion,
+                    latestVersion: latestVersion
+                };
             }
 
             if (this.isNewerVersion(latestVersion, this.currentVersion)) {
@@ -50,31 +66,58 @@ class AutoUpdater extends EventEmitter {
 
                 return {
                     hasUpdate: true,
-                    version: latestVersion,
+                    currentVersion: this.currentVersion,
+                    latestVersion: latestVersion,
                     downloadUrl: downloadUrl,
-                    fileSize: exeAsset.size
+                    fileSize: exeAsset.size,
+                    releaseNotes: latestRelease.body || 'Aucune note de mise à jour disponible'
                 };
             }
 
-            return { hasUpdate: false };
+            return { 
+                hasUpdate: false,
+                currentVersion: this.currentVersion,
+                latestVersion: latestVersion
+            };
         } catch (error) {
             console.error('Erreur lors de la vérification des mises à jour:', error);
-            return { hasUpdate: false, error };
+            return { 
+                hasUpdate: false, 
+                error,
+                currentVersion: this.currentVersion
+            };
         }
     }
 
     isNewerVersion(latest, current) {
-        const latestParts = latest.split('.').map(Number);
-        const currentParts = current.split('.').map(Number);
+        try {
+            const latestParts = latest.split('.').map(Number);
+            const currentParts = current.split('.').map(Number);
 
-        for (let i = 0; i < Math.max(latestParts.length, currentParts.length); i++) {
-            const latestPart = latestParts[i] || 0;
-            const currentPart = currentParts[i] || 0;
-            
-            if (latestPart > currentPart) return true;
-            if (latestPart < currentPart) return false;
+            if (latestParts.some(isNaN) || currentParts.some(isNaN)) {
+                console.error('Format de version invalide');
+                return false;
+            }
+
+            for (let i = 0; i < Math.max(latestParts.length, currentParts.length); i++) {
+                const latestPart = latestParts[i] || 0;
+                const currentPart = currentParts[i] || 0;
+                
+                if (latestPart > currentPart) {
+                    console.log(`Nouvelle version disponible: ${latest} > ${current}`);
+                    return true;
+                }
+                if (latestPart < currentPart) {
+                    console.log(`Version actuelle plus récente: ${current} > ${latest}`);
+                    return false;
+                }
+            }
+            console.log('Versions identiques:', current);
+            return false;
+        } catch (error) {
+            console.error('Erreur lors de la comparaison des versions:', error);
+            return false;
         }
-        return false;
     }
 
     async downloadUpdate(downloadUrl) {
