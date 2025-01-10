@@ -14,6 +14,7 @@ const { install, getVersionList, installDependencies } = require('@xmcl/installe
 const { MinecraftLocation, Version } = require('@xmcl/core');
 const { Agent } = require('undici');
 const AutoUpdater = require('./modules/auto-updater');
+const ResourceManager = require('./modules/resource-manager');
 
 // Configuration du stockage local
 const store = new Store();
@@ -27,6 +28,7 @@ let authData = null;
 let gameRunning = false;
 let gameInstalled = false;
 let splashWindow = null;
+let securityChecker = null;
 
 // Discord 'Rich presence'
 const RPC = require('discord-rpc');
@@ -49,6 +51,9 @@ const fabricPath = path.join(tempDir, fabricInstallerName); // Combine le chemin
 
 const JAVA_DOWNLOAD_URL = 'download.oracle.com/java/17/archive/jdk-17.0.12_windows-x64_bin.exe';
 const JAVA_INSTALLER_PATH = path.join(app.getPath('temp'), 'jdk-17-installer.exe');
+
+// Ajouter avec les autres constantes
+const resourceManager = new ResourceManager(GAME_PATH);
 
 // Fonction pour obtenir le chemin par défaut du dossier de jeu
 function getDefaultGamePath() {
@@ -150,6 +155,15 @@ function createWindow() {
     // Envoi du chemin du jeu au chargement
     mainWindow.webContents.on('did-finish-load', () => {
         mainWindow.webContents.send('game-path', savedGamePath);
+    });
+
+    mainWindow.on('close', async (event) => {
+        if (gameRunning) {
+            event.preventDefault(); // Empêcher la fermeture immédiate
+            await killMinecraftProcess();
+            gameRunning = false;
+            mainWindow.destroy(); // Fermer la fenêtre après avoir tué le processus
+        }
     });
 }
 
@@ -323,10 +337,14 @@ app.whenReady().then(async () => {
 });
 
 // Gestion de la fermeture de l'application
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+app.on('window-all-closed', async () => {
+    if (gameRunning) {
+        await killMinecraftProcess();
+    }
+    
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
 });
 
 app.on('activate', () => {
@@ -866,6 +884,26 @@ ipcMain.handle('install-game', async (event) => {
             console.log('Mods are already installed and up to date, skipping reinstallation.');
         }
 
+        // Vérifier et installer les ressources
+        const resourcesValid = await resourceManager.verifyResources();
+        if (!resourcesValid) {
+            event.sender.send('install-progress', {
+                stage: 'installing-resources',
+                message: 'Installation des ressources...'
+            });
+            
+            // Charger et installer les ressources depuis la configuration
+            const resourcesConfig = JSON.parse(await fs.readFile(path.join(process.cwd(), 'resources.json'), 'utf8'));
+            
+            for (const pack of resourcesConfig.resourcepacks || []) {
+                await resourceManager.installResourcePack(pack.url, event);
+            }
+            
+            for (const shader of resourcesConfig.shaders || []) {
+                await resourceManager.installShader(shader.url, event);
+            }
+        }
+
         gameInstalled = true;
         store.set('gameInstalled', true);
         return { success: true, message: 'Installation terminée avec succès.' };
@@ -1024,6 +1062,19 @@ async function launchMinecraft(event, options) {
             event.sender.send('game-closed', code);
         });
 
+        // Ajouter un gestionnaire pour la fermeture du launcher
+        mainWindow.on('close', async () => {
+            if (gameRunning) {
+                await killMinecraftProcess();
+                gameRunning = false;
+            }
+        });
+
+        // Stocker le processus Minecraft dans la variable globale
+        launcher.on('start', (proc) => {
+            gameProcess = proc;
+        });
+
         // Lancement du jeu
         await launcher.launch(opts);
         
@@ -1099,6 +1150,36 @@ ipcMain.handle('launch-minecraft', async (event, options) => {
             }
         }
 
+        // Vérifier les ressources (resource packs et shaders)
+        const resourcesValid = await resourceManager.verifyResources();
+        if (!resourcesValid) {
+            event.sender.send('install-progress', {
+                stage: 'installing-resources',
+                message: 'Installation des ressources...'
+            });
+            
+            // Charger et installer les ressources depuis la configuration
+            const resourcesConfig = JSON.parse(await fs.readFile(path.join(process.cwd(), 'resources.json'), 'utf8'));
+            
+            // Installation des resource packs
+            for (const pack of resourcesConfig.resourcepacks || []) {
+                event.sender.send('install-progress', {
+                    stage: 'installing-resourcepack',
+                    message: `Installation du pack de ressources: ${pack.name}`
+                });
+                await resourceManager.installResourcePack(pack.url, event);
+            }
+            
+            // Installation des shaders
+            for (const shader of resourcesConfig.shaders || []) {
+                event.sender.send('install-progress', {
+                    stage: 'installing-shader',
+                    message: `Installation du shader: ${shader.name}`
+                });
+                await resourceManager.installShader(shader.url, event);
+            }
+        }
+
         // Lancer le jeu
         return await launchMinecraft(event, options);
     } catch (error) {
@@ -1109,12 +1190,13 @@ ipcMain.handle('launch-minecraft', async (event, options) => {
 
 // Ajoutez ces nouvelles fonctions d'initialisation
 async function verifyGameFiles() {
-    // Vérification des fichiers du jeu
     const gameFiles = [
         { path: GAME_PATH, type: 'directory' },
         { path: path.join(GAME_PATH, 'versions'), type: 'directory' },
         { path: path.join(GAME_PATH, 'assets'), type: 'directory' },
-        { path: path.join(GAME_PATH, 'libraries'), type: 'directory' }
+        { path: path.join(GAME_PATH, 'libraries'), type: 'directory' },
+        { path: path.join(GAME_PATH, 'resourcepacks'), type: 'directory' },
+        { path: path.join(GAME_PATH, 'shaderpacks'), type: 'directory' }
     ];
 
     for (const file of gameFiles) {
@@ -1138,4 +1220,26 @@ async function loadConfigurations() {
             store.set(key, value);
         }
     });
+}
+
+// Modification de la fonction pour tuer le processus Minecraft
+async function killMinecraftProcess() {
+    if (process.platform === 'win32') {
+        try {
+            // Sur Windows, on utilise taskkill pour forcer la fermeture du processus Java
+            await new Promise((resolve, reject) => {
+                exec('taskkill /F /IM java.exe', (error, stdout, stderr) => {
+                    if (error) {
+                        console.log('Aucun processus Java en cours');
+                        resolve();
+                    } else {
+                        console.log('Processus Java terminé');
+                        resolve();
+                    }
+                });
+            });
+        } catch (error) {
+            console.error('Erreur lors de la fermeture du processus Java:', error);
+        }
+    }
 }

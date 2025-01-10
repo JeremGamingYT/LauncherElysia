@@ -165,6 +165,28 @@ ipcRenderer.on('install-progress', (event, data) => {
             statusText.textContent = `Installation des mods : ${data.progress}%`;
             progressBar.style.width = `${data.progress}%`;
             break;
+        case 'installing-resources':
+            statusText.textContent = data.message || 'Installation des ressources...';
+            console.log('Installation des ressources...');
+            break;
+        case 'installing-resourcepack':
+            statusText.textContent = data.message || 'Installation du pack de ressources...';
+            console.log('Installation du pack de ressources:', data.message);
+            break;
+        case 'resourcepack-progress':
+            statusText.textContent = `Installation du pack de ressources : ${data.progress}%`;
+            progressBar.style.width = `${data.progress}%`;
+            console.log('Progression du pack de ressources:', data.progress + '%');
+            break;
+        case 'installing-shader':
+            statusText.textContent = data.message || 'Installation du shader...';
+            console.log('Installation du shader:', data.message);
+            break;
+        case 'shader-progress':
+            statusText.textContent = `Installation du shader : ${data.progress}%`;
+            progressBar.style.width = `${data.progress}%`;
+            console.log('Progression du shader:', data.progress + '%');
+            break;
         default:
             statusText.textContent = 'Installation en cours...';
     }
