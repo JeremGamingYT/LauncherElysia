@@ -35,17 +35,17 @@ const clientId = '1296879619563327498';
 // Crée un client RPC
 const rpc = new RPC.Client({ transport: 'ipc' });
 
-// Constantes pour Forge et chemins
+// Constantes pour Fabric et chemins
 const GAME_PATH = path.join(app.getPath('appData'), '.elysia');
 const javaPath = store.get('java.path', 'C:\\Program Files\\Java\\jdk-17\\bin\\javaw.exe')
-const FORGE_VERSION = '1.20.1-47.2.20';
-const FORGE_VERSION_LAUNCHER = '1.20.1-forge-47.2.20';
-const FORGE_INSTALLER_URL = `https://maven.minecraftforge.net/net/minecraftforge/forge/${FORGE_VERSION}/forge-${FORGE_VERSION}-installer.jar`;
-const FORGE_INSTALLER_PATH = path.join(app.getPath('temp'), `forge-${FORGE_VERSION}-installer.jar`);
+const FABRIC_VERSION = '0.16.10';
+const FABRIC_VERSION_LAUNCHER = 'fabric-loader-0.16.10-1.21';
+const FABRIC_INSTALLER_URL = `https://maven.fabricmc.net/net/fabricmc/fabric-installer/1.0.1/fabric-installer-1.0.1.jar`;
+const FABRIC_INSTALLER_PATH = path.join(app.getPath('temp'), `fabric-installer-1.0.1.jar`);
 
 const tempDir = path.join(app.getPath('temp')); // Récupère le dossier Temp
-const forgeInstallerName = 'forge-1.20.1-47.2.20-installer.jar'; // Nom du fichier
-const forgePath = path.join(tempDir, forgeInstallerName); // Combine le chemin et le nom du fichier
+const fabricInstallerName = 'fabric-installer-1.0.1.jar'; // Nom du fichier
+const fabricPath = path.join(tempDir, fabricInstallerName); // Combine le chemin et le nom du fichier
 
 const JAVA_DOWNLOAD_URL = 'download.oracle.com/java/17/archive/jdk-17.0.12_windows-x64_bin.exe';
 const JAVA_INSTALLER_PATH = path.join(app.getPath('temp'), 'jdk-17-installer.exe');
@@ -547,11 +547,11 @@ async function checkFileIntegrity(event) {
     }
 }
 
-// Fonction pour télécharger Forge
-async function downloadForge(event) {
-    const writer = fs.createWriteStream(FORGE_INSTALLER_PATH);
+// Fonction pour télécharger Fabric
+async function downloadFabric(event) {
+    const writer = fs.createWriteStream(FABRIC_INSTALLER_PATH);
     const response = await axios({
-        url: FORGE_INSTALLER_URL,
+        url: FABRIC_INSTALLER_URL,
         method: 'GET',
         responseType: 'stream'
     });
@@ -575,26 +575,26 @@ async function downloadForge(event) {
     });
 }
 
-// Fonction pour installer Forge
-async function installForge(event) {
+// Fonction pour installer Fabric
+async function installFabric(event) {
     return new Promise((resolve, reject) => {
         const javaPath = store.get('java.path', 'java');
-        const command = `"${javaPath}" -jar "${FORGE_INSTALLER_PATH}" --installClient "${GAME_PATH}"`;
+        const command = `"${javaPath}" -jar "${FABRIC_INSTALLER_PATH}" client -dir "${GAME_PATH}" -mcversion 1.21`;
 
         const child = exec(command);
 
         child.stdout.on('data', (data) => {
-            console.log(`Forge stdout: ${data}`);
-            event.sender.send('install-progress', { stage: 'installing-forge', data });
+            console.log(`Fabric stdout: ${data}`);
+            event.sender.send('install-progress', { stage: 'installing-fabric', data });
         });
 
         child.stderr.on('data', (data) => {
-            console.error(`Forge stderr: ${data}`);
+            console.error(`Fabric stderr: ${data}`);
         });
 
         child.on('close', (code) => {
             if (code !== 0) {
-                reject(new Error(`L'installation de Forge a échoué avec le code ${code}`));
+                reject(new Error(`L'installation de Fabric a échoué avec le code ${code}`));
             } else {
                 resolve();
             }
@@ -847,14 +847,14 @@ ipcMain.handle('install-game', async (event) => {
             console.log('Minecraft is already installed, skipping reinstallation.');
         }
 
-        // Vérifier l'installation de Forge
-        const forgeValid = await verifyForgeInstallation();
-        if (!forgeValid) {
-            event.sender.send('install-progress', { stage: 'installing-forge', message: 'Installation de Forge...' });
-            await downloadForge(event);
-            await installForge(event);
+        // Vérifier l'installation de Fabric
+        const fabricValid = await verifyFabricInstallation();
+        if (!fabricValid) {
+            event.sender.send('install-progress', { stage: 'installing-fabric', message: 'Installation de Fabric...' });
+            await downloadFabric(event);
+            await installFabric(event);
         } else {
-            console.log('Forge is already installed, skipping reinstallation.');
+            console.log('Fabric is already installed, skipping reinstallation.');
         }
 
         // Vérifier l'installation des mods
@@ -897,40 +897,39 @@ async function verifyMinecraftInstallation() {
     }
 }
 
-// Fonction pour vérifier l'installation de Forge
-async function verifyForgeInstallation() {
+// Fonction pour vérifier l'installation de Fabric
+async function verifyFabricInstallation() {
     try {
-        // Vérifier les fichiers de version Forge
-        const forgeVersionPath = path.join(GAME_PATH, 'versions', FORGE_VERSION_LAUNCHER);
-        const forgeLibPath = path.join(GAME_PATH, 'libraries', 'net', 'minecraftforge', 'forge', FORGE_VERSION);
+        // Vérifier les fichiers de version Fabric
+        const fabricVersionPath = path.join(GAME_PATH, 'versions', FABRIC_VERSION_LAUNCHER);
+        const fabricLibPath = path.join(GAME_PATH, 'libraries', 'net', 'fabricmc', 'fabric-loader', FABRIC_VERSION);
         
         // Liste complète des fichiers requis
         const requiredFiles = [
             // Fichiers de version
-            path.join(forgeVersionPath, `${FORGE_VERSION_LAUNCHER}.json`),
+            path.join(fabricVersionPath, `${FABRIC_VERSION_LAUNCHER}.json`),
             // Fichiers de bibliothèque
-            path.join(forgeLibPath, `forge-${FORGE_VERSION}-universal.jar`),
-            path.join(forgeLibPath, `forge-${FORGE_VERSION}-client.jar`)
+            path.join(fabricLibPath, `fabric-loader-${FABRIC_VERSION}.jar`)
         ];
 
         // Vérifier l'existence de tous les fichiers requis
         for (const file of requiredFiles) {
             if (!await fs.pathExists(file)) {
-                console.log(`Fichier Forge manquant: ${file}`);
+                console.log(`Fichier Fabric manquant: ${file}`);
                 return false;
             }
             
             // Vérifier que les fichiers ne sont pas vides
             const stats = await fs.stat(file);
             if (stats.size === 0) {
-                console.log(`Fichier Forge corrompu (taille 0): ${file}`);
+                console.log(`Fichier Fabric corrompu (taille 0): ${file}`);
                 return false;
             }
         }
 
         return true;
     } catch (error) {
-        console.error('Erreur lors de la vérification de Forge:', error);
+        console.error('Erreur lors de la vérification de Fabric:', error);
         return false;
     }
 }
@@ -966,58 +965,76 @@ async function verifyModsInstallation() {
     }
 }
 
-// Modification des options de lancement pour masquer le terminal
+// Modification de la fonction launchMinecraft pour suivre la documentation
 async function launchMinecraft(event, options) {
-    const opts = {
-        clientPackage: null,
-        authorization: store.get('minecraft-token'),
-        root: GAME_PATH,
-        version: {
-            number: '1.20.1',
-            type: "release"
-        },
-        java: javaPath,
-        forge: forgePath,
-        memory: {
-            max: options.maxMemory || "2G",
-            min: options.minMemory || "1G"
-        },
-        window: {
-            width: 1280,
-            height: 720,
-            fullscreen: false
-        },
-        overrides: {
-            detached: false,
-            stdio: 'pipe'
-        },
-        hideWindow: true
-    };
+    try {
+        // Configuration des options de lancement selon la documentation
+        const opts = {
+            clientPackage: null,
+            authorization: store.get('minecraft-token'),
+            root: GAME_PATH,
+            version: {
+                number: "1.21",
+                type: "release",
+                custom: FABRIC_VERSION_LAUNCHER // Ajout de la version Fabric
+            },
+            memory: {
+                max: options.maxMemory || "2G",
+                min: options.minMemory || "1G"
+            },
+            window: {
+                width: 1280,
+                height: 720,
+                fullscreen: false
+            },
+            // Ajout des options de diagnostic et de logging
+            overrides: {
+                detached: false,
+                stdio: 'pipe'
+            },
+            // Ajout des options de logging
+            logging: true
+        };
 
-    const launcher = new Client();
-    launcher.launch(opts);
+        const launcher = new Client();
 
-    launcher.on('debug', (e) => {
-        const logPath = path.join(GAME_PATH, 'launcher.log');
-        fs.appendFileSync(logPath, `${new Date().toISOString()} - ${e}\n`);
-    });
+        // Gestion des événements selon la documentation
+        launcher.on('debug', (e) => {
+            const logPath = path.join(GAME_PATH, 'launcher.log');
+            fs.appendFileSync(logPath, `${new Date().toISOString()} - DEBUG: ${e}\n`);
+            console.log('Debug:', e);
+        });
 
-    launcher.on('data', (e) => {
-        const logPath = path.join(GAME_PATH, 'minecraft.log');
-        fs.appendFileSync(logPath, `${new Date().toISOString()} - ${e}\n`);
-    });
+        launcher.on('data', (e) => {
+            const logPath = path.join(GAME_PATH, 'minecraft.log');
+            fs.appendFileSync(logPath, `${new Date().toISOString()} - ${e}\n`);
+            console.log('Minecraft:', e);
+        });
 
-    launcher.on('progress', (e) => {
-        if (e.type === 'download') {
-            const progressPercent = Math.round((e.task / e.total) * 100);
-            event.sender.send('download-progress', progressPercent);
-        }
-    });
+        launcher.on('progress', (e) => {
+            if (e.type === 'download') {
+                const progressPercent = Math.round((e.task / e.total) * 100);
+                event.sender.send('download-progress', progressPercent);
+            }
+        });
 
-    gameRunning = true;
-    mainWindow.minimize();
+        launcher.on('close', (code) => {
+            console.log('Minecraft closed with code:', code);
+            gameRunning = false;
+            event.sender.send('game-closed', code);
+        });
 
-    return { success: true };
+        // Lancement du jeu
+        await launcher.launch(opts);
+        
+        gameRunning = true;
+        mainWindow.minimize();
+
+        return { success: true };
+    } catch (error) {
+        console.error('Erreur lors du lancement de Minecraft:', error);
+        return { success: false, error: error.message };
+    }
 }
 
 ipcMain.handle('check-game-installation', async () => {
@@ -1029,7 +1046,7 @@ ipcMain.handle('check-game-installation', async () => {
     }
 
     try {
-        await fs.access(path.join(GAME_PATH, 'versions', `${FORGE_VERSION_LAUNCHER}`));
+        await fs.access(path.join(GAME_PATH, '.fabric'));
         gameInstalled = true;
         store.set('gameInstalled', true);
         return { installed: true };
@@ -1058,15 +1075,15 @@ ipcMain.handle('launch-minecraft', async (event, options) => {
             await installVanilla(event);
         }
 
-        // Vérifier l'installation de Forge
-        const forgeValid = await verifyForgeInstallation();
-        if (!forgeValid) {
+        // Vérifier l'installation de Fabric
+        const fabricValid = await verifyFabricInstallation();
+        if (!fabricValid) {
             event.sender.send('install-progress', {
-                stage: 'installing-forge',
-                message: 'Installation de Forge nécessaire...'
+                stage: 'installing-fabric',
+                message: 'Installation de Fabric nécessaire...'
             });
-            await downloadForge(event);
-            await installForge(event);
+            await downloadFabric(event);
+            await installFabric(event);
         }
 
         // Vérifier les mods
@@ -1112,8 +1129,8 @@ async function loadConfigurations() {
     const configs = {
         'java-path': javaPath,
         'game-directory': GAME_PATH,
-        'forge-version': FORGE_VERSION,
-        'minecraft-version': '1.20.1'
+        'fabric-version': FABRIC_VERSION,
+        'minecraft-version': '1.21'
     };
 
     Object.entries(configs).forEach(([key, value]) => {
