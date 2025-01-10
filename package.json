@@ -34,7 +34,9 @@
     "minecraft-launcher-core": "^3.17.1",
     "msmc": "^5.0.5",
     "progress-stream": "^2.0.0",
-    "undici": "^5.28.2"
+    "undici": "^5.28.2",
+    "adm-zip": "^0.5.10",
+    "sharp": "^0.32.6"
   },
   "devDependencies": {
     "electron": "^25.8.4",

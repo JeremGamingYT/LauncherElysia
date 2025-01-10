@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
 const ejs = require('ejs');
@@ -15,6 +15,7 @@ const { MinecraftLocation, Version } = require('@xmcl/core');
 const { Agent } = require('undici');
 const AutoUpdater = require('./modules/auto-updater');
 const ResourceManager = require('./modules/resource-manager');
+const SecurityChecker = require('./modules/security-checker');
 
 // Configuration du stockage local
 const store = new Store();
@@ -164,6 +165,44 @@ function createWindow() {
             gameRunning = false;
             mainWindow.destroy(); // Fermer la fenêtre après avoir tué le processus
         }
+    });
+
+    // Initialiser le système de sécurité
+    const initSecurity = async () => {
+        securityChecker = new SecurityChecker(GAME_PATH);
+        await securityChecker.initialize();
+    };
+    initSecurity();
+
+    // Gérer les détections 
+    securityChecker.on('detection', async (data) => {
+        // Créer une nouvelle fenêtre pour l'alerte
+        const alertWindow = new BrowserWindow({
+            width: 500,
+            height: 400,
+            frame: false,
+            transparent: true,
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false
+            },
+            parent: mainWindow,
+            modal: true
+        });
+
+        // Charger le template d'alerte
+        const templatePath = path.join(__dirname, 'views', 'security-alert.ejs');
+        const template = fs.readFileSync(templatePath, 'utf-8');
+        
+        // Passer les données correctement au template
+        const html = ejs.render(template, {
+            allDetections: data.allDetections,
+            path: path // Nécessaire pour utiliser path.basename dans le template
+        });
+        
+        const tempPath = path.join(app.getPath('temp'), 'security-alert.html');
+        fs.writeFileSync(tempPath, html);
+        alertWindow.loadFile(tempPath);
     });
 }
 
@@ -1243,3 +1282,17 @@ async function killMinecraftProcess() {
         }
     }
 }
+
+// Ajoutez les gestionnaires IPC pour les actions de sécurité
+ipcMain.on('show-security-details', async (event) => {
+    const reportPath = await securityChecker.generateReport();
+    shell.openPath(reportPath);
+});
+
+ipcMain.on('remove-suspicious-files', async (event) => {
+    const files = Array.from(securityChecker.suspiciousFiles.keys());
+    for (const filePath of files) {
+        await securityChecker.removeFile(filePath);
+    }
+    event.sender.close();
+});

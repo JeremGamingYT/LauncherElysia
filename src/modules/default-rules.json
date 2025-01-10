@@ -1,0 +1,43 @@
+{
+    "signatures": [
+        {
+            "pattern": "xray",
+            "confidence": 85,
+            "description": "Contient des fonctionnalités Xray"
+        },
+        {
+            "pattern": "X-Ray",
+            "confidence": 85,
+            "description": "Contient des fonctionnalités Xray"
+        },
+        {
+            "pattern": "see through",
+            "confidence": 75,
+            "description": "Potentielle fonctionnalité de vision à travers les blocs"
+        },
+        {
+            "pattern": "transparent ore",
+            "confidence": 80,
+            "description": "Modification suspecte de la transparence des minerais"
+        },
+        {
+            "pattern": "bypass",
+            "confidence": 75,
+            "description": "Tentative possible de contournement de sécurité"
+        }
+    ],
+    "metadata": [
+        {
+            "type": "size",
+            "maxSize": 100000000,
+            "confidence": 60,
+            "description": "Taille de fichier suspecte"
+        },
+        {
+            "type": "name",
+            "pattern": "hack|cheat|exploit|xray|x-ray",
+            "confidence": 70,
+            "description": "Nom de fichier suspect"
+        }
+    ]
+} 
