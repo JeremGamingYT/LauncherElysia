@@ -111,12 +111,12 @@ function createWindow() {
         memoryOptions: [2, 4, 6, 8],
         news: [
             {
-                title: 'À venir: Nouvelle interface.',
-                content: 'Une nouvelle interface est en cours de développement.'
+                title: '🚀 Update 9 - Migration vers Fabric 1.21',
+                content: 'La migration vers Fabric 1.21 est maintenant terminée. Vous pouvez maintenant profiter de la nouvelle version du launcher.'
             },
             {
-                title: 'Version Beta 1.0.0',
-                content: 'Nouvelle version du launcher Elysia.'
+                title: 'À venir: Nouvelle interface.',
+                content: 'Une nouvelle interface est en cours de développement.'
             }
         ],
         cssPath: `file://${cssPath}`,
