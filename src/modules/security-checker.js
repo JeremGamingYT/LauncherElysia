@@ -144,7 +144,11 @@ class SecurityChecker extends EventEmitter {
                 modsList = await fs.readJson(modsListPath);
             }
             if (await fs.pathExists(resourcesListPath)) {
-                resourcesList = await fs.readJson(resourcesListPath);
+                const resources = await fs.readJson(resourcesListPath);
+                resourcesList = [
+                    ...(resources.resourcepacks || []),
+                    ...(resources.shaders || [])
+                ];
             }
 
             // Liste des extensions de fichiers de configuration légitimes
@@ -202,7 +206,18 @@ class SecurityChecker extends EventEmitter {
             if (fileDir.includes('resourcepacks') || fileDir.includes('shaderpacks')) {
                 return resourcesList.some(resource => {
                     const resourceFileName = path.basename(resource.url);
-                    return resourceFileName === fileName;
+                    const resourceName = resource.name;
+                    
+                    // Vérifier le nom exact du fichier ou le nom de la ressource
+                    return fileName === resourceFileName || 
+                           fileName.includes(resourceName) ||
+                           // Gérer les variations de noms (shaders)
+                           (fileDir.includes('shaderpacks') && 
+                            (fileName.toLowerCase().includes('shader') || 
+                             fileName.toLowerCase().includes('seus') ||
+                             fileName.toLowerCase().includes('bsl') ||
+                             fileName.toLowerCase().includes('chocapic') ||
+                             fileName.toLowerCase().includes('bliss')));
                 });
             }
 

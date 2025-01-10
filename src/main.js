@@ -178,8 +178,8 @@ function createWindow() {
     securityChecker.on('detection', async (data) => {
         // Créer une nouvelle fenêtre pour l'alerte
         const alertWindow = new BrowserWindow({
-            width: 500,
-            height: 400,
+            width: 800,
+            height: 600,
             frame: false,
             transparent: true,
             webPreferences: {
@@ -187,17 +187,22 @@ function createWindow() {
                 contextIsolation: false
             },
             parent: mainWindow,
-            modal: true
+            modal: true,
+            resizable: true,
+            minWidth: 600,
+            minHeight: 400
         });
+
+        // Centrer la fenêtre sur l'écran parent
+        alertWindow.center();
 
         // Charger le template d'alerte
         const templatePath = path.join(__dirname, 'views', 'security-alert.ejs');
         const template = fs.readFileSync(templatePath, 'utf-8');
         
-        // Passer les données correctement au template
         const html = ejs.render(template, {
             allDetections: data.allDetections,
-            path: path // Nécessaire pour utiliser path.basename dans le template
+            path: path
         });
         
         const tempPath = path.join(app.getPath('temp'), 'security-alert.html');

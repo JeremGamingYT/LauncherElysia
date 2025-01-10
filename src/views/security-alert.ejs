@@ -28,12 +28,16 @@
             background: var(--bg-dark);
             border: 2px solid var(--danger);
             border-radius: 8px;
-            padding: 20px;
-            width: 480px;
-            max-width: 90vw;
+            padding: 25px;
+            width: 700px;
+            max-width: 95vw;
+            max-height: 90vh;
             z-index: 1000;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
             color: var(--text);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         @keyframes alertFadeIn {
@@ -69,9 +73,10 @@
 
         .security-alert-content {
             margin: 15px 0;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
-            padding-right: 10px;
+            padding-right: 15px;
+            flex: 1;
         }
 
         .security-alert-content::-webkit-scrollbar {
@@ -97,27 +102,23 @@
         }
 
         .file-name {
+            font-size: 16px;
             font-weight: 600;
             color: var(--text);
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
 
         .file-path {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--text-secondary);
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             word-break: break-all;
         }
 
         .detection-reason {
-            background: var(--bg-dark);
-            padding: 8px;
-            border-radius: 4px;
-            margin-top: 8px;
             font-size: 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            line-height: 1.4;
+            padding: 10px;
         }
 
         .confidence-badge {
@@ -152,10 +153,10 @@
         }
 
         .btn {
-            padding: 8px 16px;
+            padding: 10px 20px;
             border: none;
             border-radius: 4px;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 500;
             cursor: pointer;
             transition: opacity 0.2s;
