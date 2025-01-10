@@ -1,6 +1,8 @@
-# Launcher Elysia
+# Launcher Minecraft Personnalisable
 
 Un launcher Minecraft moderne et élégant développé avec Electron, utilisant CSS, JavaScript et EJS.
+
+> **Note importante**: Ce launcher est fourni sous licence ISC modifiée. Vous pouvez l'utiliser et le modifier librement, mais vous ne pouvez pas utiliser le nom "Elysia"/"Élysia" dans vos versions modifiées.
 
 ## Fonctionnalités
 
