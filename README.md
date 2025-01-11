@@ -6,6 +6,13 @@ Un launcher Minecraft moderne et élégant développé avec Electron, utilisant 
 
 ## Dernières mises à jour
 
+### Update 12
+- Système de sécurité avancé
+- Détection des fichiers malveillants
+- Protection contre les mods non autorisés
+- Analyse comportementale des fichiers
+- Quarantaine automatique des fichiers suspects
+
 ### Update 11.1
 - Ajout de nouveaux shaders et resource packs
 - Correction de bugs mineurs
