@@ -4,6 +4,25 @@ Un launcher Minecraft moderne et élégant développé avec Electron, utilisant 
 
 > **Note importante**: Ce launcher est fourni sous licence ISC modifiée. Vous pouvez l'utiliser et le modifier librement, mais vous ne pouvez pas utiliser le nom "Elysia"/"Élysia" dans vos versions modifiées.
 
+## Dernières mises à jour
+
+### Update 11.1
+- Ajout de nouveaux shaders et resource packs
+- Correction de bugs mineurs
+- Amélioration de la stabilité générale
+
+### Update 11
+- Ajout d'un gestionnaire de ressources
+- Support des shaders et resource packs
+- Vérification automatique des ressources
+- Installation et mise à jour automatique des ressources
+
+### Update 10
+- Mise à jour complète de la liste des mods
+- Support de Fabric 1.21
+- Plus de 150 mods intégrés
+- Optimisation des performances
+
 ## Fonctionnalités
 
 - Interface utilisateur moderne et intuitive
@@ -12,6 +31,9 @@ Un launcher Minecraft moderne et élégant développé avec Electron, utilisant 
 - Affichage de l'avatar du joueur
 - Barre de progression pour le téléchargement
 - Section actualités personnalisable
+- Gestionnaire de ressources intégré
+- Support des shaders et resource packs
+- Installation automatique des mods
 
 ## Prérequis
 

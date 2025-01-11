@@ -250,19 +250,28 @@
         </div>
 
         <div class="security-alert-actions">
-            <button class="btn btn-secondary" onclick="showDetails()">Afficher les détails</button>
             <button class="btn btn-danger" onclick="removeFiles()">Supprimer</button>
         </div>
     </div>
 
     <script>
-        function showDetails() {
-            ipcRenderer.send('show-security-details');
-        }
+        const { ipcRenderer } = require('electron');
 
         function removeFiles() {
-            ipcRenderer.send('remove-suspicious-files');
+            const suspiciousFiles = [];
+            document.querySelectorAll('.suspicious-file').forEach(fileElement => {
+                const filePath = fileElement.querySelector('.file-path').textContent;
+                suspiciousFiles.push(filePath);
+            });
+
+            if (suspiciousFiles.length > 0) {
+                if (confirm('Voulez-vous vraiment supprimer tous les fichiers suspects détectés ?')) {
+                    ipcRenderer.send('remove-suspicious-files', suspiciousFiles);
+                    // Fermer la fenêtre après la suppression
+                    window.close();
+                }
+            }
         }
     </script>
 </body>
-</html> 
+</html>

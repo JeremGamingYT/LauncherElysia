@@ -117,12 +117,16 @@ function createWindow() {
         memoryOptions: [2, 4, 6, 8],
         news: [
             {
-                title: '🚀 Update 9 - Migration vers Fabric 1.21',
-                content: 'La migration vers Fabric 1.21 est maintenant terminée. Vous pouvez maintenant profiter de la nouvelle version du launcher.'
+                title: '🚀 Update 11.1 - Améliorations et corrections',
+                content: 'Ajout de nouveaux shaders et ressource packs. Correction de bugs mineurs.'
             },
             {
-                title: 'À venir: Nouvelle interface.',
-                content: 'Une nouvelle interface est en cours de développement.'
+                title: '🎮 Update 11 - Gestion des ressources',
+                content: 'Ajout d\'un gestionnaire de ressources pour les shaders et resource packs.'
+            },
+            {
+                title: '📦 Update 10 - Mise à jour des mods',
+                content: 'Mise à jour complète de la liste des mods pour Fabric 1.21.'
             }
         ],
         cssPath: `file://${cssPath}`,
@@ -1289,15 +1293,26 @@ async function killMinecraftProcess() {
 }
 
 // Ajoutez les gestionnaires IPC pour les actions de sécurité
-ipcMain.on('show-security-details', async (event) => {
-    const reportPath = await securityChecker.generateReport();
-    shell.openPath(reportPath);
-});
-
-ipcMain.on('remove-suspicious-files', async (event) => {
-    const files = Array.from(securityChecker.suspiciousFiles.keys());
-    for (const filePath of files) {
-        await securityChecker.removeFile(filePath);
+ipcMain.on('remove-suspicious-files', async (event, filesToRemove) => {
+    try {
+        for (const filePath of filesToRemove) {
+            // Mettre le fichier en quarantaine avant de le supprimer
+            await securityChecker.quarantineFile(filePath);
+            // Supprimer le fichier
+            await securityChecker.removeFile(filePath);
+        }
+        
+        // Envoyer une notification de succès
+        dialog.showMessageBox({
+            type: 'info',
+            title: 'Suppression réussie',
+            message: 'Les fichiers suspects ont été supprimés avec succès.'
+        });
+    } catch (error) {
+        console.error('Erreur lors de la suppression des fichiers:', error);
+        dialog.showErrorBox(
+            'Erreur de suppression',
+            'Une erreur est survenue lors de la suppression des fichiers.'
+        );
     }
-    event.sender.close();
 });
