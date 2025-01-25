@@ -41,8 +41,8 @@ const rpc = new RPC.Client({ transport: 'ipc' });
 // Constantes pour Fabric et chemins
 const GAME_PATH = path.join(app.getPath('appData'), '.elysia');
 const javaPath = store.get('java.path', 'C:\\Program Files\\Java\\jdk-17\\bin\\javaw.exe')
-const FABRIC_VERSION = '0.16.10';
-const FABRIC_VERSION_LAUNCHER = 'fabric-loader-0.16.10-1.21';
+const FABRIC_VERSION = '0.16.5';
+const FABRIC_VERSION_LAUNCHER = 'fabric-loader-0.16.5-1.21';
 const FABRIC_INSTALLER_URL = `https://maven.fabricmc.net/net/fabricmc/fabric-installer/1.0.1/fabric-installer-1.0.1.jar`;
 const FABRIC_INSTALLER_PATH = path.join(app.getPath('temp'), `fabric-installer-1.0.1.jar`);
 

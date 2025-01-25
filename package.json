@@ -1,7 +1,7 @@
 {
   "name": "elysia",
-  "version": "1.4.0",
-  "description": "Launcher Minecraft Elysia - Un launcher Minecraft moderne et sécurisé",
+  "version": "1.4.1",
+  "description": "Launcher Minecraft Elysia",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
