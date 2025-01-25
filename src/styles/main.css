@@ -1,19 +1,20 @@
 :root {
     --primary: #6366f1;
-    --primary-hover: #4f46e5;
+    --primary-hover: #818cf8;
     --danger: #ef4444;
-    --danger-hover: #dc2626;
-    --bg-dark: #0f172a;
+    --danger-hover: #f87171;
+    --bg-dark: rgba(15, 23, 42, 0.95);
     --bg-darker: #020617;
-    --bg-light: #1e293b;
-    --border-color: #334155;
+    --bg-light: rgba(30, 41, 59, 0.7);
+    --border-color: rgba(51, 65, 85, 0.4);
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
     --success: #22c55e;
-    --success-hover: #16a34a;
+    --success-hover: #4ade80;
     
-    --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --hover-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    --hover-transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --glass-effect: rgba(2, 6, 23, 0.7);
 }
 
 * {
@@ -21,29 +22,33 @@
     padding: 0;
     box-sizing: border-box;
     user-select: none;
+    font-synthesis: none;
 }
 
 body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background: var(--bg-darker);
     color: var(--text-primary);
     height: 100vh;
     overflow: hidden;
-    font-size: 14px;
+    font-size: 15px;
+    line-height: 1.6;
 }
 
 /* Barre de titre modernisée */
 .titlebar {
-    height: 40px;
-    background: var(--bg-dark);
+    height: 48px;
+    background: var(--glass-effect);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 20px;
+    padding: 0 24px;
     -webkit-app-region: drag;
     border-bottom: 1px solid var(--border-color);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    position: relative;
+    z-index: 1000;
 }
 
 .titlebar-title {
@@ -373,6 +378,7 @@ body {
     flex-direction: column;
     gap: 32px;
     overflow-y: auto;
+    background: linear-gradient(to bottom right, rgba(2, 6, 23, 0.8), rgba(15, 23, 42, 0.4));
 }
 
 /* Section actualités améliorée */
