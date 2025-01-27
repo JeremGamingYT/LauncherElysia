@@ -15,7 +15,6 @@ const { MinecraftLocation, Version } = require('@xmcl/core');
 const { Agent } = require('undici');
 const AutoUpdater = require('./modules/auto-updater');
 const ResourceManager = require('./modules/resource-manager');
-const SecurityChecker = require('./modules/security-checker');
 
 // Configuration du stockage local
 const store = new Store();
@@ -29,7 +28,6 @@ let authData = null;
 let gameRunning = false;
 let gameInstalled = false;
 let splashWindow = null;
-let securityChecker = null;
 
 // Discord 'Rich presence'
 const RPC = require('discord-rpc');
@@ -169,49 +167,6 @@ function createWindow() {
             gameRunning = false;
             mainWindow.destroy(); // Fermer la fenêtre après avoir tué le processus
         }
-    });
-
-    // Initialiser le système de sécurité
-    const initSecurity = async () => {
-        securityChecker = new SecurityChecker(GAME_PATH);
-        await securityChecker.initialize();
-    };
-    initSecurity();
-
-    // Gérer les détections 
-    securityChecker.on('detection', async (data) => {
-        // Créer une nouvelle fenêtre pour l'alerte
-        const alertWindow = new BrowserWindow({
-            width: 800,
-            height: 600,
-            frame: false,
-            transparent: true,
-            webPreferences: {
-                nodeIntegration: true,
-                contextIsolation: false
-            },
-            parent: mainWindow,
-            modal: true,
-            resizable: true,
-            minWidth: 600,
-            minHeight: 400
-        });
-
-        // Centrer la fenêtre sur l'écran parent
-        alertWindow.center();
-
-        // Charger le template d'alerte
-        const templatePath = path.join(__dirname, 'views', 'security-alert.ejs');
-        const template = fs.readFileSync(templatePath, 'utf-8');
-        
-        const html = ejs.render(template, {
-            allDetections: data.allDetections,
-            path: path
-        });
-        
-        const tempPath = path.join(app.getPath('temp'), 'security-alert.html');
-        fs.writeFileSync(tempPath, html);
-        alertWindow.loadFile(tempPath);
     });
 }
 
@@ -645,7 +600,9 @@ async function downloadFabric(event) {
 async function installFabric(event) {
     return new Promise((resolve, reject) => {
         const javaPath = store.get('java.path', 'java');
-        const command = `"${javaPath}" -jar "${FABRIC_INSTALLER_PATH}" client -dir "${GAME_PATH}" -mcversion 1.21`;
+        const command = `"${javaPath}" -jar "${FABRIC_INSTALLER_PATH}" client -dir "${GAME_PATH}" -mcversion 1.21 -loader ${FABRIC_VERSION}`;
+
+        console.log('Commande d\'installation Fabric:', command); // Debug
 
         const child = exec(command);
 
@@ -660,8 +617,10 @@ async function installFabric(event) {
 
         child.on('close', (code) => {
             if (code !== 0) {
+                console.error(`Installation de Fabric échouée avec le code ${code}`);
                 reject(new Error(`L'installation de Fabric a échoué avec le code ${code}`));
             } else {
+                console.log('Installation de Fabric réussie');
                 resolve();
             }
         });
@@ -730,7 +689,7 @@ async function launchVanillaTemporary(event) {
             authorization: store.get('minecraft-token'),
             root: GAME_PATH,
             version: {
-                number: '1.20.1',
+                number: '1.21',
                 type: "release"
             },
             memory: {
@@ -775,7 +734,7 @@ async function launchVanillaTemporary(event) {
 // Modification de la fonction installVanilla
 async function installVanilla(event) {
     try {
-        const version = await getVersionList().then(list => list.versions.find(v => v.id === '1.20.1'));
+        const version = await getVersionList().then(list => list.versions.find(v => v.id === '1.21'));
         
         // Configuration de l'agent de téléchargement
         const agent = new Agent({
@@ -798,7 +757,7 @@ async function installVanilla(event) {
         await install(version, GAME_PATH, downloadOptions);
         
         // Installation des dépendances (bibliothèques et assets)
-        const resolvedVersion = await Version.parse(GAME_PATH, '1.20.1');
+        const resolvedVersion = await Version.parse(GAME_PATH, '1.21');
         await installDependencies(resolvedVersion, downloadOptions);
 
         console.log('Installation de Minecraft vanilla terminée');
@@ -964,10 +923,10 @@ ipcMain.handle('install-game', async (event) => {
 // Fonction pour vérifier l'installation de Minecraft
 async function verifyMinecraftInstallation() {
     try {
-        const minecraftPath = path.join(GAME_PATH, 'versions', '1.20.1');
+        const minecraftPath = path.join(GAME_PATH, 'versions', '1.21');
         const requiredFiles = [
-            path.join(minecraftPath, '1.20.1.json'),
-            path.join(minecraftPath, '1.20.1.jar')
+            path.join(minecraftPath, '1.21.json'),
+            path.join(minecraftPath, '1.21.jar')
         ];
 
         for (const file of requiredFiles) {
@@ -986,27 +945,27 @@ async function verifyMinecraftInstallation() {
 // Fonction pour vérifier l'installation de Fabric
 async function verifyFabricInstallation() {
     try {
-        // Vérifier les fichiers de version Fabric
         const fabricVersionPath = path.join(GAME_PATH, 'versions', FABRIC_VERSION_LAUNCHER);
         const fabricLibPath = path.join(GAME_PATH, 'libraries', 'net', 'fabricmc', 'fabric-loader', FABRIC_VERSION);
         
-        // Liste complète des fichiers requis
+        console.log('Vérification des chemins Fabric:');
+        console.log('Version Path:', fabricVersionPath);
+        console.log('Lib Path:', fabricLibPath);
+
         const requiredFiles = [
-            // Fichiers de version
             path.join(fabricVersionPath, `${FABRIC_VERSION_LAUNCHER}.json`),
-            // Fichiers de bibliothèque
             path.join(fabricLibPath, `fabric-loader-${FABRIC_VERSION}.jar`)
         ];
 
-        // Vérifier l'existence de tous les fichiers requis
         for (const file of requiredFiles) {
+            console.log('Vérification du fichier:', file);
             if (!await fs.pathExists(file)) {
                 console.log(`Fichier Fabric manquant: ${file}`);
                 return false;
             }
             
-            // Vérifier que les fichiers ne sont pas vides
             const stats = await fs.stat(file);
+            console.log(`Taille du fichier ${path.basename(file)}: ${stats.size} bytes`);
             if (stats.size === 0) {
                 console.log(`Fichier Fabric corrompu (taille 0): ${file}`);
                 return false;
@@ -1051,18 +1010,45 @@ async function verifyModsInstallation() {
     }
 }
 
+// Ajouter cette nouvelle fonction
+async function renameFabricJson() {
+    try {
+        const fabricVersionPath = path.join(GAME_PATH, 'versions', FABRIC_VERSION_LAUNCHER);
+        const currentJsonPath = path.join(fabricVersionPath, '1.21.json');
+        const newJsonPath = path.join(fabricVersionPath, `${FABRIC_VERSION_LAUNCHER}.json`);
+
+        // Vérifier si le fichier source existe
+        if (await fs.pathExists(currentJsonPath)) {
+            // Vérifier si le fichier de destination n'existe pas déjà
+            if (!await fs.pathExists(newJsonPath)) {
+                await fs.copy(currentJsonPath, newJsonPath);
+                console.log('Fichier JSON Fabric renommé avec succès');
+            }
+        }
+    } catch (error) {
+        console.error('Erreur lors du renommage du fichier JSON Fabric:', error);
+    }
+}
+
 // Modification de la fonction launchMinecraft pour suivre la documentation
 async function launchMinecraft(event, options) {
     try {
-        // Configuration des options de lancement selon la documentation
+        // Vérifier et rafraîchir le token si nécessaire
+        const token = store.get('minecraft-token');
+        if (!token) {
+            throw new Error('Veuillez vous connecter avec votre compte Microsoft');
+        }
+
+        await renameFabricJson();
+
         const opts = {
             clientPackage: null,
-            authorization: store.get('minecraft-token'),
+            authorization: token,
             root: GAME_PATH,
             version: {
-                number: "1.21",
+                number: '1.21',
                 type: "release",
-                custom: FABRIC_VERSION_LAUNCHER // Ajout de la version Fabric
+                custom: FABRIC_VERSION_LAUNCHER
             },
             memory: {
                 max: options.maxMemory || "2G",
@@ -1081,6 +1067,9 @@ async function launchMinecraft(event, options) {
             // Ajout des options de logging
             logging: true
         };
+
+        // Ajouter un log pour déboguer
+        console.log('Options de lancement:', JSON.stringify(opts, null, 2));
 
         const launcher = new Client();
 
@@ -1291,28 +1280,3 @@ async function killMinecraftProcess() {
         }
     }
 }
-
-// Ajoutez les gestionnaires IPC pour les actions de sécurité
-ipcMain.on('remove-suspicious-files', async (event, filesToRemove) => {
-    try {
-        for (const filePath of filesToRemove) {
-            // Mettre le fichier en quarantaine avant de le supprimer
-            await securityChecker.quarantineFile(filePath);
-            // Supprimer le fichier
-            await securityChecker.removeFile(filePath);
-        }
-        
-        // Envoyer une notification de succès
-        dialog.showMessageBox({
-            type: 'info',
-            title: 'Suppression réussie',
-            message: 'Les fichiers suspects ont été supprimés avec succès.'
-        });
-    } catch (error) {
-        console.error('Erreur lors de la suppression des fichiers:', error);
-        dialog.showErrorBox(
-            'Erreur de suppression',
-            'Une erreur est survenue lors de la suppression des fichiers.'
-        );
-    }
-});
