@@ -1,6 +1,6 @@
 const { ipcRenderer } = require('electron');
 
-// Éléments DOM
+// Éléments DOM essentiels
 const launchButton = document.getElementById('launch-btn');
 const usernameInput = document.getElementById('username');
 const versionSelect = document.getElementById('version');
@@ -31,70 +31,54 @@ closeBtn.addEventListener('click', () => {
     ipcRenderer.send('close-window');
 });
 
-// Gestion du slider de mémoire
-memorySlider.addEventListener('input', (e) => {
-    const value = e.target.value;
-    memoryValue.textContent = value;
-    
-    // Animation du slider
-    const percent = ((value - memorySlider.min) / (memorySlider.max - memorySlider.min)) * 100;
-    memorySlider.style.background = `linear-gradient(to right, var(--primary) ${percent}%, var(--bg-light) ${percent}%)`;
-});
-
-// Initialisation du slider
-const initSlider = () => {
-    const value = memorySlider.value;
-    const percent = ((value - memorySlider.min) / (memorySlider.max - memorySlider.min)) * 100;
-    memorySlider.style.background = `linear-gradient(to right, var(--primary) ${percent}%, var(--bg-light) ${percent}%)`;
-};
-
 // Fonction pour mettre à jour l'interface pendant le lancement
-function updateLaunchUI(isLaunching, status = '') {
-    console.log('updateLaunchUI called:', { isLaunching, isGameRunning, isAuthenticated });
-    
-    if (isLaunching) {
+function updateLaunchUI(loading = false, message = '') {
+    if (loading) {
         launchButton.disabled = true;
-        launchButton.textContent = 'LANCEMENT...';
-        progressBar.parentElement.classList.add('downloading');
-        statusText.textContent = status || 'Téléchargement des fichiers...';
+        progressBar.style.width = '100%';
+        progressBar.style.transition = 'width 15s linear';
+        if (message) statusText.textContent = message;
     } else {
-        launchButton.disabled = isGameRunning;
-        launchButton.textContent = isAuthenticated ? (isGameRunning ? 'EN COURS...' : 'JOUER') : 'SE CONNECTER';
-        progressBar.parentElement.classList.remove('downloading');
-        statusText.textContent = isAuthenticated ? 
-            (isGameRunning ? 'Minecraft est en cours d\'exécution' : 'Prêt à jouer') : 
-            'Connectez-vous pour jouer';
+        launchButton.disabled = false;
         progressBar.style.width = '0%';
+        progressBar.style.transition = 'none';
     }
-    console.log('UI updated:', { 
-        buttonText: launchButton.textContent,
-        buttonDisabled: launchButton.disabled,
-        statusText: statusText.textContent
-    });
 }
 
 // Fonction pour mettre à jour l'interface utilisateur après l'authentification
 function updateAuthUI(profile) {
+    if (!profile) return;
+    
     isAuthenticated = true;
     currentUser = profile;
+    
+    // Mise à jour du profil
     usernameInput.value = profile.name;
     usernameInput.disabled = true;
-    avatar.style.backgroundImage = `url('https://minotar.net/avatar/${profile.name}')`;
+    avatar.style.backgroundImage = `url('https://minotar.net/avatar/${profile.name}/80')`;
     avatarStatus.classList.add('online');
     logoutBtn.style.display = 'flex';
-    updateLaunchUI(false);
+    
+    // Mise à jour du bouton de lancement
+    launchButton.textContent = 'JOUER';
+    statusText.textContent = 'Prêt à jouer';
 }
 
-// Fonction pour réinitialiser l'interface utilisateur après la déconnexion
+// Fonction pour réinitialiser l'interface utilisateur
 function resetAuthUI() {
     isAuthenticated = false;
     currentUser = null;
-    usernameInput.value = '';
+    
+    // Réinitialisation du profil
+    usernameInput.value = 'Non connecté';
     usernameInput.disabled = true;
-    avatar.style.backgroundImage = `url('https://minotar.net/avatar/steve')`;
+    avatar.style.backgroundImage = `url('https://minotar.net/avatar/steve/80')`;
     avatarStatus.classList.remove('online');
     logoutBtn.style.display = 'none';
-    updateLaunchUI(false);
+    
+    // Réinitialisation du bouton de lancement
+    launchButton.textContent = 'SE CONNECTER';
+    statusText.textContent = 'Connectez-vous pour jouer';
 }
 
 // Gestion des événements du jeu
@@ -192,68 +176,23 @@ ipcRenderer.on('install-progress', (event, data) => {
     }
 });
 
-// Vérification du statut d'authentification au démarrage
-ipcRenderer.on('auth-status', (event, data) => {
+// Supprimer la vérification du localStorage et ajouter cet écouteur
+ipcRenderer.on('auth-status-update', (event, data) => {
+    console.log('Réception de l\'état d\'authentification:', data);
     if (data.isAuthenticated && data.profile) {
         updateAuthUI(data.profile);
-    }
-});
-
-// Réception du chemin du jeu
-ipcRenderer.on('game-path', (event, path) => {
-    gamePathInput.value = path;
-});
-
-// Gestion du bouton de sélection du dossier
-browseBtn.addEventListener('click', async () => {
-    try {
-        const result = await ipcRenderer.invoke('select-directory');
-        if (result.success) {
-            gamePathInput.value = result.path;
-            // Animation de confirmation
-            gamePathInput.style.borderColor = 'var(--success)';
-            setTimeout(() => {
-                gamePathInput.style.borderColor = '';
-            }, 1000);
-        }
-    } catch (error) {
-        alert('Erreur lors de la sélection du dossier');
-    }
-});
-
-// Gestion du bouton de réinitialisation du chemin
-resetPathBtn.addEventListener('click', async () => {
-    try {
-        const result = await ipcRenderer.invoke('reset-directory');
-        if (result.success) {
-            gamePathInput.value = result.path;
-            // Animation de confirmation
-            gamePathInput.style.borderColor = 'var(--success)';
-            setTimeout(() => {
-                gamePathInput.style.borderColor = '';
-            }, 1000);
-        }
-    } catch (error) {
-        alert('Erreur lors de la réinitialisation du chemin');
+    } else {
+        resetAuthUI();
     }
 });
 
 // Gestion du bouton de déconnexion
 logoutBtn.addEventListener('click', async () => {
-    if (isGameRunning) {
-        alert('Veuillez fermer le jeu avant de vous déconnecter');
-        return;
-    }
-
     try {
-        const result = await ipcRenderer.invoke('logout');
-        if (result.success) {
-            resetAuthUI();
-        } else {
-            throw new Error(result.error || 'Erreur lors de la déconnexion');
-        }
+        await ipcRenderer.invoke('logout');
+        resetAuthUI();
     } catch (error) {
-        alert(`Erreur: ${error.message}`);
+        console.error('Erreur lors de la déconnexion:', error);
     }
 });
 
@@ -318,7 +257,7 @@ async function launchGame() {
     }
 }
 
-// Gestion du lancement du jeu
+// Modifier la fonction de lancement du jeu
 launchButton.addEventListener('click', async () => {
     try {
         if (!isAuthenticated) {
@@ -330,25 +269,27 @@ launchButton.addEventListener('click', async () => {
                 throw new Error(result.error || 'Erreur lors de la connexion');
             }
 
+            // Mise à jour de l'interface avec le nouveau profil
             updateAuthUI(result.profile);
+            
+            // Sauvegarder l'état dans le localStorage
+            localStorage.setItem('lastAuthState', JSON.stringify({
+                isAuthenticated: true,
+                profile: result.profile,
+                timestamp: Date.now()
+            }));
+
+            updateLaunchUI(false);
             return;
         }
 
-        // Vérification et installation si nécessaire
-        const installResult = await ipcRenderer.invoke('install-game');
-        if (!installResult.success) {
-            throw new Error(installResult.message || 'Erreur lors de l\'installation');
-        }
-
-        // Lancement du jeu
+        // Lancement du jeu avec les paramètres
         updateLaunchUI(true, 'Lancement du jeu...');
-        const options = {
-            version: versionSelect.value,
+        const result = await ipcRenderer.invoke('launch-minecraft', {
             maxMemory: `${memorySlider.value}G`,
-            minMemory: '1G'
-        };
-
-        const result = await ipcRenderer.invoke('launch-minecraft', options);
+            minMemory: "1G",
+            version: versionSelect.value
+        });
         
         if (!result.success) {
             throw new Error(result.error || 'Erreur lors du lancement');
@@ -356,8 +297,8 @@ launchButton.addEventListener('click', async () => {
 
         statusText.textContent = 'Minecraft est en cours d\'exécution';
         isGameRunning = true;
-        updateLaunchUI(false);
     } catch (error) {
+        console.error('Erreur:', error);
         alert(`Erreur: ${error.message}`);
         updateLaunchUI(false);
     }
@@ -365,4 +306,79 @@ launchButton.addEventListener('click', async () => {
 
 // Initialisation de l'interface
 updateLaunchUI(false);
-initSlider();
+
+// Ajouter au début du fichier avec les autres sélecteurs DOM
+const navItems = document.querySelectorAll('.nav-item');
+const pages = {
+    home: document.getElementById('home-page'),
+    play: document.getElementById('play-page'),
+    news: document.getElementById('news-page'),
+    settings: document.getElementById('settings-page')
+};
+
+// Mettre à jour la logique de navigation
+navItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // Retirer la classe active de tous les items
+        navItems.forEach(nav => nav.classList.remove('active'));
+        
+        // Ajouter la classe active à l'item cliqué
+        item.classList.add('active');
+        
+        // Cacher toutes les pages
+        Object.values(pages).forEach(page => {
+            if (page) page.style.display = 'none';
+        });
+        
+        // Afficher la page correspondante
+        const pageId = item.getAttribute('href').replace('#', '');
+        const pageToShow = pageId === 'home' ? pages.home : 
+                          pageId === 'play' ? pages.play : 
+                          pageId === 'news' ? pages.news : 
+                          pageId === 'settings' ? pages.settings : null;
+        
+        if (pageToShow) {
+            pageToShow.style.display = 'block';
+        }
+    });
+});
+
+// Initialisation : afficher la page d'accueil
+document.addEventListener('DOMContentLoaded', () => {
+    // L'état d'authentification sera géré par l'événement 'auth-status-update'
+    console.log('Application chargée, en attente de l\'état d\'authentification...');
+});
+
+// Ajouter la gestion des événements pour les paramètres
+memorySlider.addEventListener('input', (e) => {
+    memoryValue.textContent = `${e.target.value} Go`;
+});
+
+// Mettre à jour la gestion du chemin du jeu
+browseBtn.addEventListener('click', async () => {
+    try {
+        const result = await ipcRenderer.invoke('select-game-path');
+        if (result.success) {
+            gamePathInput.value = result.path;
+        }
+    } catch (error) {
+        console.error('Erreur lors de la sélection du dossier:', error);
+        alert('Erreur lors de la sélection du dossier');
+    }
+});
+
+resetPathBtn.addEventListener('click', async () => {
+    try {
+        const defaultPath = await ipcRenderer.invoke('reset-game-path');
+        gamePathInput.value = defaultPath;
+    } catch (error) {
+        console.error('Erreur lors de la réinitialisation du chemin:', error);
+    }
+});
+
+// Ajouter avec les autres écouteurs
+ipcRenderer.on('game-path', (event, path) => {
+    gamePathInput.value = path;
+});

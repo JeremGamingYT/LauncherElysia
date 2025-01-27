@@ -77,9 +77,9 @@ function createWindow() {
     // Création de la fenêtre principale
     mainWindow = new BrowserWindow({
         width: 1280,
-        height: 800,
+        height: 900,
         minWidth: 1280,
-        minHeight: 800,
+        minHeight: 900,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
@@ -110,7 +110,7 @@ function createWindow() {
     ensureGameDirectory(savedGamePath);
 
     const html = ejs.render(template, {
-        title: 'Elysia',
+        title: 'Elysia - Beta-v1.4.2',
         versions: ['Beta'],
         memoryOptions: [2, 4, 6, 8],
         news: [
@@ -144,20 +144,43 @@ function createWindow() {
         mainWindow.webContents.openDevTools();
     }
 
-    // Vérification de l'authentification au démarrage
+    // Vérification immédiate de l'authentification
     const savedToken = store.get('minecraft-token');
-    if (savedToken) {
-        mainWindow.webContents.on('did-finish-load', () => {
-            mainWindow.webContents.send('auth-status', { 
-                isAuthenticated: true,
-                profile: store.get('minecraft-profile')
+    const savedProfile = store.get('minecraft-profile');
+    
+    mainWindow.webContents.on('did-finish-load', async () => {
+        try {
+            if (savedToken && savedProfile) {
+                const xboxManager = await authManager.refresh(savedToken);
+                const newToken = await xboxManager.getMinecraft();
+                
+                // Mettre à jour le token
+                store.set('minecraft-token', newToken.mclc());
+                
+                mainWindow.webContents.send('auth-status-update', {
+                    isAuthenticated: true,
+                    profile: savedProfile
+                });
+            } else {
+                mainWindow.webContents.send('auth-status-update', {
+                    isAuthenticated: false
+                });
+            }
+        } catch (error) {
+            console.error('Erreur lors de la vérification du token:', error);
+            // En cas d'erreur, supprimer les données d'authentification
+            store.delete('minecraft-token');
+            store.delete('minecraft-profile');
+            mainWindow.webContents.send('auth-status-update', {
+                isAuthenticated: false
             });
-        });
-    }
+        }
+    });
 
     // Envoi du chemin du jeu au chargement
     mainWindow.webContents.on('did-finish-load', () => {
-        mainWindow.webContents.send('game-path', savedGamePath);
+        const gamePath = store.get('game-path', getDefaultGamePath());
+        mainWindow.webContents.send('game-path', gamePath);
     });
 
     mainWindow.on('close', async (event) => {
@@ -231,6 +254,36 @@ ipcMain.handle('reset-directory', () => {
     return { success: false };
 });
 
+// Ajouter avec les autres gestionnaires IPC
+ipcMain.handle('select-game-path', async () => {
+    try {
+        const result = await dialog.showOpenDialog(mainWindow, {
+            properties: ['openDirectory'],
+            title: 'Sélectionner le dossier du jeu'
+        });
+
+        if (!result.canceled) {
+            const selectedPath = result.filePaths[0];
+            store.set('game-path', selectedPath);
+            return {
+                success: true,
+                path: selectedPath
+            };
+        }
+        return { success: false };
+    } catch (error) {
+        console.error('Erreur lors de la sélection du dossier:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+// Ajouter avec les autres gestionnaires IPC
+ipcMain.handle('reset-game-path', () => {
+    const defaultPath = getDefaultGamePath();
+    store.set('game-path', defaultPath);
+    return defaultPath;
+});
+
 // Fonction pour vérifier les mises à jour au démarrage
 async function checkForUpdates() {
     try {
@@ -264,41 +317,18 @@ async function checkForUpdates() {
 
 // Ajouter la vérification des mises à jour au démarrage de l'application
 app.whenReady().then(async () => {
-    await createSplashWindow();
-
     try {
-        // Vérification des mises à jour
+        // Afficher le splash screen
+        createSplashWindow();
+        
+        // Vérifier l'authentification au démarrage
         splashWindow.webContents.send('splash-status', {
-            message: 'Recherche de mises à jour...',
+            message: 'Vérification de l\'authentification...',
             progress: 10
         });
-
-        const updateInfo = await autoUpdater.checkForUpdates();
         
-        if (updateInfo.hasUpdate && updateInfo.downloadUrl) {
-            splashWindow.webContents.send('splash-status', {
-                message: 'Téléchargement de la mise à jour...',
-                progress: 20
-            });
-
-            // Écoutez les événements de progression du téléchargement
-            autoUpdater.on('download-progress', (progressObj) => {
-                splashWindow.webContents.send('splash-status', {
-                    message: `Téléchargement: ${Math.round(progressObj.percent)}%`,
-                    progress: 20 + (progressObj.percent * 0.6)
-                });
-            });
-
-            const setupPath = await autoUpdater.downloadUpdate(updateInfo.downloadUrl);
-
-            splashWindow.webContents.send('splash-status', {
-                message: 'Installation de la mise à jour...',
-                progress: 80
-            });
-
-            await autoUpdater.installUpdate(setupPath);
-        }
-
+        const authResult = await checkStoredAuth();
+        
         // Initialisation des composants
         splashWindow.webContents.send('splash-status', {
             message: 'Vérification des fichiers...',
@@ -618,7 +648,7 @@ async function installFabric(event) {
         child.on('close', (code) => {
             if (code !== 0) {
                 console.error(`Installation de Fabric échouée avec le code ${code}`);
-                reject(new Error(`L'installation de Fabric a échoué avec le code ${code}`));
+                reject(new Error(`L'installation de Fabric a échouée avec le code ${code}`));
             } else {
                 console.log('Installation de Fabric réussie');
                 resolve();
@@ -1278,5 +1308,69 @@ async function killMinecraftProcess() {
         } catch (error) {
             console.error('Erreur lors de la fermeture du processus Java:', error);
         }
+    }
+}
+
+// Modifier la fonction de vérification d'authentification
+ipcMain.handle('check-auth', async () => {
+    try {
+        const savedToken = store.get('minecraft-token');
+        const savedProfile = store.get('minecraft-profile');
+        
+        if (savedToken && savedProfile) {
+            // Vérifier si le token est toujours valide
+            try {
+                const xboxManager = await authManager.refresh(savedToken);
+                const newToken = await xboxManager.getMinecraft();
+                
+                // Mettre à jour le token si nécessaire
+                store.set('minecraft-token', newToken.mclc());
+                
+                return {
+                    success: true,
+                    profile: savedProfile
+                };
+            } catch (error) {
+                // Si le refresh échoue, supprimer les données d'authentification
+                store.delete('minecraft-token');
+                store.delete('minecraft-profile');
+                return { success: false };
+            }
+        }
+        return { success: false };
+    } catch (error) {
+        console.error('Erreur lors de la vérification de l\'authentification:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+// Ajouter cette nouvelle fonction pour vérifier l'authentification stockée
+async function checkStoredAuth() {
+    try {
+        const savedToken = store.get('minecraft-token');
+        const savedProfile = store.get('minecraft-profile');
+        
+        if (savedToken && savedProfile) {
+            try {
+                const xboxManager = await authManager.refresh(savedToken);
+                const newToken = await xboxManager.getMinecraft();
+                
+                // Mettre à jour le token
+                store.set('minecraft-token', newToken.mclc());
+                
+                return {
+                    success: true,
+                    profile: savedProfile
+                };
+            } catch (error) {
+                // Si le refresh échoue, supprimer les données
+                store.delete('minecraft-token');
+                store.delete('minecraft-profile');
+            }
+        }
+        return { success: false };
+    } catch (error) {
+        console.error('Erreur lors de la vérification de l\'authentification:', error);
+        return { success: false, error: error.message };
     }
 }

@@ -1,6 +1,6 @@
 {
   "name": "elysia",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Launcher Minecraft Elysia",
   "main": "src/main.js",
   "scripts": {

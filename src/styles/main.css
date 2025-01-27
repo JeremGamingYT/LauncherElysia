@@ -1,20 +1,25 @@
 :root {
-    --primary: #6366f1;
-    --primary-hover: #818cf8;
-    --danger: #ef4444;
-    --danger-hover: #f87171;
-    --bg-dark: rgba(15, 23, 42, 0.95);
-    --bg-darker: #020617;
-    --bg-light: rgba(30, 41, 59, 0.7);
-    --border-color: rgba(51, 65, 85, 0.4);
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --success: #22c55e;
-    --success-hover: #4ade80;
+    --primary: #1a9fff;
+    --primary-hover: #47b0ff;
+    --accent: #ff9f1a;
+    --danger: #ff3a3a;
+    --danger-hover: #ff5c5c;
+    --bg-darker: #15171e;
+    --bg-dark: #1b1d23;
+    --bg-light: #22242c;
+    --bg-lighter: #2a2d35;
+    --text-primary: #ffffff;
+    --text-secondary: #9ba1a8;
+    --text-tertiary: #666b73;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    --hover-transition: all 0.2s ease-out;
+    --success: #00ff9d;
+    --success-hover: #33ffb4;
     
-    --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    --hover-transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    --glass-effect: rgba(2, 6, 23, 0.7);
+    --glass-effect: rgba(10, 12, 16, 0.85);
+    --neon-glow: 0 0 10px rgba(0, 242, 254, 0.3);
+    --accent-gradient: linear-gradient(45deg, var(--primary), var(--accent));
 }
 
 * {
@@ -26,35 +31,50 @@
 }
 
 body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     background: var(--bg-darker);
     color: var(--text-primary);
     height: 100vh;
     overflow: hidden;
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1.6;
+    letter-spacing: 0.3px;
 }
 
-/* Barre de titre modernisée */
+/* Animation de fond subtile */
+@keyframes backgroundPulse {
+    0% { background-position: 0 0; }
+    100% { background-position: 60px 60px; }
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    animation: backgroundPulse 20s linear infinite;
+    z-index: -1;
+}
+
+/* Style de la barre de titre façon Steam */
 .titlebar {
-    height: 48px;
-    background: var(--glass-effect);
+    height: 32px;
+    background: var(--bg-dark);
+    border-bottom: 1px solid var(--border-subtle);
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 0 24px;
+    padding: 0 16px;
     -webkit-app-region: drag;
-    border-bottom: 1px solid var(--border-color);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    position: relative;
-    z-index: 1000;
+    justify-content: space-between;
 }
 
 .titlebar-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
     letter-spacing: 0.5px;
 }
 
@@ -62,6 +82,7 @@ body {
     -webkit-app-region: no-drag;
     display: flex;
     gap: 12px;
+    margin-left: auto;
 }
 
 .titlebar button {
@@ -75,7 +96,8 @@ body {
     align-items: center;
     justify-content: center;
     border-radius: 6px;
-    transition: var(--hover-transition);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
 }
 
 .titlebar button:hover {
@@ -83,47 +105,64 @@ body {
     color: var(--text-primary);
 }
 
+.titlebar button:active {
+    transform: scale(0.95);
+}
+
 .close-btn:hover {
     background: var(--danger) !important;
 }
 
-/* Layout principal amélioré */
+/* Container principal style Epic Games */
 .container {
-    display: flex;
-    height: calc(100vh - 40px);
-}
-
-/* Sidebar modernisée */
-.sidebar {
-    width: 340px;
-    height: 100%;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    height: calc(100vh - 32px);
     background: var(--bg-dark);
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    border-right: 1px solid var(--border-color);
-    overflow: hidden;
 }
 
-/* Section profil améliorée */
-.profile-section {
+/* Sidebar style Steam moderne */
+.sidebar {
+    background: var(--bg-darker);
+    padding: 24px 0;
+    border-right: 1px solid var(--border-subtle);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    padding: 20px;
-    background: var(--bg-darker);
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    position: relative;
-    min-height: auto;
+    gap: 24px; /* Espacement entre les sections */
+}
+
+.sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        var(--primary),
+        transparent
+    );
+    opacity: 0.5;
+}
+
+/* Section profil style Epic/Steam */
+.profile-section {
+    padding: 24px;
+    border-bottom: 1px solid var(--border-subtle);
+    text-align: center;
 }
 
 .avatar-container {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 16px;
     position: relative;
-    width: 96px;
-    height: 96px;
+    border-radius: 50%;
+    background: var(--bg-light);
+    padding: 3px;
+    border: 2px solid var(--border-subtle);
 }
 
 .avatar {
@@ -131,20 +170,19 @@ body {
     height: 100%;
     border-radius: 50%;
     background-size: cover;
-    border: 3px solid var(--primary);
-    transition: var(--hover-transition);
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 .avatar-status {
     position: absolute;
-    bottom: 4px;
-    right: 4px;
-    width: 20px;
-    height: 20px;
+    bottom: 2px;
+    right: 2px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
-    background: var(--bg-darker);
-    border: 3px solid var(--bg-darker);
+    background: var(--text-tertiary);
+    border: 2px solid var(--bg-darker);
     transition: var(--hover-transition);
 }
 
@@ -152,23 +190,15 @@ body {
     background: var(--success);
 }
 
-/* Input username modernisé */
 .username-input {
-    width: 100%;
-    padding: 12px 16px;
-    background: var(--bg-light);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    color: var(--text-primary);
-    font-size: 14px;
     text-align: center;
-    transition: var(--hover-transition);
-}
-
-.username-input:focus {
-    border-color: var(--primary);
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding: 4px 8px;
+    width: 100%;
 }
 
 /* Bouton de déconnexion amélioré */
@@ -176,9 +206,9 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 16px;
+    padding: 10px 57px;
     background: var(--bg-light);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-subtle);
     border-radius: 8px;
     color: var(--text-primary);
     cursor: pointer;
@@ -193,40 +223,6 @@ body {
 .logout-icon {
     width: 16px;
     height: 16px;
-}
-
-/* Section paramètres modernisée */
-.settings-section {
-    background: var(--bg-darker);
-    border-radius: 12px;
-    padding: 24px;
-    border: 1px solid var(--border-color);
-    height: auto;
-}
-
-.settings-section h3 {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 20px;
-}
-
-.setting-item {
-    margin-bottom: 24px;
-}
-
-.setting-item:last-child {
-    margin-bottom: 0;
-}
-
-.setting-item label {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--text-primary);
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
 /* Select version amélioré */
@@ -252,7 +248,7 @@ body {
     width: 100%;
     padding: 10px 16px;
     background: var(--bg-light);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-subtle);
     border-radius: 8px;
     color: var(--text-primary);
     font-size: 14px;
@@ -291,14 +287,14 @@ body {
     background: var(--primary);
     border-radius: 50%;
     cursor: pointer;
-    transition: var(--hover-transition);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     border: 2px solid var(--bg-darker);
     box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
 .memory-slider::-webkit-slider-thumb:hover {
-    background: var(--primary-hover);
-    transform: scale(1.1);
+    transform: scale(1.2);
+    box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.2);
 }
 
 .slider-value {
@@ -310,7 +306,7 @@ body {
     border-radius: 4px;
     font-size: 12px;
     color: var(--text-primary);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-subtle);
 }
 
 .memory-info {
@@ -330,7 +326,7 @@ body {
     flex: 1;
     padding: 10px 16px;
     background: var(--bg-light);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-subtle);
     border-radius: 8px;
     color: var(--text-primary);
     font-size: 13px;
@@ -339,14 +335,31 @@ body {
 #browse-btn {
     padding: 0 16px;
     background: var(--bg-light);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-subtle);
     border-radius: 8px;
     color: var(--text-primary);
     cursor: pointer;
     transition: var(--hover-transition);
+    margin-top: 17px;
 }
 
 #browse-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+#reset-path {
+    padding: 0 16px;
+    background: var(--bg-light);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--hover-transition);
+    margin-top: 17px;
+}
+
+#reset-path:hover {
     background: var(--primary);
     border-color: var(--primary);
 }
@@ -357,7 +370,7 @@ body {
     gap: 8px;
     padding: 8px 16px;
     background: var(--bg-light);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-subtle);
     border-radius: 8px;
     color: var(--text-secondary);
     font-size: 13px;
@@ -370,24 +383,18 @@ body {
     color: var(--text-primary);
 }
 
-/* Contenu principal modernisé */
+/* Zone principale style Epic Games */
 .main-content {
-    flex: 1;
     padding: 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
+    padding-bottom: 160px; /* Espace pour la zone de lancement */
+    background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-darker) 100%);
     overflow-y: auto;
-    background: linear-gradient(to bottom right, rgba(2, 6, 23, 0.8), rgba(15, 23, 42, 0.4));
+    height: 100%;
 }
 
-/* Section actualités améliorée */
-.news-section {
-    flex: 1;
-}
-
+/* Cartes d'actualités style Steam */
 .news-section h2 {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 600;
     margin-bottom: 24px;
     color: var(--text-primary);
@@ -396,151 +403,114 @@ body {
 .news-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 24px;
+    gap: 20px;
 }
 
 .news-item {
-    background: var(--bg-dark);
-    padding: 24px;
+    background: var(--bg-light);
     border-radius: 12px;
-    border: 1px solid var(--border-color);
+    overflow: hidden;
     transition: var(--hover-transition);
 }
 
 .news-item:hover {
-    transform: translateY(-4px);
-    border-color: var(--primary);
+    transform: translateY(-2px);
     box-shadow: var(--card-shadow);
 }
 
 .news-item h3 {
-    color: var(--text-primary);
+    padding: 20px;
     font-size: 16px;
     font-weight: 600;
-    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border-subtle);
 }
 
 .news-item p {
+    padding: 20px;
     color: var(--text-secondary);
-    font-size: 14px;
-    line-height: 1.6;
 }
 
-/* Section lancement modernisée */
-.launch-section {
-    background: var(--bg-dark);
-    border-radius: 12px;
-    padding: 24px;
-    border: 1px solid var(--border-color);
-}
-
-.progress-container {
-    margin-bottom: 20px;
-}
-
-.progress-bar {
-    width: 100%;
-    height: 6px;
-    background: var(--bg-darker);
-    border-radius: 3px;
-    overflow: hidden;
-    margin-bottom: 12px;
-}
-
-.progress {
-    width: 0%;
-    height: 100%;
-    background: var(--primary);
-    transition: width 0.3s ease;
-    position: relative;
-}
-
-.progress::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    animation: progress-shine 1.5s infinite;
-}
-
-@keyframes progress-shine {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-}
-
-.status-text {
-    color: var(--text-secondary);
-    font-size: 14px;
-    text-align: center;
-}
-
+/* Bouton de lancement style Epic Games */
 .launch-button {
-    width: 100%;
-    padding: 16px;
     background: var(--primary);
-    border: none;
-    border-radius: 8px;
     color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0 32px;
+    height: 48px;
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     transition: var(--hover-transition);
-    position: relative;
-    overflow: hidden;
-}
-
-.launch-button::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transform: translateX(-100%);
-    transition: transform 0.6s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .launch-button:hover {
     background: var(--primary-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
-}
-
-.launch-button:hover::after {
-    transform: translateX(100%);
-}
-
-.launch-button:active {
-    transform: translateY(0);
+    transform: translateY(-1px);
 }
 
 .launch-button:disabled {
-    background: var(--bg-light);
+    background: var(--bg-lighter);
+    color: var(--text-tertiary);
     cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
 }
 
-/* Scrollbar personnalisée */
+/* Barre de progression style Epic */
+.progress-container {
+    margin-bottom: 24px;
+}
+
+.progress-bar {
+    height: 4px;
+    background: var(--bg-lighter);
+    border-radius: 2px;
+    overflow: hidden;
+    width: 100%;
+}
+
+.progress {
+    height: 100%;
+    background: var(--primary);
+    transition: width 0.3s ease-out;
+}
+
+.status-text {
+    text-align: center;
+    margin-top: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+/* Contrôles personnalisés */
+select, input[type="text"] {
+    background: var(--bg-lighter);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* Scrollbar style Steam */
 ::-webkit-scrollbar {
     width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--bg-darker);
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--bg-light);
+    background: var(--bg-lighter);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--border-color);
+    background: var(--text-tertiary);
 }
 
 /* Ajout des styles pour les tooltips */
@@ -560,7 +530,7 @@ body {
     font-size: 12px;
     white-space: nowrap;
     border-radius: 6px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-subtle);
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s ease;
@@ -572,4 +542,240 @@ body {
     opacity: 1;
     visibility: visible;
     transform: translateX(-50%) translateY(-4px);
-} 
+}
+
+/* Navigation avec icônes dans la sidebar */
+.nav-menu {
+    margin-top: 16px; /* Réduit la marge du haut puisqu'on a supprimé des éléments */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 16px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: var(--hover-transition);
+    font-weight: 500;
+}
+
+.nav-item svg {
+    width: 20px;
+    height: 20px;
+    opacity: 0.7;
+    transition: var(--hover-transition);
+}
+
+.nav-item:hover {
+    background: var(--bg-light);
+    color: var(--text-primary);
+}
+
+.nav-item:hover svg {
+    opacity: 1;
+    color: var(--primary);
+}
+
+.nav-item.active {
+    background: var(--bg-light);
+    color: var(--text-primary);
+}
+
+.nav-item.active svg {
+    opacity: 1;
+    color: var(--primary);
+}
+
+/* Modifier la zone de lancement pour un meilleur positionnement */
+.play-page {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    height: 100%;
+    padding: 700px 0px; /* Augmente l'espace en bas et ajoute du padding horizontal */
+}
+
+.launch-zone {
+    width: 100%;
+    background: transparent;
+    padding: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.launch-zone .progress-container {
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+.launch-zone .launch-button {
+    width: 100%;
+    max-width: none; /* Supprime la limitation de largeur maximale du bouton */
+}
+
+/* Ajuste la taille et l'espacement de la barre de progression */
+.progress-bar {
+    height: 4px;
+    background: var(--bg-lighter);
+    border-radius: 2px;
+    overflow: hidden;
+    width: 100%;
+}
+
+.status-text {
+    text-align: center;
+    margin-top: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.welcome-content {
+    max-width: 800px;
+    margin: 32px auto;
+    padding: 24px;
+    background: var(--bg-light);
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+}
+
+.welcome-content p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+.home-page h2,
+.play-page h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+}
+
+/* Styles pour la page Actualités */
+.news-page {
+    overflow-y: auto;
+}
+
+.news-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 24px;
+    padding: 2px;
+}
+
+.news-item {
+    background: var(--bg-light);
+    border-radius: 12px;
+    padding: 24px;
+    transition: var(--hover-transition);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+}
+
+.news-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow);
+    border-color: var(--primary);
+}
+
+.news-item h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+}
+
+.news-divider {
+    height: 1px;
+    background: var(--border-subtle);
+    margin-bottom: 16px;
+}
+
+.news-item p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    flex-grow: 1;
+}
+
+.news-date {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-top: auto;
+}
+
+/* Supprimer les anciens styles d'image qui ne sont plus nécessaires */
+.news-image {
+    display: none;
+}
+
+/* Styles pour la page Paramètres */
+.settings-page {
+    padding: 32px;
+    height: 100%;
+    overflow-y: auto;
+    display: none; /* Par défaut caché */
+}
+
+.settings-container {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    max-width: 800px;
+    height: 600px;
+    margin: 0 auto;
+}
+
+/* Assurez-vous que ces styles ne sont pas en conflit */
+.settings-section {
+    background: var(--bg-light);
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid var(--border-subtle);
+}
+
+.settings-section h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+}
+
+.settings-group {
+    margin-bottom: 20px;
+}
+
+/* Rendre les contrôles plus visibles */
+.memory-control {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+#memory-slider {
+    flex: 1;
+    height: 4px;
+    background: var(--bg-lighter);
+    border-radius: 2px;
+    -webkit-appearance: none;
+}
+
+.path-control {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
