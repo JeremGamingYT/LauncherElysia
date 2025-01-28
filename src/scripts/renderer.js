@@ -1,4 +1,5 @@
 const { ipcRenderer } = require('electron');
+const path = require('path');
 
 // Éléments DOM
 const launchButton = document.getElementById('launch-btn');
@@ -49,32 +50,59 @@ const initSlider = () => {
 };
 
 // Fonction pour mettre à jour l'interface pendant le lancement
-function updateLaunchUI(isLaunching, status = '') {
-    console.log('updateLaunchUI called:', { isLaunching, isGameRunning, isAuthenticated });
+function updateLaunchUI(stage = 'idle', status = '') {
+    console.log('updateLaunchUI called:', stage, status);
     
-    if (isLaunching) {
-        launchButton.disabled = true;
-        launchButton.textContent = 'LANCEMENT...';
-        progressBar.parentElement.classList.add('downloading');
-        statusText.textContent = status || 'Téléchargement des fichiers...';
+    const states = {
+        'auth': {
+            button: 'CONNEXION...',
+            status: 'Authentification en cours',
+            progress: 25
+        },
+        'install': {
+            button: 'INSTALLATION...',
+            status: 'Installation des composants',
+            progress: 50
+        },
+        'download': {
+            button: 'TÉLÉCHARGEMENT...',
+            status: 'Téléchargement des fichiers',
+            progress: 75
+        },
+        'launch': {
+            button: 'LANCEMENT...',
+            status: 'Démarrage du jeu',
+            progress: 90
+        },
+        'idle': {
+            button: isAuthenticated ? (isGameRunning ? 'EN COURS...' : 'JOUER') : 'SE CONNECTER',
+            status: isAuthenticated ? 
+                (isGameRunning ? 'Minecraft est en cours d\'exécution' : 'Prêt à jouer') : 
+                'Connectez-vous pour jouer',
+            progress: 0
+        }
+    };
+
+    const currentState = states[stage] || states.idle;
+    
+    launchButton.textContent = currentState.button;
+    statusText.textContent = status || currentState.status;
+    launchButton.disabled = !['idle', 'error'].includes(stage);
+    
+    // Animation de la barre de progression
+    if (stage !== 'idle') {
+        progressBar.style.width = `${currentState.progress}%`;
+        progressBar.parentElement.classList.add('active');
     } else {
-        launchButton.disabled = isGameRunning;
-        launchButton.textContent = isAuthenticated ? (isGameRunning ? 'EN COURS...' : 'JOUER') : 'SE CONNECTER';
-        progressBar.parentElement.classList.remove('downloading');
-        statusText.textContent = isAuthenticated ? 
-            (isGameRunning ? 'Minecraft est en cours d\'exécution' : 'Prêt à jouer') : 
-            'Connectez-vous pour jouer';
         progressBar.style.width = '0%';
+        progressBar.parentElement.classList.remove('active');
     }
-    console.log('UI updated:', { 
-        buttonText: launchButton.textContent,
-        buttonDisabled: launchButton.disabled,
-        statusText: statusText.textContent
-    });
+    
+    console.log('UI updated:', currentState);
 }
 
 // Fonction pour mettre à jour l'interface utilisateur après l'authentification
-function updateAuthUI(profile) {
+async function updateAuthUI(profile) {
     isAuthenticated = true;
     currentUser = profile;
     usernameInput.value = profile.name;
@@ -82,7 +110,8 @@ function updateAuthUI(profile) {
     avatar.style.backgroundImage = `url('https://minotar.net/avatar/${profile.name}')`;
     avatarStatus.classList.add('online');
     logoutBtn.style.display = 'flex';
-    updateLaunchUI(false);
+    updateLaunchUI('idle');
+    updateGameStats();
 }
 
 // Fonction pour réinitialiser l'interface utilisateur après la déconnexion
@@ -94,22 +123,23 @@ function resetAuthUI() {
     avatar.style.backgroundImage = `url('https://minotar.net/avatar/steve')`;
     avatarStatus.classList.remove('online');
     logoutBtn.style.display = 'none';
-    updateLaunchUI(false);
+    updateLaunchUI('idle');
 }
 
 // Gestion des événements du jeu
 ipcRenderer.on('game-started', () => {
     console.log('Événement game-started reçu');
     isGameRunning = true;
-    updateLaunchUI(false);
-
-    // Désactiver les contrôles pendant que le jeu est en cours
+    
+    // Mettre à jour l'UI avant de désactiver les contrôles
+    updateLaunchUI('idle', 'Lancement réussi !');
+    
+    // Désactiver les contrôles
     versionSelect.disabled = true;
     memorySlider.disabled = true;
     browseBtn.disabled = true;
     resetPathBtn.disabled = true;
 
-    statusText.textContent = 'Minecraft est en cours d\'exécution';
     console.log('État après game-started:', { isGameRunning, isAuthenticated });
 });
 
@@ -117,7 +147,7 @@ ipcRenderer.on('game-started', () => {
 ipcRenderer.on('game-closed', (event, code) => {
     console.log('Événement game-closed reçu avec le code:', code);
     isGameRunning = false;
-    updateLaunchUI(false);
+    updateLaunchUI('idle');
 
     // Réactiver les contrôles
     versionSelect.disabled = false;
@@ -187,8 +217,16 @@ ipcRenderer.on('install-progress', (event, data) => {
             progressBar.style.width = `${data.progress}%`;
             console.log('Progression du shader:', data.progress + '%');
             break;
+        case 'launching':
+            updateLaunchUI('launch', 'Démarrage du client Minecraft...');
+            progressBar.style.width = `${data.progress}%`;
+            break;
+        case 'verification':
+            updateLaunchUI('install', `Vérification des fichiers: ${data.file}`);
+            progressBar.style.width = `${data.progress}%`;
+            break;
         default:
-            statusText.textContent = 'Installation en cours...';
+            statusText.textContent = data.message || 'Installation en cours...';
     }
 });
 
@@ -260,109 +298,95 @@ logoutBtn.addEventListener('click', async () => {
 // Fonction améliorée pour installer Forge
 async function installForge() {
     try {
-        const progressBar = document.querySelector('.progress');
-        const statusText = document.querySelector('.status-text');
-        const launchButton = document.getElementById('launch-btn');
-
-        // Désactiver le bouton pendant l'installation
-        launchButton.disabled = true;
-        progressBar.style.width = '0%';
-        statusText.textContent = 'Préparation de l\'installation...';
-
         const result = await ipcRenderer.invoke('install-forge');
         
         if (!result.success) {
             throw new Error(result.error || 'Échec de l\'installation de Forge');
         }
 
-        statusText.textContent = 'Installation terminée avec succès';
-        progressBar.style.width = '100%';
         return true;
     } catch (error) {
         console.error('Erreur lors de l\'installation de Forge:', error);
         const statusText = document.querySelector('.status-text');
         statusText.textContent = `Erreur: ${error.message}`;
         return false;
-    } finally {
-        // Réactiver le bouton
-        const launchButton = document.getElementById('launch-btn');
-        launchButton.disabled = false;
-    }
-}
-
-// Modify the launch function to handle Forge
-async function launchGame() {
-    try {
-        // First ensure Forge is installed
-        const forgeInstalled = await installForge();
-        if (!forgeInstalled) {
-            throw new Error('Échec de l\'installation de Forge');
-        }
-
-        // Launch with Forge
-        const result = await ipcRenderer.invoke('launch-minecraft', {
-            maxMemory: memorySlider.value + "G",
-            minMemory: "1G"
-        });
-
-        if (!result.success) {
-            throw new Error(result.error || 'Échec du lancement du jeu');
-        }
-
-        // Update UI to show game is running
-        launchButton.disabled = true;
-        launchButton.textContent = 'JEU EN COURS...';
-    } catch (error) {
-        console.error('Erreur lors du lancement du jeu:', error);
-        alert('Erreur lors du lancement du jeu: ' + error.message);
     }
 }
 
 // Gestion du lancement du jeu
 launchButton.addEventListener('click', async () => {
     try {
-        if (!isAuthenticated) {
-            // Lancement de l'authentification Microsoft
-            updateLaunchUI(true, 'Connexion à Microsoft...');
-            const result = await ipcRenderer.invoke('microsoft-login');
-            
-            if (!result.success) {
-                throw new Error(result.error || 'Erreur lors de la connexion');
-            }
-
-            updateAuthUI(result.profile);
-            return;
-        }
-
-        // Vérification et installation si nécessaire
-        const installResult = await ipcRenderer.invoke('install-game');
-        if (!installResult.success) {
-            throw new Error(installResult.message || 'Erreur lors de l\'installation');
-        }
-
-        // Lancement du jeu
-        updateLaunchUI(true, 'Lancement du jeu...');
-        const options = {
+        const success = await ipcRenderer.invoke('launch-game', {
+            username: usernameInput.value,
             version: versionSelect.value,
-            maxMemory: `${memorySlider.value}G`,
-            minMemory: '1G'
-        };
+            memory: memorySlider.value
+        });
 
-        const result = await ipcRenderer.invoke('launch-minecraft', options);
-        
-        if (!result.success) {
-            throw new Error(result.error || 'Erreur lors du lancement');
+        if (!success) {
+            showErrorModal('Échec du lancement. Vérifiez les logs.');
         }
-
-        statusText.textContent = 'Minecraft est en cours d\'exécution';
-        isGameRunning = true;
-        updateLaunchUI(false);
     } catch (error) {
-        alert(`Erreur: ${error.message}`);
-        updateLaunchUI(false);
+        console.error('Erreur lancement:', error);
+        showErrorModal(`Erreur: ${error.message}`);
     }
 });
 
+// Gestion de la navigation entre les pages
+document.querySelectorAll('.nav-btn').forEach(button => {
+    button.addEventListener('click', () => {
+        const page = button.dataset.page;
+        
+        // Retirer la classe active de tous les boutons
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Ajouter la classe active au bouton cliqué
+        button.classList.add('active');
+        
+        // Masquer toutes les pages
+        document.querySelectorAll('.main-content > div').forEach(page => {
+            page.style.display = 'none';
+        });
+        
+        // Afficher la page correspondante
+        document.querySelector(`.page-${page}`).style.display = 'flex';
+    });
+});
+
+// Au chargement, afficher la page play par défaut
+document.querySelector('.page-play').style.display = 'flex';
+
 // Initialisation de l'interface
-updateLaunchUI(false);
+updateLaunchUI('idle');
 initSlider();
+
+// Ajouter un nouvel événement pour le pré-lancement
+ipcRenderer.on('pre-launch', () => {
+    updateLaunchUI('launch', 'Finalisation du lancement...');
+    progressBar.style.width = '95%';
+});
+
+// Nouvelle fonction pour mettre à jour les stats
+async function updateGameStats() {
+    try {
+        const stats = await ipcRenderer.invoke('get-game-stats');
+        const playtimeElement = document.getElementById('playtime');
+        const versionElement = document.getElementById('game-version');
+        
+        playtimeElement.textContent = `Temps joué: ${formatPlayTime(stats.playTime)}`;
+        versionElement.textContent = `Version: ${stats.version}`;
+    } catch (error) {
+        console.error('Erreur récupération stats:', error);
+    }
+}
+
+// Fonction de formatage du temps
+function formatPlayTime(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours}h ${minutes}m`;
+}
+
+// Appeler updateGameStats au chargement
+document.addEventListener('DOMContentLoaded', updateGameStats);

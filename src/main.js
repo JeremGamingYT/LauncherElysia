@@ -17,7 +17,14 @@ const AutoUpdater = require('./modules/auto-updater');
 const ResourceManager = require('./modules/resource-manager');
 
 // Configuration du stockage local
-const store = new Store();
+const store = new Store({
+    schema: {
+        playTime: {
+            type: 'number',
+            default: 0
+        }
+    }
+});
 const authManager = new Auth("select_account");
 const autoUpdater = new AutoUpdater('JeremGamingYT', 'LauncherElysia');
 
@@ -28,6 +35,7 @@ let authData = null;
 let gameRunning = false;
 let gameInstalled = false;
 let splashWindow = null;
+let gameStartTime = null;
 
 // Discord 'Rich presence'
 const RPC = require('discord-rpc');
@@ -110,7 +118,7 @@ function createWindow() {
     ensureGameDirectory(savedGamePath);
 
     const html = ejs.render(template, {
-        title: 'Elysia',
+        title: 'Elysia - Beta v1.5.0',
         versions: ['Beta'],
         memoryOptions: [2, 4, 6, 8],
         news: [
@@ -265,6 +273,8 @@ async function checkForUpdates() {
 // Ajouter la vérification des mises à jour au démarrage de l'application
 app.whenReady().then(async () => {
     await createSplashWindow();
+    await createWindow(); // Créer la fenêtre principale d'abord
+    mainWindow.hide(); // La cacher temporairement
 
     try {
         // Vérification des mises à jour
@@ -299,13 +309,6 @@ app.whenReady().then(async () => {
             await autoUpdater.installUpdate(setupPath);
         }
 
-        // Initialisation des composants
-        splashWindow.webContents.send('splash-status', {
-            message: 'Vérification des fichiers...',
-            progress: 85
-        });
-        await verifyGameFiles();
-
         splashWindow.webContents.send('splash-status', {
             message: 'Chargement des configurations...',
             progress: 90
@@ -316,7 +319,6 @@ app.whenReady().then(async () => {
             message: 'Préparation du launcher...',
             progress: 95
         });
-        await createWindow();
 
         // Finalisation
         splashWindow.webContents.send('splash-status', {
@@ -327,7 +329,7 @@ app.whenReady().then(async () => {
         // Attendre un court instant pour montrer 100%
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Fermer le splash screen et afficher la fenêtre principale
+        // Afficher la fenêtre principale seulement à la fin
         splashWindow.close();
         mainWindow.show();
 
@@ -446,30 +448,45 @@ async function verifyMod(modUrl, modPath) {
     }
 }
 
-// Fonction pour vérifier tous les mods
-async function verifyFiles(fileList, basePath) {
-    const verificationResults = {
-        missingFiles: [],
-        modifiedFiles: [],
-        validFiles: []
-    };
-
-    for (const fileUrl of fileList) {
-        const fileName = path.basename(fileUrl);
-        const filePath = path.join(basePath, fileName);
-        
-        const result = await verifyMod(fileUrl, filePath);
-        
-        if (!result.exists) {
-            verificationResults.missingFiles.push(fileUrl);
-        } else if (result.needsUpdate) {
-            verificationResults.modifiedFiles.push(fileUrl);
-        } else {
-            verificationResults.validFiles.push(fileUrl);
+// Modifier la fonction verifyFiles pour gérer les cas où modsList n'est pas un tableau
+async function verifyFiles(event, modsList) {
+    try {
+        if (!Array.isArray(modsList)) {
+            console.warn('modsList invalide, utilisation tableau vide');
+            modsList = [];
         }
-    }
 
-    return verificationResults;
+        const modsPath = path.join(GAME_PATH, 'mods');
+        await fs.ensureDir(modsPath);
+
+        const verificationResults = await Promise.all(
+            modsList.map(async (mod) => {
+                const fileName = path.basename(new URL(mod.url).pathname);
+                const filePath = path.join(modsPath, fileName);
+                
+                // Vérifier existence fichier
+                const exists = await fs.pathExists(filePath);
+                if (!exists) return { file: fileName, status: 'missing' };
+
+                // Vérifier intégrité fichier
+                const expectedHash = await calculateFileHashFromUrl(mod.url);
+                const actualHash = await calculateFileHash(filePath);
+                
+                return {
+                    file: fileName,
+                    status: actualHash === expectedHash ? 'valid' : 'modified'
+                };
+            })
+        );
+
+        return {
+            missingFiles: verificationResults.filter(r => r.status === 'missing').map(r => r.file),
+            modifiedFiles: verificationResults.filter(r => r.status === 'modified').map(r => r.file)
+        };
+    } catch (error) {
+        console.error('Erreur vérification fichiers:', error);
+        throw error;
+    }
 }
 
 // Fonction pour installer un seul mod
@@ -490,80 +507,47 @@ async function installSingleMod(modUrl, modPath, event) {
 }
 
 // Fonction optimisée pour installer uniquement les mods nécessaires
-async function installMissingMods(modsToInstall, modsDestPath, event) {
+async function installMissingMods(modsToInstall, targetDir, event) {
     try {
-        await fs.ensureDir(modsDestPath);
-        const totalMods = modsToInstall.length;
+        await fs.ensureDir(targetDir);
         
-        for (let i = 0; i < modsToInstall.length; i++) {
-            const modUrl = modsToInstall[i];
-            const modName = path.basename(modUrl);
-            const modPath = path.join(modsDestPath, modName);
-
+        for (const mod of modsToInstall) {
+            const fileName = path.basename(new URL(mod.url).pathname);
+            const modPath = path.join(targetDir, fileName);
+            
             event.sender.send('install-progress', {
                 stage: 'downloading-mod',
-                modName,
-                progress: Math.round((i / totalMods) * 100)
+                modName: fileName
             });
 
-            await installSingleMod(modUrl, modPath, event);
+            await installSingleMod(mod.url, modPath, event);
         }
-
         return true;
     } catch (error) {
-        console.error('Erreur lors de l\'installation des mods:', error);
+        console.error('Erreur installation mods:', error);
         return false;
     }
 }
 
-// Fonction améliorée pour vérifier l'intégrité du jeu
+// Modifier la fonction checkFileIntegrity pour une vérification plus réaliste
 async function checkFileIntegrity(event) {
     try {
-        const modsList = await fs.readJson(path.join(__dirname, 'mods.json'));
-        const modsPath = path.join(app.getPath('appData'), '.elysia', 'mods');
-
-        event.sender.send('install-progress', { 
-            stage: 'verifying-files',
-            message: 'Vérification des fichiers...'
-        });
-
-        // 1) Vérifier l'état des fichiers requis (existant, modifié, etc.)
-        const verificationResults = await verifyFiles(modsList, modsPath);
+        const modsDir = path.join(GAME_PATH, 'mods');
+        const modsList = await fs.readJson(path.join(__dirname, 'resources.json'));
         
-        // 2) Déterminer si une mise à jour est nécessaire (fichiers manquants ou modifiés)
-        const needsUpdate = verificationResults.missingFiles.length > 0 || 
-                           verificationResults.modifiedFiles.length > 0;
-
-        // 3) Supprimer les mods qui ne figurent pas dans mods.json (fichiers en trop)
-        const allLocalMods = await fs.readdir(modsPath); 
-        const allRequiredModNames = modsList.map((url) => path.basename(url));
-        for (const localMod of allLocalMods) {
-            if (!allRequiredModNames.includes(localMod) && localMod.endsWith('.jar')) {
-                const extraneousModPath = path.join(modsPath, localMod);
-                console.log(`Fichier mod extraneous détecté et supprimé : ${localMod}`);
-                await fs.remove(extraneousModPath);
+        // Vérifier seulement l'existence des fichiers, pas leur contenu
+        for (const mod of modsList) {
+            const fileName = path.basename(new URL(mod.url).pathname);
+            const modPath = path.join(modsDir, fileName);
+            
+            if (!await fs.pathExists(modPath)) {
+                console.log(`Mod manquant: ${fileName}`);
+                return false;
             }
         }
-
-        // 4) Installer les fichiers manquants ou modifiés, si nécessaire
-        if (needsUpdate) {
-            const modsToInstall = [
-                ...verificationResults.missingFiles,
-                ...verificationResults.modifiedFiles
-            ];
-
-            event.sender.send('install-progress', {
-                stage: 'updating-files',
-                message: `Installation de ${modsToInstall.length} fichier(s)...`
-            });
-
-            const installSuccess = await installMissingMods(modsToInstall, modsPath, event);
-            return installSuccess;
-        }
-
-        return true; // Aucun changement requis
+        return true;
     } catch (error) {
-        console.error('Erreur lors de la vérification des fichiers:', error);
+        console.error('Erreur de vérification:', error);
         return false;
     }
 }
@@ -596,13 +580,13 @@ async function downloadFabric(event) {
     });
 }
 
-// Fonction pour installer Fabric
+// Modifier la fonction d'installation de Fabric pour la rendre plus tolérante
 async function installFabric(event) {
     return new Promise((resolve, reject) => {
         const javaPath = store.get('java.path', 'java');
         const command = `"${javaPath}" -jar "${FABRIC_INSTALLER_PATH}" client -dir "${GAME_PATH}" -mcversion 1.21 -loader ${FABRIC_VERSION}`;
 
-        console.log('Commande d\'installation Fabric:', command); // Debug
+        console.log('Commande d\'installation Fabric:', command);
 
         const child = exec(command);
 
@@ -617,31 +601,56 @@ async function installFabric(event) {
 
         child.on('close', (code) => {
             if (code !== 0) {
-                console.error(`Installation de Fabric échouée avec le code ${code}`);
-                reject(new Error(`L'installation de Fabric a échoué avec le code ${code}`));
+                console.warn(`Installation de Fabric échouée avec le code ${code} - continuation sans Fabric`);
+                resolve(false); // On résout au lieu de rejeter
             } else {
                 console.log('Installation de Fabric réussie');
-                resolve();
+                resolve(true);
             }
         });
     });
 }
 
-// Fonction pour installer les mods
+// Modifier la fonction verifyModsInstallation
+async function verifyModsInstallation() {
+    try {
+        const { mods } = await fs.readJson(path.join(__dirname, 'resources.json')); // Extraction du tableau mods
+        const modsDir = path.join(GAME_PATH, 'mods');
+
+        if (!await fs.pathExists(modsDir)) return false;
+
+        // Vérifier chaque mod
+        for (const mod of mods) { // Utilisation directe du tableau mods
+            const fileName = path.basename(new URL(mod.url).pathname);
+            const modFilePath = path.join(modsDir, fileName);
+            
+            if (!await fs.pathExists(modFilePath)) {
+                console.log(`Mod manquant: ${fileName}`);
+                return false;
+            }
+        }
+        return true;
+    } catch (error) {
+        console.error('Erreur vérification mods:', error);
+        return false;
+    }
+}
+
+// Modifier la fonction installMods
 async function installMods(event) {
-    const modsJsonPath = path.join(__dirname, 'mods.json');
+    const modsJsonPath = path.join(__dirname, 'resources.json');
     const modsDestPath = path.join(app.getPath('appData'), '.elysia', 'mods');
 
     try {
         await fs.ensureDir(modsDestPath);
 
-        // Lire la liste des mods à partir du fichier mods.json
-        const modsList = await fs.readJson(modsJsonPath);
-        const totalMods = modsList.length;
+        // Lire la liste des mods à partir du fichier resources.json
+        const { mods } = await fs.readJson(modsJsonPath); // Extraction du tableau mods
+        const totalMods = mods.length;
         let installedMods = 0;
 
-        for (const modUrl of modsList) {
-            const modName = path.basename(modUrl);
+        for (const mod of mods) { // Parcourir le tableau mods
+            const modName = path.basename(mod.url); // Utiliser mod.url
             const modPath = path.join(modsDestPath, modName);
 
             if (await fs.pathExists(modPath)) {
@@ -653,7 +662,7 @@ async function installMods(event) {
             console.log(`Téléchargement du mod : ${modName}`);
             event.sender.send('install-progress', { stage: 'downloading-mod', modName });
 
-            const response = await axios.get(modUrl, { responseType: 'stream' });
+            const response = await axios.get(mod.url, { responseType: 'stream' }); // Utiliser mod.url
             const writer = fs.createWriteStream(modPath);
 
             response.data.pipe(writer);
@@ -979,37 +988,6 @@ async function verifyFabricInstallation() {
     }
 }
 
-// Adding a new function for verifying mods
-async function verifyModsInstallation() {
-    try {
-        // Load the mods list from mods.json
-        const modsListPath = path.join(__dirname, 'mods.json'); 
-        const modsList = JSON.parse(fs.readFileSync(modsListPath, 'utf-8'));
-
-        // Path to the mods folder
-        const modsDir = path.join(GAME_PATH, 'mods');
-        if (!fs.existsSync(modsDir)) {
-            return false; 
-        }
-
-        // Vérifier que chaque mod de la liste est présent
-        for (const modUrl of modsList) {
-            const fileName = modUrl.split('/').pop(); 
-            const modFilePath = path.join(modsDir, fileName);
-            if (!fs.existsSync(modFilePath)) {
-                return false;
-            }
-            // Optional: If you also want a hash check, compute file hash here
-        }
-
-        // Tous les mods nécessaires sont là
-        return true;
-    } catch (error) {
-        console.error('Erreur lors de la vérification des mods:', error);
-        return false;
-    }
-}
-
 // Ajouter cette nouvelle fonction
 async function renameFabricJson() {
     try {
@@ -1112,11 +1090,27 @@ async function launchMinecraft(event, options) {
             gameProcess = proc;
         });
 
+        // Étape de pré-lancement
+        event.sender.send('install-progress', {
+            stage: 'launching',
+            progress: 90,
+            message: 'Préparation du contexte de jeu...'
+        });
+
+        // Ajouter un délai visuel pour la transition
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Émettre l'événement de pré-lancement
+        event.sender.send('pre-launch');
+
         // Lancement du jeu
         await launcher.launch(opts);
         
         gameRunning = true;
         mainWindow.minimize();
+
+        // Envoyer la confirmation de démarrage
+        event.sender.send('game-started');
 
         return { success: true };
     } catch (error) {
@@ -1145,8 +1139,13 @@ ipcMain.handle('check-game-installation', async () => {
     }
 });
 
-ipcMain.handle('launch-minecraft', async (event, options) => {
+// Modifier le handler launch-game pour gérer les échecs de Fabric
+ipcMain.handle('launch-game', async (event, options) => {
     try {
+        gameStartTime = Date.now();
+        // Vérifier et créer les dossiers avant toute opération
+        await resourceManager.initialize();
+
         // Vérifier l'authentification
         const savedToken = store.get('minecraft-token');
         if (!savedToken) {
@@ -1168,23 +1167,29 @@ ipcMain.handle('launch-minecraft', async (event, options) => {
         if (!fabricValid) {
             event.sender.send('install-progress', {
                 stage: 'installing-fabric',
-                message: 'Installation de Fabric nécessaire...'
+                message: 'Tentative d\'installation de Fabric...'
             });
-            await downloadFabric(event);
-            await installFabric(event);
+            
+            // Tentative d'installation qui peut échouer sans bloquer
+            const fabricInstalled = await installFabric(event);
+            
+            if (!fabricInstalled) {
+                console.warn('Échec de l\'installation de Fabric - continuation sans');
+                event.sender.send('install-progress', {
+                    stage: 'warning',
+                    message: 'Fabric non installé - certaines fonctionnalités peuvent être limitées'
+                });
+            }
         }
 
-        // Vérifier les mods
-        const modsValid = await checkFileIntegrity(event);
+        // Remplacer la vérification d'intégrité par une simple existence
+        const modsValid = await verifyModsInstallation();
         if (!modsValid) {
             event.sender.send('install-progress', {
-                stage: 'verifying-mods',
-                message: 'Vérification des mods...'
+                stage: 'installing-mods',
+                message: 'Installation des mods manquants...'
             });
-            const retryValid = await checkFileIntegrity(event);
-            if (!retryValid) {
-                throw new Error('Impossible de réparer les mods');
-            }
+            await installMods(event);
         }
 
         // Vérifier les ressources (resource packs et shaders)
@@ -1192,8 +1197,11 @@ ipcMain.handle('launch-minecraft', async (event, options) => {
         if (!resourcesValid) {
             event.sender.send('install-progress', {
                 stage: 'installing-resources',
-                message: 'Installation des ressources...'
+                message: 'Création des dossiers et installation des ressources...'
             });
+            
+            // Recréer les dossiers au cas où
+            await resourceManager.initialize();
             
             // Charger et installer les ressources depuis la configuration
             const resourcesConfig = JSON.parse(await fs.readFile(path.join(process.cwd(), 'resources.json'), 'utf8'));
@@ -1225,25 +1233,10 @@ ipcMain.handle('launch-minecraft', async (event, options) => {
     }
 });
 
-// Ajoutez ces nouvelles fonctions d'initialisation
-async function verifyGameFiles() {
-    const gameFiles = [
-        { path: GAME_PATH, type: 'directory' },
-        { path: path.join(GAME_PATH, 'versions'), type: 'directory' },
-        { path: path.join(GAME_PATH, 'assets'), type: 'directory' },
-        { path: path.join(GAME_PATH, 'libraries'), type: 'directory' },
-        { path: path.join(GAME_PATH, 'resourcepacks'), type: 'directory' },
-        { path: path.join(GAME_PATH, 'shaderpacks'), type: 'directory' }
-    ];
-
-    for (const file of gameFiles) {
-        if (file.type === 'directory' && !fs.existsSync(file.path)) {
-            await fs.mkdir(file.path, { recursive: true });
-        }
-    }
-}
-
 async function loadConfigurations() {
+    // Créer les dossiers nécessaires
+    await resourceManager.initialize();
+    
     // Chargement des configurations
     const configs = {
         'java-path': javaPath,
@@ -1280,3 +1273,28 @@ async function killMinecraftProcess() {
         }
     }
 }
+
+async function calculateFileHashFromUrl(url) {
+    try {
+        const response = await axios.head(url);
+        return response.headers['x-checksum-sha256'] || null;
+    } catch (error) {
+        console.error('Erreur récupération hash:', error);
+        return null;
+    }
+}
+
+// Nouvelle fonction pour formater le temps
+function formatPlayTime(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours}h ${minutes}m`;
+}
+
+// Handler pour récupérer les stats
+ipcMain.handle('get-game-stats', () => {
+    return {
+        playTime: store.get('playTime', 0),
+        version: store.get('minecraft-version', '1.21')
+    };
+});

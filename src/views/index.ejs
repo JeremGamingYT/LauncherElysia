@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="<%= cssPath %>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -9,7 +10,6 @@
 <body>
     <div class="titlebar">
         <div class="titlebar-title">
-            <img src="src/assets/logo.png" class="icon">
             <%= title %>
         </div>
         <div class="titlebar-controls">
@@ -34,119 +34,163 @@
                     <div class="avatar-status"></div>
                 </div>
                 <input type="text" id="username" placeholder="Non connecté" class="username-input" readonly>
-                <button id="logout-btn" class="logout-button" style="display: none;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" class="logout-icon">
-                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" 
-                              stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+            </div>
+
+            <div class="nav-section">
+                <button class="nav-btn active" data-page="play">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 3l14 9-14 9V3z"/>
                     </svg>
-                    Se déconnecter
+                    <span>Jouer</span>
+                </button>
+                <button class="nav-btn" data-page="news">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2z"/>
+                        <path d="M16 8H8m8 4H8m8 4H8"/>
+                    </svg>
+                    <span>Actualités</span>
+                </button>
+                <button class="nav-btn" data-page="settings">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/>
+                        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                    </svg>
+                    <span>Paramètres</span>
                 </button>
             </div>
-            
-            <div class="settings-section">
-                <h3>
-                    <svg width="16" height="16" viewBox="0 0 24 24" style="margin-right: 8px; vertical-align: middle;">
-                        <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" fill="none" stroke-width="2"/>
-                        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" fill="none" stroke-width="2"/>
+
+            <div class="sidebar-footer">
+                <button id="logout-btn" class="nav-btn" style="display: none;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m-5 5h10"/>
                     </svg>
-                    Configuration
-                </h3>
-                
-                <div class="setting-item">
-                    <label for="version">
-                        <svg width="16" height="16" viewBox="0 0 24 24">
-                            <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" 
-                                  stroke="currentColor" fill="none" stroke-width="2"/>
-                            <path d="M3.3 7L12 12l8.7-5M12 22V12" stroke="currentColor" fill="none" stroke-width="2"/>
-                        </svg>
-                        Version
-                    </label>
-                    <div class="select-wrapper" data-tooltip="Sélectionnez la version de Minecraft">
-                        <select id="version" class="version-select">
-                            <% versions.forEach(function(version) { %>
-                                <option value="<%= version %>"><%= version %></option>
-                            <% }); %>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="setting-item memory-setting">
-                    <label for="memory-slider">
-                        <svg width="16" height="16" viewBox="0 0 24 24">
-                            <path d="M4 6h16M4 10h16M4 14h16M4 18h16" stroke="currentColor" stroke-width="2"/>
-                            <rect x="8" y="2" width="8" height="20" rx="2" stroke="currentColor" fill="none" stroke-width="2"/>
-                        </svg>
-                        Mémoire RAM
-                    </label>
-                    <div class="slider-container">
-                        <input type="range" id="memory-slider" min="2" max="16" step="1" value="4" class="memory-slider">
-                        <div class="slider-value">
-                            <span id="memory-value">4</span>
-                            <span class="unit">Go</span>
-                        </div>
-                    </div>
-                    <div class="memory-info">
-                        Recommandé: 4-8 Go
-                    </div>
-                </div>
-
-                <div class="setting-item game-directory">
-                    <label for="game-path">
-                        <svg width="16" height="16" viewBox="0 0 24 24">
-                            <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" 
-                                  stroke="currentColor" fill="none" stroke-width="2"/>
-                        </svg>
-                        Dossier d'installation
-                    </label>
-                    <div class="directory-input">
-                        <input type="text" id="game-path" readonly>
-                        <button id="browse-btn" data-tooltip="Choisir le dossier d'installation">
-                            <svg width="16" height="16" viewBox="0 0 24 24" class="folder-icon">
-                                <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" 
-                                      stroke="currentColor" stroke-width="2" fill="none"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <button id="reset-path" class="reset-button" data-tooltip="Réinitialiser le dossier par défaut">
-                        <svg width="16" height="16" viewBox="0 0 24 24" class="reset-icon">
-                            <path d="M3 12a9 9 0 019-9 9 9 0 019 9 9 9 0 01-9 9m0-18C7.03 3 3 7.03 3 12" 
-                                  stroke="currentColor" stroke-width="2" fill="none"/>
-                            <path d="M12 7v5l4 4" stroke="currentColor" stroke-width="2" fill="none"/>
-                        </svg>
-                        Réinitialiser
-                    </button>
-                </div>
+                    <span>Déconnexion</span>
+                </button>
             </div>
         </div>
 
         <div class="main-content">
-            <div class="news-section">
-                <h2>
-                    <svg width="24" height="24" viewBox="0 0 24 24" style="margin-right: 8px; vertical-align: middle;">
-                        <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2z" 
-                              stroke="currentColor" fill="none" stroke-width="2"/>
-                        <path d="M16 8H8m8 4H8m8 4H8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    Actualités
-                </h2>
-                <div class="news-container">
-                    <% news.forEach(function(item) { %>
-                        <div class="news-item">
-                            <h3><%= item.title %></h3>
-                            <p><%= item.content %></p>
+            <div class="page-settings" style="display: none;">
+                <div class="settings-section">
+                    <h3>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/>
+                            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                        </svg>
+                        Configuration
+                    </h3>
+                    
+                    <div class="setting-item">
+                        <label for="version">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                                <path d="M3.3 7L12 12l8.7-5M12 22V12"/>
+                            </svg>
+                            Version
+                        </label>
+                        <div class="select-wrapper" data-tooltip="Sélectionnez la version de Minecraft">
+                            <select id="version" class="version-select">
+                                <% versions.forEach(function(version) { %>
+                                    <option value="<%= version %>"><%= version %></option>
+                                <% }); %>
+                            </select>
                         </div>
-                    <% }); %>
+                    </div>
+
+                    <div class="setting-item memory-setting">
+                        <label for="memory-slider">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                            </svg>
+                            Mémoire RAM
+                        </label>
+                        <div class="slider-container">
+                            <input type="range" id="memory-slider" min="2" max="16" step="1" value="4" class="memory-slider">
+                            <div class="slider-value">
+                                <span id="memory-value">4</span>
+                                <span class="unit">Go</span>
+                            </div>
+                        </div>
+                        <div class="memory-info">
+                            Recommandé: 4-8 Go
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <label for="game-path">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                            </svg>
+                            Dossier d'installation
+                        </label>
+                        <div class="directory-input">
+                            <input type="text" id="game-path" readonly>
+                            <button id="browse-btn" data-tooltip="Choisir le dossier d'installation">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <button id="reset-path" class="reset-button" data-tooltip="Réinitialiser le dossier par défaut">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 12a9 9 0 019-9 9 9 0 019 9 9 9 0 01-9 9m0-18C7.03 3 3 7.03 3 12"/>
+                                <path d="M12 7v5l4 4"/>
+                            </svg>
+                            Réinitialiser
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="launch-section">
-                <div class="progress-container">
-                    <div class="progress-bar">
-                        <div class="progress"></div>
+            <div class="page-play active">
+                <div class="launch-section">
+                    <div class="game-stats">
+                        <div class="stat-item">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                            <span id="playtime">Temps joué: 0h</span>
+                        </div>
+                        <div class="stat-item">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0L12 2.69z"/>
+                            </svg>
+                            <span id="game-version">Version: <%= versions[0] %></span>
+                        </div>
                     </div>
-                    <div class="status-text">Connectez-vous pour jouer</div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress"></div>
+                        </div>
+                        <div class="status-text">Connectez-vous pour jouer</div>
+                    </div>
+                    <button id="launch-btn" class="launch-button">
+                        SE CONNECTER
+                        <svg class="launch-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14m-7-7l7 7-7 7"/>
+                        </svg>
+                    </button>
                 </div>
-                <button id="launch-btn" class="launch-button">SE CONNECTER</button>
+            </div>
+
+            <div class="page-news">
+                <div class="news-section">
+                    <h2>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2z"/>
+                            <path d="M16 8H8m8 4H8m8 4H8"/>
+                        </svg>
+                        Actualités
+                    </h2>
+                    <div class="news-container">
+                        <% news.forEach(function(item) { %>
+                            <div class="news-item">
+                                <h3><%= item.title %></h3>
+                                <p><%= item.content %></p>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

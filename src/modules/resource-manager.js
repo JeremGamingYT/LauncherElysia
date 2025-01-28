@@ -12,8 +12,21 @@ class ResourceManager {
     }
 
     async initialize() {
-        await fs.ensureDir(this.resourcepacksPath);
-        await fs.ensureDir(this.shadersPath);
+        try {
+            // Créer les dossiers avec vérification renforcée
+            await fs.ensureDir(this.resourcepacksPath);
+            await fs.ensureDir(this.shadersPath);
+            
+            // Vérifier que les dossiers sont bien accessibles
+            const resourcepacksAccess = await fs.access(this.resourcepacksPath, fs.constants.W_OK);
+            const shadersAccess = await fs.access(this.shadersPath, fs.constants.W_OK);
+            
+            console.log('Dossiers ressources initialisés avec succès');
+            return true;
+        } catch (error) {
+            console.error('Erreur lors de l\'initialisation des dossiers:', error);
+            throw new Error('Impossible de créer les dossiers nécessaires');
+        }
     }
 
     // Fonction pour calculer le hash d'un fichier
@@ -173,57 +186,26 @@ class ResourceManager {
 
     async verifyResources() {
         try {
-            await this.initialize();
-
-            const resourcesConfig = path.join(process.cwd(), 'resources.json');
-            if (!fs.existsSync(resourcesConfig)) {
-                return true;
-            }
-
-            const config = JSON.parse(await fs.readFile(resourcesConfig, 'utf8'));
+            // Vérifier seulement si le dossier existe et contient des fichiers
+            const resourcepacksExist = await fs.pathExists(this.resourcepacksPath) 
+                && (await fs.readdir(this.resourcepacksPath)).length > 0;
             
-            // Vérifier les resource packs configurés
-            for (const pack of config.resourcepacks || []) {
-                const packPath = path.join(this.resourcepacksPath, path.basename(pack.url));
-                const verification = await this.verifyFile(pack.url, packPath);
-                if (!verification.exists || verification.needsUpdate) {
-                    return false;
-                }
-            }
+            const shadersExist = await fs.pathExists(this.shadersPath) 
+                && (await fs.readdir(this.shadersPath)).length > 0;
 
-            // Vérifier les shaders configurés
-            for (const shader of config.shaders || []) {
-                const shaderPath = path.join(this.shadersPath, path.basename(shader.url));
-                const verification = await this.verifyFile(shader.url, shaderPath);
-                if (!verification.exists || verification.needsUpdate) {
-                    return false;
-                }
-            }
-
-            // Détecter les fichiers non configurés
-            const configuredResourcePacks = new Set(config.resourcepacks.map(pack => path.basename(pack.url)));
-            const configuredShaders = new Set(config.shaders.map(shader => path.basename(shader.url)));
-
-            // Vérifier les resource packs non configurés
-            const existingResourcePacks = await fs.readdir(this.resourcepacksPath);
-            for (const pack of existingResourcePacks) {
-                if (!configuredResourcePacks.has(pack)) {
-                    console.log(`Pack de ressources non configuré détecté: ${pack}`);
-                }
-            }
-
-            // Vérifier les shaders non configurés
-            const existingShaders = await fs.readdir(this.shadersPath);
-            for (const shader of existingShaders) {
-                if (!configuredShaders.has(shader)) {
-                    console.log(`Shader non configuré détecté: ${shader}`);
-                }
-            }
-
-            return true;
+            return resourcepacksExist && shadersExist;
         } catch (error) {
-            console.error('Erreur lors de la vérification des ressources:', error);
+            console.error('Erreur vérification ressources:', error);
             return false;
+        }
+    }
+
+    async installMod(url, event) {
+        const fileName = path.basename(new URL(url).pathname).toLowerCase();
+        const destPath = path.join(this.gamePath, 'mods', fileName);
+        
+        if (!fs.existsSync(destPath)) {
+            await this.downloadFile(url, destPath, event);
         }
     }
 }
