@@ -123,16 +123,16 @@ function createWindow() {
         memoryOptions: [2, 4, 6, 8],
         news: [
             {
+                title: '🎉 Update 14 - Version 1.5.0',
+                content: 'Nouveau module anti-cheat, gestion des ressources améliorée et nouvelle interface utilisateur.'
+            },
+            {
                 title: '🛡️ Update 12 - Sécurité renforcée',
                 content: 'Nouveau système de sécurité avancé avec détection des fichiers suspects.'
             },
             {
                 title: '🚀 Update 11.1 - Améliorations et corrections',
                 content: 'Ajout de nouveaux shaders et ressource packs. Correction de bugs mineurs.'
-            },
-            {
-                title: '🎮 Update 11 - Gestion des ressources',
-                content: 'Ajout d\'un gestionnaire de ressources pour les shaders et resource packs.'
             }
         ],
         cssPath: `file://${cssPath}`,

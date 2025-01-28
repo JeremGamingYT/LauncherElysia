@@ -6,6 +6,14 @@ Un launcher Minecraft moderne et élégant développé avec Electron, utilisant 
 
 ## Dernières mises à jour
 
+### Update 14
+- Version 1.5.0 du launcher
+- Nouveau module anti-cheat
+- Gestion des ressources améliorée
+- Nouvelle interface utilisateur
+- Affichage des statistiques de jeu
+- Ajout de 100 nouveaux mods
+
 ### Update 12
 - Système de sécurité avancé
 - Détection des fichiers malveillants
