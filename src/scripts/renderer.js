@@ -316,17 +316,34 @@ async function installForge() {
 // Gestion du lancement du jeu
 launchButton.addEventListener('click', async () => {
     try {
-        const success = await ipcRenderer.invoke('launch-game', {
+        // Vérifier d'abord si l'utilisateur est authentifié
+        if (!isAuthenticated) {
+            // Si non authentifié, lancer le processus de connexion Microsoft
+            updateLaunchUI('auth', 'Connexion en cours...');
+            const authResult = await ipcRenderer.invoke('microsoft-login');
+            
+            if (!authResult.success) {
+                throw new Error(authResult.error || 'Échec de l\'authentification');
+            }
+            
+            await updateAuthUI(authResult.profile);
+            return;
+        }
+
+        // Si authentifié, lancer le jeu
+        updateLaunchUI('launch', 'Lancement du jeu...');
+        const result = await ipcRenderer.invoke('launch-game', {
             username: usernameInput.value,
             version: versionSelect.value,
             memory: memorySlider.value
         });
 
-        if (!success) {
-            showErrorModal('Échec du lancement. Vérifiez les logs.');
+        if (!result.success) {
+            throw new Error(result.error || 'Échec du lancement');
         }
     } catch (error) {
         console.error('Erreur lancement:', error);
+        updateLaunchUI('error', `Erreur: ${error.message}`);
         showErrorModal(`Erreur: ${error.message}`);
     }
 });

@@ -1142,15 +1142,19 @@ ipcMain.handle('check-game-installation', async () => {
 // Modifier le handler launch-game pour gérer les échecs de Fabric
 ipcMain.handle('launch-game', async (event, options) => {
     try {
-        gameStartTime = Date.now();
-        // Vérifier et créer les dossiers avant toute opération
-        await resourceManager.initialize();
-
-        // Vérifier l'authentification
+        // Vérifier l'authentification en premier
         const savedToken = store.get('minecraft-token');
         if (!savedToken) {
-            throw new Error('Veuillez vous connecter avec votre compte Microsoft');
+            return {
+                success: false,
+                error: 'Veuillez vous connecter avec votre compte Microsoft'
+            };
         }
+
+        gameStartTime = Date.now();
+        
+        // Vérifier et créer les dossiers avant toute opération
+        await resourceManager.initialize();
 
         // Vérifier les installations
         const minecraftValid = await verifyMinecraftInstallation();
@@ -1226,10 +1230,17 @@ ipcMain.handle('launch-game', async (event, options) => {
         }
 
         // Lancer le jeu
-        return await launchMinecraft(event, options);
+        const launchResult = await launchMinecraft(event, options);
+        return {
+            success: true,
+            ...launchResult
+        };
     } catch (error) {
         console.error('Erreur lors du lancement:', error);
-        return { success: false, error: error.message };
+        return {
+            success: false,
+            error: error.message
+        };
     }
 });
 
@@ -1296,5 +1307,16 @@ ipcMain.handle('get-game-stats', () => {
     return {
         playTime: store.get('playTime', 0),
         version: store.get('minecraft-version', '1.21')
+    };
+});
+
+// Ajouter cette nouvelle fonction pour vérifier l'état de l'authentification
+ipcMain.handle('check-auth', () => {
+    const token = store.get('minecraft-token');
+    const profile = store.get('minecraft-profile');
+    
+    return {
+        isAuthenticated: !!token,
+        profile: profile || null
     };
 });
