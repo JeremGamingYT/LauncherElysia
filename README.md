@@ -6,6 +6,9 @@ Un launcher Minecraft moderne et élégant développé avec Electron, utilisant 
 
 ## Dernières mises à jour
 
+### Update 15
+- Version 1.5.4 du launcher
+
 ### Update 14
 - Version 1.5.0 du launcher
 - Nouveau module anti-cheat
@@ -13,30 +16,6 @@ Un launcher Minecraft moderne et élégant développé avec Electron, utilisant 
 - Nouvelle interface utilisateur
 - Affichage des statistiques de jeu
 - Ajout de 100 nouveaux mods
-
-### Update 12
-- Système de sécurité avancé
-- Détection des fichiers malveillants
-- Protection contre les mods non autorisés
-- Analyse comportementale des fichiers
-- Quarantaine automatique des fichiers suspects
-
-### Update 11.1
-- Ajout de nouveaux shaders et resource packs
-- Correction de bugs mineurs
-- Amélioration de la stabilité générale
-
-### Update 11
-- Ajout d'un gestionnaire de ressources
-- Support des shaders et resource packs
-- Vérification automatique des ressources
-- Installation et mise à jour automatique des ressources
-
-### Update 10
-- Mise à jour complète de la liste des mods
-- Support de Fabric 1.21
-- Plus de 150 mods intégrés
-- Optimisation des performances
 
 ## Fonctionnalités
 
