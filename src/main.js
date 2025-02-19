@@ -636,42 +636,52 @@ async function verifyModsInstallation() {
     }
 }
 
-// Modifier la fonction installMods
+// Modification dans la fonction installMods pour régler le problème de chemin
+// Ancienne version :
+/*
 async function installMods(event) {
     const modsJsonPath = path.join(__dirname, 'resources.json');
     const modsDestPath = path.join(app.getPath('appData'), '.elysia', 'mods');
+    // ... suite du code
+}
+*/
 
+// Nouvelle version avec détection du mode production :
+async function installMods(event) {
+    // Déterminer le chemin correct des ressources selon que l'app soit packagée ou non
+    const resourcesDirectory = app.isPackaged ? process.resourcesPath : __dirname;
+    const modsJsonPath = path.join(resourcesDirectory, 'resources.json');
+    const modsDestPath = path.join(app.getPath('appData'), '.elysia', 'mods');
+    
     try {
         await fs.ensureDir(modsDestPath);
-
-        // Lire la liste des mods à partir du fichier resources.json
-        const { mods } = await fs.readJson(modsJsonPath); // Extraction du tableau mods
+        // Lire la liste des mods depuis le fichier resources.json
+        const { mods } = await fs.readJson(modsJsonPath);
         const totalMods = mods.length;
         let installedMods = 0;
-
-        for (const mod of mods) { // Parcourir le tableau mods
-            const modName = path.basename(mod.url); // Utiliser mod.url
+    
+        for (const mod of mods) {
+            const modName = path.basename(mod.url);
             const modPath = path.join(modsDestPath, modName);
-
+    
             if (await fs.pathExists(modPath)) {
                 console.log(`Le mod ${modName} est déjà installé, passage au suivant.`);
                 installedMods++;
                 continue;
             }
-
+    
             console.log(`Téléchargement du mod : ${modName}`);
             event.sender.send('install-progress', { stage: 'downloading-mod', modName });
-
-            const response = await axios.get(mod.url, { responseType: 'stream' }); // Utiliser mod.url
+    
+            const response = await axios.get(mod.url, { responseType: 'stream' });
             const writer = fs.createWriteStream(modPath);
-
             response.data.pipe(writer);
-
+    
             await new Promise((resolve, reject) => {
                 writer.on('finish', resolve);
                 writer.on('error', reject);
             });
-
+    
             installedMods++;
             event.sender.send('install-progress', {
                 stage: 'mod-progress',
@@ -679,7 +689,7 @@ async function installMods(event) {
                 progress: Math.round((installedMods / totalMods) * 100)
             });
         }
-
+    
         event.sender.send('install-mods-reply', { success: true });
     } catch (error) {
         console.error(`Erreur lors de l'installation des mods: ${error.message}`);
