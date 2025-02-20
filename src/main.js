@@ -636,26 +636,50 @@ async function verifyModsInstallation() {
     }
 }
 
-// Modification dans la fonction installMods pour régler le problème de chemin
-// Ancienne version :
-/*
-async function installMods(event) {
-    const modsJsonPath = path.join(__dirname, 'resources.json');
-    const modsDestPath = path.join(app.getPath('appData'), '.elysia', 'mods');
-    // ... suite du code
-}
-*/
-
 // Nouvelle version avec détection du mode production :
 async function installMods(event) {
-    // Déterminer le chemin correct des ressources selon que l'app soit packagée ou non
-    const resourcesDirectory = app.isPackaged ? process.resourcesPath : __dirname;
+    let resourcesDirectory;
+    if (app.isPackaged) {
+        // D'abord, essayer dans process.resourcesPath
+        let candidate = path.join(process.resourcesPath, 'resources.json');
+        if (await fs.pathExists(candidate)) {
+            resourcesDirectory = process.resourcesPath;
+        } else {
+            // Sinon, vérifier dans un sous-dossier "Resources"
+            candidate = path.join(process.resourcesPath, 'Resources', 'resources.json');
+            if (await fs.pathExists(candidate)) {
+                resourcesDirectory = path.join(process.resourcesPath, 'Resources');
+            } else {
+                // Additional fallback : vérifier dans app.getAppPath()/src
+                candidate = path.join(app.getAppPath(), 'src', 'resources.json');
+                if (await fs.pathExists(candidate)) {
+                    resourcesDirectory = path.join(app.getAppPath(), 'src');
+                } else {
+                    // Fallback : tenter de recréer le fichier resources.json en lisant dans __dirname (accessible en lecture)
+                    try {
+                        const defaultPath = path.join(__dirname, 'resources.json');
+                        const defaultContent = await fs.readFile(defaultPath, 'utf-8');
+                        // Choisir un emplacement écrivable, ici dans le dossier userData
+                        const fallbackDirectory = app.getPath('userData');
+                        const fallbackPath = path.join(fallbackDirectory, 'resources.json');
+                        await fs.writeFile(fallbackPath, defaultContent);
+                        console.log('resources.json recréé avec succès dans le dossier fallback:', fallbackPath);
+                        resourcesDirectory = fallbackDirectory;
+                    } catch (error) {
+                        throw new Error("resources.json introuvable et échec de sa recréation.");
+                    }
+                }
+            }
+        }
+    } else {
+        resourcesDirectory = __dirname;
+    }
+    
     const modsJsonPath = path.join(resourcesDirectory, 'resources.json');
     const modsDestPath = path.join(app.getPath('appData'), '.elysia', 'mods');
     
     try {
         await fs.ensureDir(modsDestPath);
-        // Lire la liste des mods depuis le fichier resources.json
         const { mods } = await fs.readJson(modsJsonPath);
         const totalMods = mods.length;
         let installedMods = 0;

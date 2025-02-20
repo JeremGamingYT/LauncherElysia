@@ -1,7 +1,7 @@
 {
   "name": "elysia",
-  "version": "1.5.4",
-  "description": "Launcher Minecraft Elysia - Beta v1.5.4",
+  "version": "1.5.6",
+  "description": "Launcher Minecraft Elysia - Beta v1.5.6",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
@@ -100,6 +100,12 @@
       "artifactName": "${productName}-Setup-${version}.${ext}",
       "license": "LICENSE",
       "deleteAppDataOnUninstall": true
-    }
+    },
+    "extraResources": [
+      {
+        "from": "resources.json",
+        "to": "Resources/resources.json"
+      }
+    ]
   }
 }
