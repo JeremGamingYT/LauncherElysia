@@ -46,7 +46,7 @@ const rpc = new RPC.Client({ transport: 'ipc' });
 
 // Constantes pour Fabric et chemins
 const GAME_PATH = path.join(app.getPath('appData'), '.elysia');
-const javaPath = store.get('java.path', 'C:\\Program Files\\Java\\jdk-17\\bin\\javaw.exe')
+const javaPath = store.get('java.path', 'C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe')
 const FABRIC_VERSION = '0.16.5';
 const FABRIC_VERSION_LAUNCHER = 'fabric-loader-0.16.5-1.21';
 const FABRIC_INSTALLER_URL = `https://maven.fabricmc.net/net/fabricmc/fabric-installer/1.0.1/fabric-installer-1.0.1.jar`;
@@ -56,8 +56,8 @@ const tempDir = path.join(app.getPath('temp')); // Récupère le dossier Temp
 const fabricInstallerName = 'fabric-installer-1.0.1.jar'; // Nom du fichier
 const fabricPath = path.join(tempDir, fabricInstallerName); // Combine le chemin et le nom du fichier
 
-const JAVA_DOWNLOAD_URL = 'download.oracle.com/java/17/archive/jdk-17.0.12_windows-x64_bin.exe';
-const JAVA_INSTALLER_PATH = path.join(app.getPath('temp'), 'jdk-17-installer.exe');
+const JAVA_DOWNLOAD_URL = 'https://download.oracle.com/java/21/archive/jdk-21.0.5_windows-x64_bin.exe';
+const JAVA_INSTALLER_PATH = path.join(app.getPath('temp'), 'jdk-21-installer.exe');
 
 // Ajouter avec les autres constantes
 const resourceManager = new ResourceManager(GAME_PATH);
@@ -819,26 +819,42 @@ async function installVanilla(event) {
 
 // Fonction pour vérifier l'installation de Java
 async function verifyJavaInstallation() {
-    const defaultJavaPath = 'C:\\Program Files\\Java\\jdk-17\\bin\\javaw.exe';
+    const defaultJavaPath = 'C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe';
     const storedJavaPath = store.get('java.path', defaultJavaPath);
 
     try {
         await fs.access(storedJavaPath);
         return true;
     } catch (error) {
-        return false;
+        // Si le chemin spécifique n'existe pas, vérifions si Java 21 est disponible via command line
+        return new Promise((resolve) => {
+            exec('java -version', (error, stdout, stderr) => {
+                if (error) {
+                    resolve(false);
+                    return;
+                }
+                
+                // Vérifier si la version contient "21"
+                const output = stderr || stdout;
+                if (output.includes('21')) {
+                    resolve(true);
+                } else {
+                    resolve(false);
+                }
+            });
+        });
     }
 }
 
 // Fonction pour télécharger et installer Java
 async function downloadAndInstallJava(event) {
     try {
-        event.sender.send('install-progress', { stage: 'downloading-java', message: 'Téléchargement de Java...' });
+        event.sender.send('install-progress', { stage: 'downloading-java', message: 'Téléchargement de Java 21...' });
         
         // Téléchargement de Java
         const writer = fs.createWriteStream(JAVA_INSTALLER_PATH);
         const response = await axios({
-            url: `https://${JAVA_DOWNLOAD_URL}`,
+            url: JAVA_DOWNLOAD_URL,
             method: 'GET',
             responseType: 'stream'
         });
@@ -849,22 +865,22 @@ async function downloadAndInstallJava(event) {
             writer.on('error', reject);
         });
 
-        event.sender.send('install-progress', { stage: 'installing-java', message: 'Installation de Java...' });
+        event.sender.send('install-progress', { stage: 'installing-java', message: 'Installation de Java 21...' });
 
         // Installation silencieuse de Java
         await new Promise((resolve, reject) => {
             const child = exec(`"${JAVA_INSTALLER_PATH}" /s`, { windowsHide: true });
             child.on('close', (code) => {
                 if (code === 0) resolve();
-                else reject(new Error(`L'installation de Java a échoué avec le code ${code}`));
+                else reject(new Error(`L'installation de Java 21 a échoué avec le code ${code}`));
             });
         });
 
         // Mise à jour du chemin Java dans le store
-        store.set('java.path', 'C:\\Program Files\\Java\\jdk-17\\bin\\javaw.exe');
+        store.set('java.path', 'C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe');
         return true;
     } catch (error) {
-        console.error('Erreur lors de l\'installation de Java:', error);
+        console.error('Erreur lors de l\'installation de Java 21:', error);
         throw error;
     }
 }
@@ -1353,4 +1369,80 @@ ipcMain.handle('check-auth', () => {
         isAuthenticated: !!token,
         profile: profile || null
     };
+});
+
+// Fonction pour supprimer complètement les fichiers du launcher
+async function uninstallLauncher() {
+    try {
+        const pathsToClean = [
+            path.join(app.getPath('appData'), '.elysia'), // Dossier principal du jeu
+            path.join(app.getPath('userData')), // Dossier de configuration du launcher
+            path.join(app.getPath('temp'), 'fabric-installer-1.0.1.jar'), // Installateur Fabric
+            path.join(app.getPath('temp'), 'jdk-21-installer.exe'), // Installateur Java
+            path.join(app.getPath('temp'), 'index.html'), // Fichiers temporaires
+            path.join(app.getPath('temp'), 'splash.html') // Fichiers temporaires
+        ];
+
+        // Informer l'utilisateur
+        if (mainWindow) {
+            mainWindow.webContents.send('uninstall-progress', { 
+                stage: 'prepare', 
+                message: 'Préparation de la désinstallation...' 
+            });
+        }
+
+        for (const pathToClean of pathsToClean) {
+            if (fs.existsSync(pathToClean)) {
+                if (mainWindow) {
+                    mainWindow.webContents.send('uninstall-progress', { 
+                        stage: 'removing', 
+                        message: `Suppression de ${pathToClean}...` 
+                    });
+                }
+                
+                // Vérifier si c'est un dossier ou un fichier
+                const stats = fs.statSync(pathToClean);
+                if (stats.isDirectory()) {
+                    await fs.remove(pathToClean);
+                } else {
+                    await fs.unlink(pathToClean);
+                }
+            }
+        }
+
+        if (mainWindow) {
+            mainWindow.webContents.send('uninstall-progress', { 
+                stage: 'complete', 
+                message: 'Désinstallation terminée.' 
+            });
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Erreur lors de la désinstallation:', error);
+        if (mainWindow) {
+            mainWindow.webContents.send('uninstall-progress', { 
+                stage: 'error', 
+                message: `Erreur lors de la désinstallation: ${error.message}` 
+            });
+        }
+        return false;
+    }
+}
+
+// Ajouter un gestionnaire d'événement IPC pour la désinstallation
+ipcMain.handle('uninstall-launcher', async () => {
+    const { response } = await dialog.showMessageBox({
+        type: 'warning',
+        title: 'Désinstallation d\'Elysia',
+        message: 'Êtes-vous sûr de vouloir désinstaller complètement Elysia et tous ses fichiers? Cette action est irréversible.',
+        buttons: ['Annuler', 'Désinstaller'],
+        defaultId: 0,
+        cancelId: 0
+    });
+
+    if (response === 1) {
+        return await uninstallLauncher();
+    }
+    return false;
 });

@@ -17,6 +17,7 @@ const logoutBtn = document.getElementById('logout-btn');
 const gamePathInput = document.getElementById('game-path');
 const browseBtn = document.getElementById('browse-btn');
 const resetPathBtn = document.getElementById('reset-path');
+const uninstallBtn = document.getElementById('uninstall-btn');
 
 // États
 let isAuthenticated = false;
@@ -242,6 +243,38 @@ ipcRenderer.on('game-path', (event, path) => {
     gamePathInput.value = path;
 });
 
+// Gestion des événements de désinstallation
+ipcRenderer.on('uninstall-progress', (event, data) => {
+    const statusText = document.querySelector('.status-text');
+    const progressBar = document.querySelector('.progress');
+
+    switch (data.stage) {
+        case 'prepare':
+            updateLaunchUI('install', data.message || 'Préparation de la désinstallation...');
+            progressBar.style.width = '25%';
+            break;
+        case 'removing':
+            statusText.textContent = data.message || 'Suppression des fichiers...';
+            progressBar.style.width = '75%';
+            break;
+        case 'complete':
+            updateLaunchUI('idle', data.message || 'Désinstallation terminée.');
+            setTimeout(() => {
+                alert('Désinstallation terminée. Le launcher va maintenant se fermer.');
+                ipcRenderer.send('close-window');
+            }, 2000);
+            break;
+        case 'error':
+            updateLaunchUI('error', data.message || 'Erreur lors de la désinstallation.');
+            setTimeout(() => {
+                alert('Erreur lors de la désinstallation: ' + data.message);
+            }, 1000);
+            break;
+        default:
+            statusText.textContent = data.message || 'Désinstallation en cours...';
+    }
+});
+
 // Gestion du bouton de sélection du dossier
 browseBtn.addEventListener('click', async () => {
     try {
@@ -407,3 +440,20 @@ function formatPlayTime(seconds) {
 
 // Appeler updateGameStats au chargement
 document.addEventListener('DOMContentLoaded', updateGameStats);
+
+// Ajouter un gestionnaire pour le bouton de désinstallation
+if (uninstallBtn) {
+    uninstallBtn.addEventListener('click', async () => {
+        if (confirm('Êtes-vous sûr de vouloir désinstaller complètement Elysia et tous les fichiers associés? Cette action est irréversible.')) {
+            try {
+                const result = await ipcRenderer.invoke('uninstall-launcher');
+                if (!result) {
+                    alert('Désinstallation annulée.');
+                }
+            } catch (error) {
+                console.error('Erreur lors de la désinstallation:', error);
+                alert('Erreur lors de la désinstallation: ' + error.message);
+            }
+        }
+    });
+}
