@@ -49,808 +49,307 @@
     ],
     "mods": [
         {
-            "name": "CameraOverhaul-1.4.1-fabric-universal.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/CameraOverhaul-1.4.1-fabric-universal.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "fabric-api-0.102.0+1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/fabric-api-0.102.0+1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "cave_dust-3.0.0.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/cave_dust-3.0.0.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "mcw-bridges-3.0.0-mc1.21fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/mcw-bridges-3.0.0-mc1.21fabric.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "Clumps-fabric-1.21-18.0.0.2.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Clumps-fabric-1.21-18.0.0.2.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "accessories-fabric-1.1.0-beta.6+1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/accessories-fabric-1.1.0-beta.6+1.21.1.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "smarterfarmers-1.21-2.1.5-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/smarterfarmers-1.21-2.1.5-fabric.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "collective-1.21.1-7.87.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/collective-1.21.1-7.87.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "VisualWorkbench-v21.0.5-1.21-Fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/VisualWorkbench-v21.0.5-1.21-Fabric.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "amendments-1.21-1.2.22-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/amendments-1.21-1.2.22-fabric.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "YungsBridges-1.21.1-Fabric-5.1.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/YungsBridges-1.21.1-Fabric-5.1.1.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "DiagonalWindows-v21.0.0-1.21-Fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/DiagonalWindows-v21.0.0-1.21-Fabric.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "particular-1.1.1+1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/particular-1.1.1+1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "cicada-lib-0.10.2+1.21-1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/cicada-lib-0.10.2+1.21-1.21.1.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "lithostitched-fabric-1.21.1-1.3.10.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/lithostitched-fabric-1.21.1-1.3.10.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "easyanvils-1.21-1.0.1-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/EasyAnvils-v21.0.5-1.21-Fabric.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "entity_sound_features_fabric_1.21-0.4.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/entity_sound_features_fabric_1.21-0.4.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "[fabric]ctov-3.5.4.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/[fabric]ctov-3.5.4.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "YungsBetterOceanMonuments-1.21.1-Fabric-4.1.2.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/YungsBetterOceanMonuments-1.21.1-Fabric-4.1.2.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "mcw-fences-1.1.2-mc1.21fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/mcw-fences-1.1.2-mc1.21fabric.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "dark-loading-screen-1.6.14.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/dark-loading-screen-1.6.14.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "true-ending-v1.1.2d.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/true-ending-v1.1.2d.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "rechiseled-1.1.6b-fabric-mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/rechiseled-1.1.6b-fabric-mc1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "oceansdelight-fdrf-fabric-1.0.2-1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/oceansdelight-fdrf-fabric-1.0.2-1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "lavender-0.1.14+1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/lavender-0.1.14+1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "nullscape-1.21-1.2.10.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Nullscape_1.21.x_v1.2.10.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "puzzleslib-v21.0.28-1.21-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/PuzzlesLib-v21.0.28-1.21-Fabric.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "incendium-1.21-5.4.4-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Incendium_1.21.x_v5.4.4.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "worldweaver-21.0.13.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/worldweaver-21.0.13.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "YungsExtras-1.21.1-Fabric-5.1.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/YungsExtras-1.21.1-Fabric-5.1.1.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "geckolib-fabric-1.21-4.5.8.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/geckolib-fabric-1.21-4.5.8.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "YungsBetterStrongholds-1.21.1-Fabric-5.1.2.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/YungsBetterStrongholds-1.21.1-Fabric-5.1.2.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "CreativeCore_FABRIC_v2.12.9_mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/CreativeCore_FABRIC_v2.12.9_mc1.21.jar"
+            "name": "",
+            "url": ""
+        },        {
+            "name": "",
+            "url": ""
         },
         {
-            "name": "mcw-paths-1.0.5fabric-mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/mcw-paths-1.0.5fabric-mc1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "connectedglass-1.1.12-fabric-mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/connectedglass-1.1.12-fabric-mc1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "CreeperOverhaul-fabric-1.21.1-4.0.6.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/CreeperOverhaul-fabric-1.21.1-4.0.6.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "YungsMenuTweaks-1.21.1-Fabric-2.1.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/YungsMenuTweaks-1.21.1-Fabric-2.1.1.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "lukis-grand-capitals-1.1.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/lukis-grand-capitals-1.1.1.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "more_mobs-v1.5.4-mc1.14x-1.21x-mod.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/more_mobs-v1.5.4-mc1.14x-1.21x-mod.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "tooltipfix-1.1.1-1.20.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/tooltipfix-1.1.1-1.20.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "Geophilic-v3.1.5-f15-61.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Geophilic%20v3.1.5%20f15-61.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "chatanimation-1.0.6.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/chatanimation-1.0.6.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "enchanted-vertical-slabs-2.3.1-fabric-mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/enchanted-vertical-slabs-2.3.1-fabric-mc1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "dynamic-fps-3.7.7+minecraft-1.21.0-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/dynamic-fps-3.7.7+minecraft-1.21.0-fabric.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "YungsApi-1.21.1-Fabric-5.1.3.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/YungsApi-1.21.1-Fabric-5.1.3.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "YungsBetterNetherFortresses-1.21.1-Fabric-3.1.3.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/YungsBetterNetherFortresses-1.21.1-Fabric-3.1.3.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "entity_texture_features_fabric_1.21.1-6.2.9.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/entity_texture_features_fabric_1.21.1-6.2.9.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "firstperson-fabric-2.4.8-mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/firstperson-fabric-2.4.8-mc1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "chunksfadein-1.0.1-1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/chunksfadein-1.0.1-1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "cloth-config-15.0.140-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/cloth-config-15.0.140-fabric.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "pumpkin_pie_delight-1.0.1+1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/pumpkin_pie_delight-1.0.1+1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "AdvancementPlaques-1.21-fabric-1.6.6.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/AdvancementPlaques-1.21-fabric-1.6.6.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "supermartijn642configlib-1.1.8-fabric-mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/supermartijn642configlib-1.1.8-fabric-mc1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "BetterThirdPerson-Fabric-1.21-1.9.0.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/BetterThirdPerson-Fabric-1.21-1.9.0.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "edf-remastered-5.0-beta4.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/edf-remastered-5.0-beta4.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "mcw-stairs-1.0.0-1.21fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/mcw-stairs-1.0.0-1.21fabric.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "brrp-fabric-1.0.4-1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/brrp-fabric-1.0.4-1.21.1.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "moonlight-1.21-2.17.12-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/moonlight-1.21-2.17.12-fabric.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "spawnanimations-v1.10-mc1.17x-1.21x-mod.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/spawnanimations-v1.10-mc1.17x-1.21x-mod.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "WilderWild-3.0.11-mc1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/WilderWild-3.0.11-mc1.21.1.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "make_bubbles_pop-0.3.0-fabric-mc1.19.4-1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/make_bubbles_pop-0.3.0-fabric-mc1.19.4-1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "Kiwi-1.21-Fabric-15.1.3.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Kiwi-1.21-Fabric-15.1.3.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "SereneSeasons-fabric-1.21-10.0.0.6.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/SereneSeasons-fabric-1.21-10.0.0.6.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "appleskin-fabric-mc1.21-3.0.6.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/appleskin-fabric-mc1.21-3.0.6.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "MRU-1.0.7+1.21+fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/MRU-1.0.7+1.21+fabric.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "entityculling-fabric-1.7.2-mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/entityculling-fabric-1.7.2-mc1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "blur-fabric-5.0.0+1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/blur-fabric-5.0.0+1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "entity_model_features_fabric_1.21.1-2.4.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/entity_model_features_fabric_1.21.1-2.4.1.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "ferritecore-7.0.0-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/ferritecore-7.0.0-fabric.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "mcw-windows-2.3.2-mc1.21fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/mcw-windows-2.3.2-mc1.21fabric.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "nvidium-0.3.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/nvidium-0.3.1.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "modernfix-fabric-5.19.1+mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/modernfix-fabric-5.19.1+mc1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "continuity-3.0.0+1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/continuity-3.0.0+1.21.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "talkbubbles-1.0.8.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/talkbubbles-1.0.8.jar"
+            "name": "",
+            "url": ""
         },
         {
-            "name": "fusion-1.2.0-fabric-mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/fusion-1.2.0-fabric-mc1.21.jar"
-        },
-        {
-            "name": "sound-physics-remastered-fabric-1.21.1-1.4.8.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/sound-physics-remastered-fabric-1.21.1-1.4.8.jar"
-        },
-        {
-            "name": "Stoneworks-v21.0.0-1.21-Fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Stoneworks-v21.0.0-1.21-Fabric.jar"
-        },
-        {
-            "name": "wakes-0.3.0+1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/wakes-0.3.0+1.21.1.jar"
-        },
-        {
-            "name": "ubesdelight-fabric-1.21.1-0.3.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/ubesdelight-fabric-1.21.1-0.3.1.jar"
-        },
-        {
-            "name": "DiagonalFences-v21.0.0-1.21-Fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/DiagonalFences-v21.0.0-1.21-Fabric.jar"
-        },
-        {
-            "name": "t_and_t-neoforge-fabric-1.13.2.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/t_and_t-neoforge-fabric-1.13.2.jar"
-        },
-        {
-            "name": "visualoverhaul-fabric-5.2.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/visualoverhaul-fabric-5.2.1.jar"
-        },
-        {
-            "name": "architectury-13.0.8-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/architectury-13.0.8-fabric.jar"
-        },
-        {
-            "name": "SnowRealMagic-1.21.1-Fabric-11.0.13.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/SnowRealMagic-1.21.1-Fabric-11.0.13.jar"
-        },
-        {
-            "name": "everycomp-1.21-2.8.5-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/everycomp-1.21-2.8.5-fabric.jar"
-        },
-        {
-            "name": "monolib-fabric-1.21.1-1.4.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/monolib-fabric-1.21.1-1.4.1.jar"
-        },
-        {
-            "name": "a-good-place-1.21-1.2.5-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/a_good_place-1.21-1.2.5-fabric.jar"
-        },
-        {
-            "name": "Iceberg-1.21-fabric-1.2.7.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Iceberg-1.21-fabric-1.2.7.jar"
-        },
-        {
-            "name": "enhancedblockentities-0.10.2+1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/enhancedblockentities-0.10.2+1.21.jar"
-        },
-        {
-            "name": "watut-fabric-1.21.0-1.1.3.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/watut-fabric-1.21.0-1.1.3.jar"
-        },
-        {
-            "name": "balm-fabric-1.21.1-21.0.22.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/balm-fabric-1.21.1-21.0.22.jar"
-        },
-        {
-            "name": "moremobvariants-fabric+1.21-1.3.1.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/moremobvariants-fabric+1.21-1.3.1.1.jar"
-        },
-        {
-            "name": "status-effect-bars-1.0.6.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/status-effect-bars-1.0.6.jar"
-        },
-        {
-            "name": "resourcefulconfig-fabric-1.21-3.0.8.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/resourcefulconfig-fabric-1.21-3.0.8.jar"
-        },
-        {
-            "name": "FrozenLib-1.9.10-mc1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/FrozenLib-1.9.10-mc1.21.1.jar"
-        },
-        {
-            "name": "comforts-fabric-9.0.3+1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/comforts-fabric-9.0.3+1.21.1.jar"
-        },
-        {
-            "name": "ImmediatelyFast-Fabric-1.3.3+1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/ImmediatelyFast-Fabric-1.3.3+1.21.1.jar"
-        },
-        {
-            "name": "language-reload-1.7.2+1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/language-reload-1.7.2+1.21.1.jar"
-        },
-        {
-            "name": "YungsBetterMineshafts-1.21.1-Fabric-5.1.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/YungsBetterMineshafts-1.21.1-Fabric-5.1.1.jar"
-        },
-        {
-            "name": "fabric-medieval-buildings-1.0.2-1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/fabric_medieval_buildings-1.0.2-1.21.jar"
-        },
-        {
-            "name": "RegionsUnexploredFabric-0.5.6.1+1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/RegionsUnexploredFabric-0.5.6.1+1.21.jar"
-        },
-        {
-            "name": "mcw-trapdoors-1.1.4-mc1.21fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/mcw-trapdoors-1.1.4-mc1.21fabric.jar"
-        },
-        {
-            "name": "fabric-medieval-buildings-end-edition-1.0.2-1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/fabric_medieval_buildings_end_edition-1.0.2-1.21.jar"
-        },
-        {
-            "name": "Continents-1.21.x-v1.1.7.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Continents_1.21.x_v1.1.7.jar"
-        },
-        {
-            "name": "coroutine-util-fabric-1.21.0-1.3.7.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/coroutil-fabric-1.21.0-1.3.7.jar"
-        },
-        {
-            "name": "placeholder-api-2.4.1+1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/placeholder-api-2.4.1+1.21.jar"
-        },
-        {
-            "name": "animated-doors-1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/animated-doors-1.21.jar"
-        },
-        {
-            "name": "smallships-fabric-1.21-2.0.0-b1.5.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/smallships-fabric-1.21-2.0.0-b1.5.jar"
-        },
-        {
-            "name": "animal-armor-trims-merged-1.21-2.0.0.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/animal_armor_trims-merged-1.21-2.0.0.jar"
-        },
-        {
-            "name": "bclib-21.0.13.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/bclib-21.0.13.jar"
-        },
-        {
-            "name": "YungsBetterDesertTemples-1.21.1-Fabric-4.1.2.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/YungsBetterDesertTemples-1.21.1-Fabric-4.1.2.jar"
-        },
-        {
-            "name": "Searchables-fabric-1.21-1.0.5.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Searchables-fabric-1.21-1.0.5.jar"
-        },
-        {
-            "name": "supermartijn642corelib-1.1.18-fabric-mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/supermartijn642corelib-1.1.18-fabric-mc1.21.jar"
-        },
-        {
-            "name": "Terralith-1.21.x-v2.5.7.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Terralith_1.21.x_v2.5.7.jar"
-        },
-        {
-            "name": "fabric-language-kotlin-1.12.3+kotlin.2.0.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/fabric-language-kotlin-1.12.3+kotlin.2.0.21.jar"
-        },
-        {
-            "name": "FarmersDelight-1.21-2.1.9+refabricated.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/FarmersDelight-1.21-2.1.9+refabricated.jar"
-        },
-        {
-            "name": "moreslabsstairsandwalls-4.1.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/moreslabsstairsandwalls-4.1.1.jar"
-        },
-        {
-            "name": "new_slab_variants-merged-1.21.1-3.0.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/new_slab_variants-merged-1.21.1-3.0.1.jar"
-        },
-        {
-            "name": "mcw-roofs-2.3.1-mc1.21fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/mcw-roofs-2.3.1-mc1.21fabric.jar"
-        },
-        {
-            "name": "realisticbees-1.21.1-4.0.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/realisticbees-1.21.1-4.0.jar"
-        },
-        {
-            "name": "letmedespawn-1.3.0.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/letmedespawn-1.3.0.jar"
-        },
-        {
-            "name": "jamlib-fabric-1.2.2-build.2+1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/jamlib-fabric-1.2.2-build.2+1.21.1.jar"
-        },
-        {
-            "name": "resourcefullib-fabric-1.21-3.0.12.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/resourcefullib-fabric-1.21-3.0.12.jar"
-        },
-        {
-            "name": "BetterTridents-v21.0.1-1.21-Fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/BetterTridents-v21.0.1-1.21-Fabric.jar"
-        },
-        {
-            "name": "rightclickharvest-fabric-4.4.4+1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/rightclickharvest-fabric-4.4.4+1.21.1.jar"
-        },
-        {
-            "name": "bookshelf-fabric-1.21-21.0.3.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/bookshelf-fabric-1.21-21.0.3.jar"
-        },
-        {
-            "name": "flow-2.2.0+1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/flow-2.2.0+1.21.jar"
-        },
-        {
-            "name": "tidal-towns-1.3.4.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/tidal-towns-1.3.4.jar"
-        },
-        {
-            "name": "sootychimneys-fabric-1.3.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/sootychimneys-fabric-1.3.1.jar"
-        },
-        {
-            "name": "chat_heads-0.13.7-fabric-1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/chat_heads-0.13.7-fabric-1.21.jar"
-        },
-        {
-            "name": "iris-1.7.3+mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/iris-1.7.3+mc1.21.jar"
-        },
-        {
-            "name": "NoChatReports-FABRIC-1.21.1-v2.9.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/NoChatReports-FABRIC-1.21.1-v2.9.1.jar"
-        },
-        {
-            "name": "fallingleaves-1.16.4+1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/fallingleaves-1.16.4+1.21.1.jar"
-        },
-        {
-            "name": "modelfix-1.21-1.6-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/modelfix-1.21-1.6-fabric.jar"
-        },
-        {
-            "name": "spark-1.10.109-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/spark-1.10.109-fabric.jar"
-        },
-        {
-            "name": "mcw-doors-1.1.1fabric-mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/mcw-doors-1.1.1fabric-mc1.21.jar"
-        },
-        {
-            "name": "moredelight-24.09.27-1.21-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/moredelight-24.09.27-1.21-fabric.jar"
-        },
-        {
-            "name": "mes-1.3.5-1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/mes-1.3.5-1.21.jar"
-        },
-        {
-            "name": "explosive-enhancement-1.3.2-1.21-1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/explosive-enhancement-1.3.2-1.21-1.21.1.jar"
-        },
-        {
-            "name": "do_a_barrel_roll-fabric-3.7.2+1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/do_a_barrel_roll-fabric-3.7.2+1.21.jar"
-        },
-        {
-            "name": "fog-fabric-1.6.1-1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Fog-fabric-1.6.1-1.21.1.jar"
-        },
-        {
-            "name": "visuality-0.7.7+1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/visuality-0.7.7+1.21.jar"
-        },
-        {
-            "name": "cristellib-fabric-1.2.8.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/cristellib-fabric-1.2.8.jar"
-        },
-        {
-            "name": "dummmmmmy-1.21-2.0.6-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/dummmmmmy-1.21-2.0.6-fabric.jar"
-        },
-        {
-            "name": "jei-1.21.1-fabric-19.21.0.247.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/jei-1.21.1-fabric-19.21.0.247.jar"
-        },
-        {
-            "name": "skinlayers3d-fabric-1.7.4-mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/skinlayers3d-fabric-1.7.4-mc1.21.jar"
-        },
-        {
-            "name": "jade-1.21-fabric-15.1.5.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Jade-1.21-Fabric-15.1.5.jar"
-        },
-        {
-            "name": "treechop-1.21-fabric-0.19.2.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/TreeChop-1.21-fabric-0.19.2.jar"
-        },
-        {
-            "name": "yet_another_config_lib-3.6.2+1.21-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/YetAnotherConfigLib-3.6.2+1.21-fabric.jar"
-        },
-        {
-            "name": "owo-lib-0.12.15+1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/owo-lib-0.12.15+1.21.jar"
-        },
-        {
-            "name": "epic-knights-9.14.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/[1.21-fabric]-Epic-Knights-9.14.jar"
-        },
-        {
-            "name": "mcw-furniture-3.3.0-mc1.21fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/mcw-furniture-3.3.0-mc1.21fabric.jar"
-        },
-        {
-            "name": "dungeons-and-taverns-v4.4.4.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/dungeons-and-taverns-v4.4.4.jar"
-        },
-        {
-            "name": "immersive-thunder-1.21+1.2.2.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/ImmersiveThunder-1.21+1.2.2.jar"
-        },
-        {
-            "name": "hardcorerevival-fabric-1.21.1-21.1.5.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/hardcorerevival-fabric-1.21.1-21.1.5.jar"
-        },
-        {
-            "name": "medievalweapons-1.4.8.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/medievalweapons-1.4.8.jar"
-        },
-        {
-            "name": "terrablender-fabric-1.21-4.0.0.2.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/TerraBlender-fabric-1.21-4.0.0.2.jar"
-        },
-        {
-            "name": "controlling-fabric-1.21-18.0.4.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Controlling-fabric-1.21-18.0.4.jar"
-        },
-        {
-            "name": "pick_up_notifier-v21.0.0-1.21-Fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/PickUpNotifier-v21.0.0-1.21-Fabric.jar"
-        },
-        {
-            "name": "moreculling-1.21-0.26.0.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/moreculling-1.21-0.26.0.jar"
-        },
-        {
-            "name": "forge-config-api-port-v21.0.8-1.21-Fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/ForgeConfigAPIPort-v21.0.8-1.21-Fabric.jar"
-        },
-        {
-            "name": "snow-under-trees-2.6.0+1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/SnowUnderTrees-2.6.0+1.21.1.jar"
-        },
-        {
-            "name": "chunky-1.4.16.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Chunky-1.4.16.jar"
-        },
-        {
-            "name": "lithium-fabric-mc1.21-0.13.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/lithium-fabric-mc1.21-0.13.1.jar"
-        },
-        {
-            "name": "smoothgui-0.1.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/smoothgui-0.1.1.jar"
-        },
-        {
-            "name": "biomesoplenty-1.21-21.0.0.18.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/BiomesOPlenty-fabric-1.21-21.0.0.18.jar"
-        },
-        {
-            "name": "quad-1.2.7+1.21-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Quad-1.2.7+1.21-Fabric.jar"
-        },
-        {
-            "name": "cratedelight-24.11.22-1.21-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/cratedelight-24.11.22-1.21-fabric.jar"
-        },
-        {
-            "name": "letsdo-api-fabric-1.3.0-beta-release-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/letsdo-API-fabric-1.3.0-beta-release-fabric.jar"
-        },
-        {
-            "name": "niftycarts-21.0.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/niftycarts-21.0.1.jar"
-        },
-        {
-            "name": "glitchcore-fabric-1.21-2.0.0.3.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/GlitchCore-fabric-1.21-2.0.0.3.jar"
-        },
-        {
-            "name": "mcw-lights-1.1.1-mc1.21fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/mcw-lights-1.1.1-mc1.21fabric.jar"
-        },
-        {
-            "name": "octolib-fabric-0.5.0.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/OctoLib-FABRIC-0.5.0.1.jar"
-        },
-        {
-            "name": "athena-fabric-1.21-4.0.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/athena-fabric-1.21-4.0.1.jar"
-        },
-        {
-            "name": "sounds-2.3.2+1.21+fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Sounds-2.3.2+1.21+fabric.jar"
-        },
-        {
-            "name": "debugify-1.21+1.0.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/Debugify-1.21+1.0.jar"
-        },
-        {
-            "name": "not-enough-animations-fabric-1.9.0-mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/notenoughanimations-fabric-1.9.0-mc1.21.jar"
-        },
-        {
-            "name": "smoothscroll-2.2.1-1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/smoothscroll-2.2.1-1.21.1.jar"
-        },
-        {
-            "name": "mousetweaks-fabric-mc1.21-2.26.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/MouseTweaks-fabric-mc1.21-2.26.jar"
-        },
-        {
-            "name": "morechestvariants-1.5.6+1.21-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/MoreChestVariants-1.5.6+1.21-Fabric.jar"
-        },
-        {
-            "name": "more_beautiful_torches-merged-1.21-3.0.0.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/more_beautiful_torches-merged-1.21-3.0.0.jar"
-        },
-        {
-            "name": "sodium-fabric-0.5.11+mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/sodium-fabric-0.5.11+mc1.21.jar"
-        },
-        {
-            "name": "presencefootsteps-1.10.3+1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/PresenceFootsteps-1.10.3+1.21.jar"
-        },
-        {
-            "name": "yungs-better-dungeons-1.21.1-fabric-5.1.4.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/YungsBetterDungeons-1.21.1-Fabric-5.1.4.jar"
-        },
-        {
-            "name": "universal-bone-meal-1.21-1.0.0.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/UniversalBoneMeal-v21.0.0-1.21-Fabric.jar"
-        },
-        {
-            "name": "weaponmaster-ydm-fabric-1.21-4.2.6.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/weaponmaster_ydm-fabric-1.21-4.2.6.jar"
-        },
-        {
-            "name": "just-hammers-fabric-21.0.3.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/just-hammers-fabric-21.0.3.jar"
-        },
-        {
-            "name": "diagonal-walls-v21.0.0-1.21-Fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/DiagonalWalls-v21.0.0-1.21-Fabric.jar"
-        },
-        {
-            "name": "ambient-sounds-fabric-v6.0.5-mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/AmbientSounds_FABRIC_v6.0.5_mc1.21.jar"
-        },
-        {
-            "name": "mvs-4.2.7-1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/mvs-4.2.7-1.21.jar"
-        },
-        {
-            "name": "things-0.4.2+1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/things-0.4.2+1.21.jar"
-        },
-        {
-            "name": "notenoughcrashes-4.4.8+1.21-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/notenoughcrashes-4.4.8+1.21-fabric.jar"
-        },
-        {
-            "name": "morecraftingtables-1.2.8+1.21-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/MoreCraftingTables-1.2.8+1.21-Fabric.jar"
-        },
-        {
-            "name": "indium-1.0.35+mc1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/indium-1.0.35+mc1.21.jar"
-        },
-        {
-            "name": "storagedelight-24.12.15-1.21-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/storagedelight-24.12.15-1.21-fabric.jar"
-        },
-        {
-            "name": "eating-animation-1.21+1.9.72.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/eating-animation-1.21+1.9.72.jar"
-        },
-        {
-            "name": "YungsBetterEndIsland-1.21.1-Fabric-3.1.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/YungsBetterEndIsland-1.21.1-Fabric-3.1.1.jar"
-        },
-        {
-            "name": "immersiveui-0.3.0-fabric-1.21.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/ImmersiveUI-FABRIC-0.3.0.jar"
-        },
-        {
-            "name": "resourcepackoverrides-v21.0.0-1.21-fabric.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/ResourcePackOverrides-v21.0.0-1.21-Fabric.jar"
-        },
-        {
-            "name": "lambdynamiclights-3.1.4+1.21.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/lambdynamiclights-3.1.4+1.21.1.jar"
-        },
-        {
-            "name": "YungsBetterWitchHuts-1.21.1-Fabric-4.1.1.jar",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/Installer/mods/YungsBetterWitchHuts-1.21.1-Fabric-4.1.1.jar"
+            "name": "",
+            "url": ""
         }
     ]
 }
