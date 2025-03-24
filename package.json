@@ -1,7 +1,7 @@
 {
   "name": "elysia",
-  "version": "1.6.0",
-  "description": "Launcher Minecraft Elysia - Beta v1.6.0",
+  "version": "1.6.3",
+  "description": "Launcher Minecraft Elysia - Beta v1.6.3",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
@@ -72,6 +72,10 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "resources.json",
+        "to": "resources.json"
       }
     ],
     "directories": {
@@ -104,6 +108,10 @@
       "include": "installer.nsh"
     },
     "extraResources": [
+      {
+        "from": "resources.json",
+        "to": "resources.json"
+      },
       {
         "from": "resources.json",
         "to": "Resources/resources.json"

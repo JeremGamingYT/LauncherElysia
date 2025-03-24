@@ -359,11 +359,26 @@ launchButton.addEventListener('click', async () => {
                 throw new Error(authResult.error || 'Échec de l\'authentification');
             }
             
+            // Mise à jour de l'interface avec les infos du profil
             await updateAuthUI(authResult.profile);
+            
+            // Lancer le jeu directement après l'authentification
+            launchGame();
             return;
         }
 
-        // Si authentifié, lancer le jeu
+        // Si authentifié, lancer le jeu directement
+        launchGame();
+    } catch (error) {
+        console.error('Erreur lancement:', error);
+        updateLaunchUI('error', `Erreur: ${error.message}`);
+        showErrorModal(`Erreur: ${error.message}`);
+    }
+});
+
+// Fonction pour lancer le jeu
+async function launchGame() {
+    try {
         updateLaunchUI('launch', 'Lancement du jeu...');
         const result = await ipcRenderer.invoke('launch-game', {
             username: usernameInput.value,
@@ -375,11 +390,11 @@ launchButton.addEventListener('click', async () => {
             throw new Error(result.error || 'Échec du lancement');
         }
     } catch (error) {
-        console.error('Erreur lancement:', error);
+        console.error('Erreur lancement du jeu:', error);
         updateLaunchUI('error', `Erreur: ${error.message}`);
         showErrorModal(`Erreur: ${error.message}`);
     }
-});
+}
 
 // Gestion de la navigation entre les pages
 document.querySelectorAll('.nav-btn').forEach(button => {

@@ -47,8 +47,8 @@ const rpc = new RPC.Client({ transport: 'ipc' });
 // Constantes pour Fabric et chemins
 const GAME_PATH = path.join(app.getPath('appData'), '.elysia');
 const javaPath = store.get('java.path', 'C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe')
-const FABRIC_VERSION = '0.16.5';
-const FABRIC_VERSION_LAUNCHER = 'fabric-loader-0.16.5-1.21';
+const FABRIC_VERSION = '0.15.11';
+const FABRIC_VERSION_LAUNCHER = 'fabric-loader-0.15.11-1.21';
 const FABRIC_INSTALLER_URL = `https://maven.fabricmc.net/net/fabricmc/fabric-installer/1.0.1/fabric-installer-1.0.1.jar`;
 const FABRIC_INSTALLER_PATH = path.join(app.getPath('temp'), `fabric-installer-1.0.1.jar`);
 
@@ -118,7 +118,7 @@ function createWindow() {
     ensureGameDirectory(savedGamePath);
 
     const html = ejs.render(template, {
-        title: 'Elysia - Beta v1.5.0',
+        title: 'Elysia - Beta v1.6.3',
         versions: ['Beta'],
         memoryOptions: [2, 4, 6, 8],
         news: [
@@ -638,49 +638,14 @@ async function verifyModsInstallation() {
 
 // Nouvelle version avec détection du mode production :
 async function installMods(event) {
-    let resourcesDirectory;
-    if (app.isPackaged) {
-        // D'abord, essayer dans process.resourcesPath
-        let candidate = path.join(process.resourcesPath, 'resources.json');
-        if (await fs.pathExists(candidate)) {
-            resourcesDirectory = process.resourcesPath;
-        } else {
-            // Sinon, vérifier dans un sous-dossier "Resources"
-            candidate = path.join(process.resourcesPath, 'Resources', 'resources.json');
-            if (await fs.pathExists(candidate)) {
-                resourcesDirectory = path.join(process.resourcesPath, 'Resources');
-            } else {
-                // Additional fallback : vérifier dans app.getAppPath()/src
-                candidate = path.join(app.getAppPath(), 'src', 'resources.json');
-                if (await fs.pathExists(candidate)) {
-                    resourcesDirectory = path.join(app.getAppPath(), 'src');
-                } else {
-                    // Fallback : tenter de recréer le fichier resources.json en lisant dans __dirname (accessible en lecture)
-                    try {
-                        const defaultPath = path.join(__dirname, 'resources.json');
-                        const defaultContent = await fs.readFile(defaultPath, 'utf-8');
-                        // Choisir un emplacement écrivable, ici dans le dossier userData
-                        const fallbackDirectory = app.getPath('userData');
-                        const fallbackPath = path.join(fallbackDirectory, 'resources.json');
-                        await fs.writeFile(fallbackPath, defaultContent);
-                        console.log('resources.json recréé avec succès dans le dossier fallback:', fallbackPath);
-                        resourcesDirectory = fallbackDirectory;
-                    } catch (error) {
-                        throw new Error("resources.json introuvable et échec de sa recréation.");
-                    }
-                }
-            }
-        }
-    } else {
-        resourcesDirectory = __dirname;
-    }
-    
-    const modsJsonPath = path.join(resourcesDirectory, 'resources.json');
-    const modsDestPath = path.join(app.getPath('appData'), '.elysia', 'mods');
-    
     try {
+        // Récupérer le chemin du fichier resources.json
+        const resourcesJsonPath = await findResourcesJsonPath();
+        const resourcesDirectory = path.dirname(resourcesJsonPath);
+        const modsDestPath = path.join(app.getPath('appData'), '.elysia', 'mods');
+        
         await fs.ensureDir(modsDestPath);
-        const { mods } = await fs.readJson(modsJsonPath);
+        const { mods } = await fs.readJson(resourcesJsonPath);
         const totalMods = mods.length;
         let installedMods = 0;
     
@@ -688,36 +653,34 @@ async function installMods(event) {
             const modName = path.basename(mod.url);
             const modPath = path.join(modsDestPath, modName);
     
-            if (await fs.pathExists(modPath)) {
-                console.log(`Le mod ${modName} est déjà installé, passage au suivant.`);
-                installedMods++;
-                continue;
-            }
-    
-            console.log(`Téléchargement du mod : ${modName}`);
-            event.sender.send('install-progress', { stage: 'downloading-mod', modName });
-    
-            const response = await axios.get(mod.url, { responseType: 'stream' });
-            const writer = fs.createWriteStream(modPath);
-            response.data.pipe(writer);
-    
-            await new Promise((resolve, reject) => {
-                writer.on('finish', resolve);
-                writer.on('error', reject);
-            });
-    
-            installedMods++;
             event.sender.send('install-progress', {
-                stage: 'mod-progress',
-                modName,
-                progress: Math.round((installedMods / totalMods) * 100)
+                stage: 'installing-mod',
+                progress: Math.round((installedMods / totalMods) * 100),
+                message: `Installation de ${modName} (${installedMods + 1}/${totalMods})`
             });
+    
+            try {
+                await installSingleMod(mod.url, modPath, event);
+                installedMods++;
+            } catch (error) {
+                console.error(`Erreur lors de l'installation du mod ${modName}:`, error);
+                // Continue despite the error
+            }
         }
     
-        event.sender.send('install-mods-reply', { success: true });
+        event.sender.send('install-progress', {
+            stage: 'complete',
+            progress: 100,
+            message: `${installedMods} mods installés avec succès`
+        });
+    
+        return true;
     } catch (error) {
-        console.error(`Erreur lors de l'installation des mods: ${error.message}`);
-        event.sender.send('install-mods-reply', { success: false });
+        console.error('Erreur lors de l\'installation des mods:', error);
+        event.sender.send('install-progress', {
+            stage: 'error',
+            message: `Erreur: ${error.message}`
+        });
         throw error;
     }
 }
@@ -892,17 +855,49 @@ async function copyLauncherProfiles() {
         const sourcePath = path.join(minecraftPath, 'launcher_profiles.json');
         const destPath = path.join(GAME_PATH, 'launcher_profiles.json');
 
+        // S'assurer que le dossier de destination existe
+        await fs.ensureDir(GAME_PATH);
+
         // Vérifier si le fichier source existe
         if (await fs.pathExists(sourcePath)) {
-            // Vérifier si le fichier de destination n'existe pas déjà
-            if (!await fs.pathExists(destPath)) {
-                await fs.copy(sourcePath, destPath);
+            // Vérifier si le fichier de destination n'existe pas déjà ou s'il est plus ancien
+            const copyFile = async () => {
+                await fs.copy(sourcePath, destPath, { overwrite: true });
                 console.log('launcher_profiles.json copié avec succès');
+            };
+
+            if (!await fs.pathExists(destPath)) {
+                await copyFile();
             } else {
-                console.log('launcher_profiles.json existe déjà dans la destination');
+                // Comparer les dates de modification
+                const sourceStats = await fs.stat(sourcePath);
+                const destStats = await fs.stat(destPath);
+                
+                if (sourceStats.mtime > destStats.mtime) {
+                    await copyFile();
+                } else {
+                    console.log('launcher_profiles.json est à jour dans la destination');
+                }
             }
         } else {
             console.log('launcher_profiles.json non trouvé dans .minecraft');
+            
+            // Si le fichier source n'existe pas, création d'un fichier minimal
+            if (!await fs.pathExists(destPath)) {
+                const minimalProfiles = {
+                    "profiles": {},
+                    "settings": {
+                        "crashAssistance": true,
+                        "enableSnapshots": false,
+                        "keepLauncherOpen": false,
+                        "showMenu": false
+                    },
+                    "version": 3
+                };
+                
+                await fs.writeJson(destPath, minimalProfiles, { spaces: 2 });
+                console.log('Un launcher_profiles.json minimal a été créé');
+            }
         }
     } catch (error) {
         console.error('Erreur lors de la copie de launcher_profiles.json:', error);
@@ -957,17 +952,7 @@ ipcMain.handle('install-game', async (event) => {
                 stage: 'installing-resources',
                 message: 'Installation des ressources...'
             });
-            
-            // Charger et installer les ressources depuis la configuration
-            const resourcesConfig = JSON.parse(await fs.readFile(path.join(process.cwd(), 'resources.json'), 'utf8'));
-            
-            for (const pack of resourcesConfig.resourcepacks || []) {
-                await resourceManager.installResourcePack(pack.url, event);
-            }
-            
-            for (const shader of resourcesConfig.shaders || []) {
-                await resourceManager.installShader(shader.url, event);
-            }
+            await installResources(event);
         }
 
         gameInstalled = true;
@@ -1067,6 +1052,13 @@ async function launchMinecraft(event, options) {
             throw new Error('Veuillez vous connecter avec votre compte Microsoft');
         }
 
+        // Vérifier la présence de launcher_profiles.json
+        const profilePath = path.join(GAME_PATH, 'launcher_profiles.json');
+        if (!await fs.pathExists(profilePath)) {
+            console.log('launcher_profiles.json manquant avant le lancement, tentative de copie...');
+            await copyLauncherProfiles();
+        }
+
         await renameFabricJson();
 
         const opts = {
@@ -1078,6 +1070,7 @@ async function launchMinecraft(event, options) {
                 type: "release",
                 custom: FABRIC_VERSION_LAUNCHER
             },
+            javaPath: javaPath,
             memory: {
                 max: options.maxMemory || "2G",
                 min: options.minMemory || "1G"
@@ -1201,6 +1194,9 @@ ipcMain.handle('launch-game', async (event, options) => {
             };
         }
 
+        // Copier launcher_profiles.json avant toute opération
+        await copyLauncherProfiles();
+
         gameStartTime = Date.now();
         
         // Vérifier et créer les dossiers avant toute opération
@@ -1253,30 +1249,7 @@ ipcMain.handle('launch-game', async (event, options) => {
                 stage: 'installing-resources',
                 message: 'Création des dossiers et installation des ressources...'
             });
-            
-            // Recréer les dossiers au cas où
-            await resourceManager.initialize();
-            
-            // Charger et installer les ressources depuis la configuration
-            const resourcesConfig = JSON.parse(await fs.readFile(path.join(process.cwd(), 'resources.json'), 'utf8'));
-            
-            // Installation des resource packs
-            for (const pack of resourcesConfig.resourcepacks || []) {
-                event.sender.send('install-progress', {
-                    stage: 'installing-resourcepack',
-                    message: `Installation du pack de ressources: ${pack.name}`
-                });
-                await resourceManager.installResourcePack(pack.url, event);
-            }
-            
-            // Installation des shaders
-            for (const shader of resourcesConfig.shaders || []) {
-                event.sender.send('install-progress', {
-                    stage: 'installing-shader',
-                    message: `Installation du shader: ${shader.name}`
-                });
-                await resourceManager.installShader(shader.url, event);
-            }
+            await installResources(event);
         }
 
         // Lancer le jeu
@@ -1297,6 +1270,9 @@ ipcMain.handle('launch-game', async (event, options) => {
 async function loadConfigurations() {
     // Créer les dossiers nécessaires
     await resourceManager.initialize();
+    
+    // Copier launcher_profiles.json
+    await copyLauncherProfiles();
     
     // Chargement des configurations
     const configs = {
@@ -1474,3 +1450,93 @@ ipcMain.handle('uninstall-launcher', async () => {
     }
     return false;
 });
+
+// Fonction pour trouver le chemin valide de resources.json
+async function findResourcesJsonPath() {
+    // Chercher le fichier resources.json dans tous les emplacements possibles
+    const possibleLocations = [
+        // Application resources
+        path.join(process.resourcesPath, 'resources.json'),
+        path.join(process.resourcesPath, 'Resources', 'resources.json'),
+        // Application root
+        path.join(app.getAppPath(), 'resources.json'),
+        path.join(app.getPath('exe'), '..', 'resources.json'),
+        // Application directory
+        path.join(app.getAppPath(), 'src', 'resources.json'),
+        path.join(__dirname, 'resources.json'),
+        // User data
+        path.join(app.getPath('userData'), 'resources.json')
+    ];
+    
+    // Log for debugging
+    console.log('Searching for resources.json in these locations:');
+    possibleLocations.forEach(loc => console.log(' - ' + loc));
+    
+    // Check all possible locations
+    for (const location of possibleLocations) {
+        try {
+            if (await fs.pathExists(location)) {
+                console.log('Found resources.json at:', location);
+                return location;
+            }
+        } catch (error) {
+            console.log('Error checking', location, error.message);
+        }
+    }
+    
+    // If not found, try to create it
+    try {
+        // Last resort: copy from __dirname if it exists
+        const defaultPath = path.join(__dirname, 'resources.json');
+        if (await fs.pathExists(defaultPath)) {
+            const defaultContent = await fs.readFile(defaultPath, 'utf-8');
+            const fallbackDirectory = app.getPath('userData');
+            const fallbackPath = path.join(fallbackDirectory, 'resources.json');
+            await fs.writeFile(fallbackPath, defaultContent);
+            console.log('resources.json recreated in fallback location:', fallbackPath);
+            return fallbackPath;
+        }
+    } catch (error) {
+        console.error('Failed to recreate resources.json:', error);
+    }
+    
+    // If we get here, no valid resources.json was found
+    throw new Error("resources.json file not found in any location");
+}
+
+// Fonction pour installer les ressources (resource packs et shaders)
+async function installResources(event) {
+    try {
+        // Recréer les dossiers au cas où
+        await resourceManager.initialize();
+        
+        // Récupérer le chemin du fichier resources.json
+        const resourcesJsonPath = await findResourcesJsonPath();
+        
+        // Charger et installer les ressources depuis la configuration
+        const resourcesConfig = JSON.parse(await fs.readFile(resourcesJsonPath, 'utf8'));
+        
+        // Installation des resource packs
+        for (const pack of resourcesConfig.resourcepacks || []) {
+            event.sender.send('install-progress', {
+                stage: 'installing-resourcepack',
+                message: `Installation du pack de ressources: ${pack.name}`
+            });
+            await resourceManager.installResourcePack(pack.url, event);
+        }
+        
+        // Installation des shaders
+        for (const shader of resourcesConfig.shaders || []) {
+            event.sender.send('install-progress', {
+                stage: 'installing-shader',
+                message: `Installation du shader: ${shader.name}`
+            });
+            await resourceManager.installShader(shader.url, event);
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Erreur lors de l\'installation des ressources:', error);
+        throw error;
+    }
+}
