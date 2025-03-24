@@ -1430,6 +1430,33 @@ async function uninstallLauncher() {
     }
 }
 
+// Fonction pour exécuter le désinstallateur NSIS
+function runNsisUninstaller() {
+    try {
+        const exeName = path.basename(process.execPath);
+        const installLocation = path.dirname(process.execPath);
+        const uninstallerPath = path.join(installLocation, 'Uninstall ' + exeName);
+        
+        if (fs.existsSync(uninstallerPath)) {
+            // Démarrer le désinstallateur
+            require('child_process').spawn(uninstallerPath, [], {
+                detached: true,
+                stdio: 'ignore'
+            }).unref();
+            
+            // Fermer l'application
+            app.quit();
+            return true;
+        } else {
+            console.error('Désinstallateur introuvable:', uninstallerPath);
+            return false;
+        }
+    } catch (error) {
+        console.error('Erreur lors du lancement du désinstallateur:', error);
+        return false;
+    }
+}
+
 // Ajouter un gestionnaire d'événement IPC pour la désinstallation
 ipcMain.handle('uninstall-launcher', async () => {
     const { response } = await dialog.showMessageBox({
@@ -1442,7 +1469,8 @@ ipcMain.handle('uninstall-launcher', async () => {
     });
 
     if (response === 1) {
-        return await uninstallLauncher();
+        // Exécuter le désinstallateur NSIS au lieu de la fonction manuelle
+        return runNsisUninstaller();
     }
     return false;
 });

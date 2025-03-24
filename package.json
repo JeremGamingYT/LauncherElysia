@@ -99,7 +99,9 @@
       "installerHeaderIcon": "src/assets/icon.ico",
       "artifactName": "${productName}-Setup-${version}.${ext}",
       "license": "LICENSE",
-      "deleteAppDataOnUninstall": true
+      "deleteAppDataOnUninstall": true,
+      "runAfterFinish": true,
+      "include": "installer.nsh"
     },
     "extraResources": [
       {

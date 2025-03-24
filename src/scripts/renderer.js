@@ -446,9 +446,13 @@ if (uninstallBtn) {
     uninstallBtn.addEventListener('click', async () => {
         if (confirm('Êtes-vous sûr de vouloir désinstaller complètement Elysia et tous les fichiers associés? Cette action est irréversible.')) {
             try {
+                // Informer l'utilisateur
+                statusText.textContent = 'Lancement du désinstallateur...';
+                statusText.classList.add('status-text-animation');
+                
                 const result = await ipcRenderer.invoke('uninstall-launcher');
                 if (!result) {
-                    alert('Désinstallation annulée.');
+                    alert('Le désinstallateur n\'a pas pu être lancé. Veuillez désinstaller manuellement depuis le Panneau de configuration Windows.');
                 }
             } catch (error) {
                 console.error('Erreur lors de la désinstallation:', error);
