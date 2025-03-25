@@ -1,21 +1,33 @@
-# Security Policy
+# Politique de Sécurité
 
-## Supported Versions
+## Versions Supportées
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+Les versions suivantes du Launcher Elysia sont actuellement supportées avec des mises à jour de sécurité.
 
-| Version | Supported          |
+| Version | Supportée          |
 | ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+| 1.6.x   | :white_check_mark: |
+| 1.5.x   | :white_check_mark: |
+| < 1.5.0 | :x:                |
 
-## Reporting a Vulnerability
+## Signaler une Vulnérabilité
 
-Use this section to tell people how to report a vulnerability.
+Si vous découvrez une vulnérabilité de sécurité dans le Launcher Elysia, veuillez suivre ces étapes :
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+1. **N'exposez pas publiquement la vulnérabilité** dans un tracker d'issues ou dans des forums publics
+2. Envoyez un email à [contact@elysia.fr](mailto:contact@elysia.fr) avec les détails de la vulnérabilité
+3. Incluez autant d'informations que possible, comme :
+   - Type de vulnérabilité
+   - Étapes complètes pour reproduire le problème
+   - Impact potentiel
+   - Suggestion de correction si possible
+
+L'équipe de maintenance vous répondra dans un délai de 48 heures et vous tiendra informé des progrès vers une solution.
+
+## Politique de Divulgation
+
+- Nous examinons toutes les vulnérabilités signalées dans un délai de 7 jours
+- Les vulnérabilités critiques sont traitées en priorité
+- Une fois la vulnérabilité corrigée, nous publions une mise à jour avec un crédit approprié pour le rapporteur (sauf demande contraire)
+
+Nous apprécions vos efforts pour améliorer la sécurité du Launcher Elysia.

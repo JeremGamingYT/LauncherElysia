@@ -1,6 +1,6 @@
 # Elysia Launcher
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
-[![Version](https://img.shields.io/badge/version-1.6.4-brightgreen.svg)](https://github.com/JeremGamingYT/LauncherElysia/releases)
+[![Version](https://img.shields.io/badge/version-1.6.5-brightgreen.svg)](https://github.com/JeremGamingYT/LauncherElysia/releases)
 [![Stars](https://img.shields.io/github/stars/JeremGamingYT/LauncherElysia?style=social)](https://github.com/JeremGamingYT/LauncherElysia)
 [![Downloads](https://img.shields.io/github/downloads/JeremGamingYT/LauncherElysia/total.svg)](https://github.com/JeremGamingYT/LauncherElysia/releases)
 
@@ -10,6 +10,13 @@
 </div>
 
 ## 🚀 Dernière mise à jour
+
+### Version 1.6.5
+- 🔒 Correction de vulnérabilités de sécurité
+  - Mise à jour d'axios vers la version 1.8.2 pour corriger une vulnérabilité SSRF
+  - Suppression de la dépendance discord vulnérable à ReDoS
+  - Mise à jour des dépendances Octokit pour corriger des vulnérabilités ReDoS
+- 📝 Documentation de sécurité améliorée et mise à jour
 
 ### Version 1.6.4
 - 🧰 Correction du problème d'installation de Fabric
@@ -24,13 +31,6 @@
 - 📂 Gestion optimisée du fichier `launcher_profiles.json`
 - 🧩 Meilleure compatibilité avec l'installation des mods et ressources
 - 🖥️ Interface utilisateur améliorée et plus réactive
-
-## Mises à jour de sécurité récentes
-
-- **1.6.5** - Correction de vulnérabilités de sécurité :
-  - Mise à jour d'axios vers la version 1.8.2 pour corriger une vulnérabilité SSRF
-  - Suppression de la dépendance discord vulnérable à ReDoS
-  - Mise à jour des dépendances Octokit pour corriger des vulnérabilités ReDoS
 
 ## ✨ Fonctionnalités
 
@@ -78,6 +78,10 @@ npm run build
 2. **Configuration** - Ajustez la mémoire RAM et autres paramètres au besoin
 3. **Installation** - Le launcher installera automatiquement Minecraft, Fabric et les mods
 4. **Jouer** - Cliquez sur "JOUER" pour lancer le jeu
+
+## 🔒 Sécurité
+
+Pour plus d'informations sur notre politique de sécurité et pour signaler des vulnérabilités, consultez notre [SECURITY.md](SECURITY.md).
 
 ## 📁 Structure du projet
 
