@@ -1,3 +1,5 @@
+
+
 {
     "resourcepacks": [
         {
@@ -78,11 +80,11 @@
         },
         {
             "name": "Clumps",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/Clumps-fabric-1.21-18.0.0.2.jar"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
         },
         {
             "name": "Controlling",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/Controlling-fabric-1.21-18.0.4.jar"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
         },
         {
             "name": "Creative Core",
@@ -94,7 +96,7 @@
         },
         {
             "name": "Debugify",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/Debugify-1.21%2B1.0.jar"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
         },
         {
             "name": "Diagonal Fences",
@@ -114,7 +116,7 @@
         },
         {
             "name": "Forge Config API Port",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/ForgeConfigAPIPort-v21.0.0-1.21-Fabric.jar"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
         },
         {
             "name": "Geophilic",
@@ -122,7 +124,7 @@
         },
         {
             "name": "GlitchCore",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/GlitchCore-fabric-1.21-2.0.0.3.jar"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
         },
         {
             "name": "Iceberg",
@@ -189,19 +191,19 @@
         },
         {
             "name": "Regions Unexplored",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/RegionsUnexploredFabric-0.5.6.1%2B1.21.jar"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
         },
         {
             "name": "Resource Pack Overrides",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/ResourcePackOverrides-v21.0.0-1.21-Fabric.jar"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
         },
         {
             "name": "Searchables",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/Searchables-fabric-1.21-1.0.5.jar"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
         },
         {
             "name": "SereneSeasons",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/SereneSeasons-fabric-1.21-10.0.0.6.jar"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
         },
         {
             "name": "Snow Real Magic",
@@ -221,7 +223,7 @@
         },
         {
             "name": "TerraBlender",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/TerraBlender-fabric-1.21-4.0.0.2.jar"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
         },
         {
             "name": "Terralith",
@@ -321,7 +323,7 @@
         },
         {
             "name": "Cave Dust",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/cave_dust-3.0.0.jar"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
         },
         {
             "name": "Chat Heads",
@@ -413,7 +415,7 @@
         },
         {
             "name": "Fabric API",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/fabric-api-0.102.0%2B1.21.jar"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
         },
         {
             "name": "Fabric Language Kotlin",
@@ -549,7 +551,7 @@
         },
         {
             "name": "MVS",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/mvs-4.2.7-1.21.jar"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
         },
         {
             "name": "Nifty Carts",
