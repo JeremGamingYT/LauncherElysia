@@ -6,8 +6,9 @@ Les versions suivantes du Launcher Elysia sont actuellement supportées avec des
 
 | Version | Supportée          |
 | ------- | ------------------ |
-| 1.6.x   | :white_check_mark: |
-| 1.5.x   | :white_check_mark: |
+| 1.6.5   | :white_check_mark: |
+| < 1.6.x   | :x:              |
+| 1.5.x   | :x:                |
 | < 1.5.0 | :x:                |
 
 ## Signaler une Vulnérabilité
