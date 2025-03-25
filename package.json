@@ -29,7 +29,6 @@
     "@xmcl/installer": "^6.0.1",
     "adm-zip": "^0.5.10",
     "axios": "^1.8.2",
-    "discord": "^0.8.2",
     "discord-rpc": "^4.0.1",
     "ejs": "^3.1.9",
     "electron-store": "^8.1.0",
