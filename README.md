@@ -1,6 +1,6 @@
 # Elysia Launcher
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
-[![Version](https://img.shields.io/badge/version-1.6.0-brightgreen.svg)](https://github.com/JeremGamingYT/LauncherElysia/releases)
+[![Version](https://img.shields.io/badge/version-1.6.4-brightgreen.svg)](https://github.com/JeremGamingYT/LauncherElysia/releases)
 [![Stars](https://img.shields.io/github/stars/JeremGamingYT/LauncherElysia?style=social)](https://github.com/JeremGamingYT/LauncherElysia)
 [![Downloads](https://img.shields.io/github/downloads/JeremGamingYT/LauncherElysia/total.svg)](https://github.com/JeremGamingYT/LauncherElysia/releases)
 
@@ -10,6 +10,13 @@
 </div>
 
 ## 🚀 Dernière mise à jour
+
+### Version 1.6.4
+- 🧰 Correction du problème d'installation de Fabric
+- 🔄 Téléchargement amélioré des fichiers d'installation
+- 🛡️ Meilleure gestion des erreurs lors de l'installation
+- 🔍 Vérifications plus robustes des fichiers essentiels
+- ⚡ Installation plus fiable même avec une connexion instable
 
 ### Version 1.6.3
 - 🔄 Amélioration de la recherche du fichier `resources.json`

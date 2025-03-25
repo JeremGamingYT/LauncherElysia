@@ -123,6 +123,14 @@ function createWindow() {
         memoryOptions: [2, 4, 6, 8],
         news: [
             {
+                title: '🚀 Update 1.6.4 - Améliorations et corrections',
+                content: 'Correction du problème d\'installation de Fabric, Téléchargement amélioré des fichiers d\'installation, Meilleure gestion des erreurs lors de l\'installation, Vérifications plus robustes des fichiers essentiels, Installation plus fiable même avec une connexion instable'
+            },
+            {
+                title: '🚀 Update 1.6.3 - Améliorations et corrections',
+                content: 'Amélioration de la recherche du fichier `resources.json`, correction du problème de double-clic pour lancer Minecraft, gestion optimisée du fichier `launcher_profiles.json`, meilleure compatibilité avec l\'installation des mods et ressources, interface utilisateur améliorée et plus réactive.'
+            },
+            {
                 title: '🎉 Update 14 - Version 1.5.0',
                 content: 'Nouveau module anti-cheat, gestion des ressources améliorée et nouvelle interface utilisateur.'
             },
@@ -270,7 +278,7 @@ async function checkForUpdates() {
     }
 }
 
-// Ajouter la vérification des mises à jour au démarrage de l'application
+// Vérification des mises à jour au démarrage de l'application
 app.whenReady().then(async () => {
     await createSplashWindow();
     await createWindow(); // Créer la fenêtre principale d'abord
@@ -554,61 +562,127 @@ async function checkFileIntegrity(event) {
 
 // Fonction pour télécharger Fabric
 async function downloadFabric(event) {
-    const writer = fs.createWriteStream(FABRIC_INSTALLER_PATH);
-    const response = await axios({
-        url: FABRIC_INSTALLER_URL,
-        method: 'GET',
-        responseType: 'stream'
-    });
+    try {
+        // Vérifier si le chemin existe, sinon le créer
+        const tempDir = path.dirname(FABRIC_INSTALLER_PATH);
+        await fs.ensureDir(tempDir);
+        
+        // Supprimer le fichier s'il existe déjà mais est corrompu
+        if (await fs.pathExists(FABRIC_INSTALLER_PATH)) {
+            await fs.remove(FABRIC_INSTALLER_PATH);
+            console.log('Fichier Fabric existant supprimé pour assurer un téléchargement propre');
+        }
+        
+        const writer = fs.createWriteStream(FABRIC_INSTALLER_PATH);
+        console.log(`Téléchargement de Fabric depuis ${FABRIC_INSTALLER_URL} vers ${FABRIC_INSTALLER_PATH}`);
+        
+        const response = await axios({
+            url: FABRIC_INSTALLER_URL,
+            method: 'GET',
+            responseType: 'stream',
+            timeout: 30000 // 30 secondes de timeout
+        });
 
-    const totalLength = response.headers['content-length'];
-    const progressStream = progress({
-        length: totalLength,
-        time: 100
-    });
+        const totalLength = response.headers['content-length'];
+        const progressStream = progress({
+            length: totalLength,
+            time: 100
+        });
 
-    progressStream.on('progress', (progressData) => {
-        const percentage = Math.round(progressData.percentage);
-        event.sender.send('download-progress', percentage);
-    });
+        progressStream.on('progress', (progressData) => {
+            const percentage = Math.round(progressData.percentage);
+            event.sender.send('download-progress', percentage);
+            console.log(`Progression du téléchargement Fabric: ${percentage}%`);
+        });
 
-    response.data.pipe(progressStream).pipe(writer);
+        response.data.pipe(progressStream).pipe(writer);
 
-    return new Promise((resolve, reject) => {
-        writer.on('finish', resolve);
-        writer.on('error', reject);
-    });
+        return new Promise((resolve, reject) => {
+            writer.on('finish', async () => {
+                // Vérifier que le fichier existe et n'est pas vide
+                try {
+                    const stats = await fs.stat(FABRIC_INSTALLER_PATH);
+                    if (stats.size > 0) {
+                        console.log(`Téléchargement de Fabric terminé, taille: ${stats.size} octets`);
+                        resolve();
+                    } else {
+                        console.error('Le fichier JAR de Fabric a été téléchargé mais est vide');
+                        reject(new Error('Le fichier JAR de Fabric est vide'));
+                    }
+                } catch (err) {
+                    console.error('Erreur lors de la vérification du fichier Fabric:', err);
+                    reject(err);
+                }
+            });
+            writer.on('error', (err) => {
+                console.error('Erreur lors du téléchargement de Fabric:', err);
+                reject(err);
+            });
+        });
+    } catch (error) {
+        console.error('Erreur critique lors du téléchargement de Fabric:', error);
+        throw error;
+    }
 }
 
 // Modifier la fonction d'installation de Fabric pour la rendre plus tolérante
 async function installFabric(event) {
-    return new Promise((resolve, reject) => {
-        const javaPath = store.get('java.path', 'java');
-        const command = `"${javaPath}" -jar "${FABRIC_INSTALLER_PATH}" client -dir "${GAME_PATH}" -mcversion 1.21 -loader ${FABRIC_VERSION}`;
-
-        console.log('Commande d\'installation Fabric:', command);
-
-        const child = exec(command);
-
-        child.stdout.on('data', (data) => {
-            console.log(`Fabric stdout: ${data}`);
-            event.sender.send('install-progress', { stage: 'installing-fabric', data });
-        });
-
-        child.stderr.on('data', (data) => {
-            console.error(`Fabric stderr: ${data}`);
-        });
-
-        child.on('close', (code) => {
-            if (code !== 0) {
-                console.warn(`Installation de Fabric échouée avec le code ${code} - continuation sans Fabric`);
-                resolve(false); // On résout au lieu de rejeter
-            } else {
-                console.log('Installation de Fabric réussie');
-                resolve(true);
+    try {
+        // Vérifier que le fichier existe avant de l'utiliser
+        if (!await fs.pathExists(FABRIC_INSTALLER_PATH)) {
+            console.error(`Le fichier d'installation Fabric n'existe pas à l'emplacement: ${FABRIC_INSTALLER_PATH}`);
+            event.sender.send('install-progress', { 
+                stage: 'error', 
+                message: 'Le fichier Fabric n\'a pas pu être téléchargé. Nouvelle tentative...' 
+            });
+            
+            // Nouvelle tentative de téléchargement
+            await downloadFabric(event);
+            
+            // Vérifier à nouveau
+            if (!await fs.pathExists(FABRIC_INSTALLER_PATH)) {
+                throw new Error('Impossible de télécharger le fichier Fabric après plusieurs tentatives');
             }
+        }
+        
+        // Vérifier que le fichier n'est pas vide
+        const stats = await fs.stat(FABRIC_INSTALLER_PATH);
+        if (stats.size === 0) {
+            console.error('Le fichier JAR de Fabric existe mais est vide');
+            throw new Error('Le fichier JAR de Fabric est corrompu (taille zéro)');
+        }
+        
+        return new Promise((resolve, reject) => {
+            const javaPath = store.get('java.path', 'java');
+            const command = `"${javaPath}" -jar "${FABRIC_INSTALLER_PATH}" client -dir "${GAME_PATH}" -mcversion 1.21 -loader ${FABRIC_VERSION}`;
+
+            console.log('Commande d\'installation Fabric:', command);
+
+            const child = exec(command);
+
+            child.stdout.on('data', (data) => {
+                console.log(`Fabric stdout: ${data}`);
+                event.sender.send('install-progress', { stage: 'installing-fabric', data });
+            });
+
+            child.stderr.on('data', (data) => {
+                console.error(`Fabric stderr: ${data}`);
+            });
+
+            child.on('close', (code) => {
+                if (code !== 0) {
+                    console.warn(`Installation de Fabric échouée avec le code ${code} - continuation sans Fabric`);
+                    resolve(false); // On résout au lieu de rejeter
+                } else {
+                    console.log('Installation de Fabric réussie');
+                    resolve(true);
+                }
+            });
         });
-    });
+    } catch (error) {
+        console.error('Erreur lors de l\'installation de Fabric:', error);
+        return false;
+    }
 }
 
 // Modifier la fonction verifyModsInstallation
@@ -930,8 +1004,30 @@ ipcMain.handle('install-game', async (event) => {
         const fabricValid = await verifyFabricInstallation();
         if (!fabricValid) {
             event.sender.send('install-progress', { stage: 'installing-fabric', message: 'Installation de Fabric...' });
-            await downloadFabric(event);
-            await installFabric(event);
+            
+            // S'assurer que le fichier n'existe pas déjà (corrompu)
+            if (await fs.pathExists(FABRIC_INSTALLER_PATH)) {
+                await fs.remove(FABRIC_INSTALLER_PATH);
+                console.log('Fichier Fabric existant supprimé avant téléchargement');
+            }
+            
+            try {
+                await downloadFabric(event);
+                const success = await installFabric(event);
+                if (!success) {
+                    console.warn('Installation de Fabric échouée, mais poursuite de l\'installation');
+                    event.sender.send('install-progress', { 
+                        stage: 'fabric-failed', 
+                        message: 'Installation de Fabric échouée - continuation sans Fabric' 
+                    });
+                }
+            } catch (fabricError) {
+                console.error('Erreur pendant l\'installation de Fabric:', fabricError);
+                event.sender.send('install-progress', { 
+                    stage: 'fabric-failed', 
+                    message: `Échec de l'installation de Fabric - continuation sans` 
+                });
+            }
         } else {
             console.log('Fabric is already installed, skipping reinstallation.');
         }

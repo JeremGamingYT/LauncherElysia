@@ -1,7 +1,7 @@
 {
   "name": "elysia",
-  "version": "1.6.3",
-  "description": "Launcher Minecraft Elysia - Beta v1.6.3",
+  "version": "1.6.4",
+  "description": "Launcher Minecraft Elysia - Beta v1.6.4",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
