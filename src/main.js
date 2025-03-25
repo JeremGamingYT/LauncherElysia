@@ -15,6 +15,7 @@ const { MinecraftLocation, Version } = require('@xmcl/core');
 const { Agent } = require('undici');
 const AutoUpdater = require('./modules/auto-updater');
 const ResourceManager = require('./modules/resource-manager');
+const AntiCheat = require('./modules/anti-cheat');
 
 // Configuration du stockage local
 const store = new Store({
@@ -61,6 +62,10 @@ const JAVA_INSTALLER_PATH = path.join(app.getPath('temp'), 'jdk-21-installer.exe
 
 // Ajouter avec les autres constantes
 const resourceManager = new ResourceManager(GAME_PATH);
+const antiCheat = new AntiCheat(GAME_PATH);
+
+// Configurer le serveur pour l'anti-cheat
+const SERVER_NAME = "Elysia";
 
 // Fonction pour obtenir le chemin par défaut du dossier de jeu
 function getDefaultGamePath() {
@@ -978,7 +983,50 @@ async function copyLauncherProfiles() {
     }
 }
 
-// Modification du handler d'installation
+// Fonction pour configurer le serveur par défaut
+async function setupDefaultServer() {
+    try {
+        const serversPath = path.join(GAME_PATH, 'servers.dat');
+        console.log('Configuration du serveur par défaut à:', serversPath);
+        
+        // Créer un fichier servers.dat préformaté (format NBT binaire)
+        // Ce fichier contient un serveur avec:
+        // - name: "Elysia"
+        // - ip: "91.197.6.212:25580"
+        // - hidden: false
+        // - preventsChatsReports: false
+        const serverData = Buffer.from([
+            10, 0, 0,                 // Compound sans nom (racine)
+            9, 0, 7, 115, 101, 114, 118, 101, 114, 115,  // "servers" (liste)
+            10, 0, 0, 0, 1,           // 1 élément compound dans la liste
+            
+            // Début du serveur (compound)
+            1, 0, 6, 104, 105, 100, 100, 101, 110, 0,  // hidden: 0 (byte)
+            1, 0, 19, 112, 114, 101, 118, 101, 110, 116, 115, 67, 104, 97, 116, 82, 101, 112, 111, 114, 116, 115, 0,  // preventsChatsReports: 0 (byte)
+            8, 0, 2, 105, 112, 0, 18, 57, 49, 46, 49, 57, 55, 46, 54, 46, 50, 49, 50, 58, 50, 53, 53, 56, 48,  // ip: "91.197.6.212:25580" (string)
+            8, 0, 4, 110, 97, 109, 101, 0, 6, 69, 108, 121, 115, 105, 97,  // name: "Elysia" (string)
+            0,  // Fin du compound serveur
+            
+            0   // Fin du compound racine
+        ]);
+        
+        // S'assurer que le répertoire cible existe
+        await fs.ensureDir(GAME_PATH);
+        
+        // Écrire le fichier préformaté
+        await fs.writeFile(serversPath, serverData);
+        
+        console.log('Serveur par défaut ajouté avec succès');
+        return true;
+    } catch (error) {
+        console.error('Erreur lors de la configuration du serveur par défaut:', error);
+        console.error(error.stack); // Afficher la stack trace complète
+        // On continue même en cas d'erreur
+        return false;
+    }
+}
+
+// Modification du handler d'installation pour ajouter la configuration du serveur
 ipcMain.handle('install-game', async (event) => {
     try {
         // Vérifier et installer Java si nécessaire
@@ -1049,6 +1097,19 @@ ipcMain.handle('install-game', async (event) => {
                 message: 'Installation des ressources...'
             });
             await installResources(event);
+        }
+        
+        // Configurer le serveur par défaut
+        event.sender.send('install-progress', {
+            stage: 'configuring-server',
+            message: 'Configuration du serveur par défaut...'
+        });
+        console.log('Tentative de configuration du serveur par défaut...');
+        try {
+            const serverSetupResult = await setupDefaultServer();
+            console.log('Résultat de la configuration du serveur:', serverSetupResult ? 'Succès' : 'Échec');
+        } catch (serverError) {
+            console.error('Erreur critique lors de la configuration du serveur:', serverError);
         }
 
         gameInstalled = true;
@@ -1236,6 +1297,33 @@ async function launchMinecraft(event, options) {
             message: 'Préparation du contexte de jeu...'
         });
 
+        // Initialiser et exécuter l'anti-cheat
+        if (SERVER_NAME) {
+            antiCheat.initialize(SERVER_NAME);
+            
+            // Analyse anti-cheat avant le lancement
+            event.sender.send('install-progress', {
+                stage: 'security',
+                progress: 92,
+                message: 'Vérification de sécurité...'
+            });
+            
+            const scanResults = await antiCheat.runFullScan();
+            
+            // Si des triches sont détectées, on le notifie à l'utilisateur et on continue quand même
+            if (scanResults.detectionFound) {
+                console.warn('Anti-cheat: détection de modifications potentiellement non autorisées');
+                event.sender.send('install-progress', {
+                    stage: 'warning',
+                    progress: 95,
+                    message: 'Avertissement: Certaines modifications non autorisées ont été détectées.'
+                });
+                
+                // On laisse un délai pour que l'utilisateur puisse voir le message
+                await new Promise(resolve => setTimeout(resolve, 3000));
+            }
+        }
+
         // Ajouter un délai visuel pour la transition
         await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -1248,8 +1336,39 @@ async function launchMinecraft(event, options) {
         gameRunning = true;
         mainWindow.minimize();
 
+        // Configurer le scan périodique de l'anti-cheat si activé
+        let antiCheatInterval = null;
+
+        if (SERVER_NAME) {
+            // Exécuter un scan toutes les 5 minutes pendant le jeu
+            antiCheatInterval = setInterval(async () => {
+                if (gameRunning) {
+                    console.log('Exécution du scan anti-cheat périodique');
+                    const scanResults = await antiCheat.runFullScan();
+                    
+                    if (scanResults.detectionFound) {
+                        console.warn('Anti-cheat: détection périodique de modifications non autorisées');
+                    }
+                } else {
+                    // Arrêter le scan si le jeu n'est plus en cours d'exécution
+                    if (antiCheatInterval) {
+                        clearInterval(antiCheatInterval);
+                        antiCheatInterval = null;
+                    }
+                }
+            }, 5 * 60 * 1000); // 5 minutes
+        }
+
         // Envoyer la confirmation de démarrage
         event.sender.send('game-started');
+
+        // Nettoyer l'intervalle lorsque le jeu se termine
+        launcher.on('close', () => {
+            if (antiCheatInterval) {
+                clearInterval(antiCheatInterval);
+                antiCheatInterval = null;
+            }
+        });
 
         return { success: true };
     } catch (error) {
@@ -1346,6 +1465,19 @@ ipcMain.handle('launch-game', async (event, options) => {
                 message: 'Création des dossiers et installation des ressources...'
             });
             await installResources(event);
+        }
+
+        // Configurer le serveur par défaut
+        event.sender.send('install-progress', {
+            stage: 'configuring-server',
+            message: 'Configuration du serveur par défaut...'
+        });
+        console.log('Configuration du serveur par défaut avant le lancement...');
+        try {
+            const serverSetupResult = await setupDefaultServer();
+            console.log('Résultat de la configuration du serveur:', serverSetupResult ? 'Succès' : 'Échec');
+        } catch (serverError) {
+            console.error('Erreur critique lors de la configuration du serveur:', serverError);
         }
 
         // Lancer le jeu

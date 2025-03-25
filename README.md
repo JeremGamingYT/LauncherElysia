@@ -25,6 +25,13 @@
 - 🧩 Meilleure compatibilité avec l'installation des mods et ressources
 - 🖥️ Interface utilisateur améliorée et plus réactive
 
+## Mises à jour de sécurité récentes
+
+- **1.6.5** - Correction de vulnérabilités de sécurité :
+  - Mise à jour d'axios vers la version 1.8.2 pour corriger une vulnérabilité SSRF
+  - Suppression de la dépendance discord vulnérable à ReDoS
+  - Mise à jour des dépendances Octokit pour corriger des vulnérabilités ReDoS
+
 ## ✨ Fonctionnalités
 
 | 🎮 Gameplay | 🛠️ Technique | 🎨 Interface |
