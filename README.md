@@ -27,20 +27,6 @@
   - Mise à jour des dépendances Octokit pour corriger des vulnérabilités ReDoS
 - 📝 Documentation de sécurité améliorée et mise à jour
 
-### Version 1.6.4
-- 🧰 Correction du problème d'installation de Fabric
-- 🔄 Téléchargement amélioré des fichiers d'installation
-- 🛡️ Meilleure gestion des erreurs lors de l'installation
-- 🔍 Vérifications plus robustes des fichiers essentiels
-- ⚡ Installation plus fiable même avec une connexion instable
-
-### Version 1.6.3
-- 🔄 Amélioration de la recherche du fichier `resources.json`
-- 🛠️ Correction du problème de double-clic pour lancer Minecraft
-- 📂 Gestion optimisée du fichier `launcher_profiles.json`
-- 🧩 Meilleure compatibilité avec l'installation des mods et ressources
-- 🖥️ Interface utilisateur améliorée et plus réactive
-
 ## ✨ Fonctionnalités
 
 | 🎮 Gameplay | 🛠️ Technique | 🎨 Interface |
