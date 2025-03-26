@@ -123,7 +123,7 @@ function createWindow() {
     ensureGameDirectory(savedGamePath);
 
     const html = ejs.render(template, {
-        title: 'Elysia - Beta v1.6.3',
+        title: 'Elysia - Beta v1.6.6',
         versions: ['Beta'],
         memoryOptions: [2, 4, 6, 8],
         news: [

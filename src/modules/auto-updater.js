@@ -239,6 +239,19 @@ class AutoUpdater extends EventEmitter {
                 throw new Error('Le fichier d\'installation n\'existe pas');
             }
 
+            // Supprimer le dossier .elysia avant l'installation
+            try {
+                const elysiaPath = path.join(app.getPath('appData'), '.elysia');
+                if (fs.existsSync(elysiaPath)) {
+                    console.log('Suppression du dossier .elysia avant la mise à jour...');
+                    await fs.promises.rm(elysiaPath, { recursive: true, force: true });
+                    console.log('Dossier .elysia supprimé avec succès');
+                }
+            } catch (error) {
+                console.error('Erreur lors de la suppression du dossier .elysia:', error);
+                // On continue l'installation même en cas d'erreur
+            }
+
             // Exécuter le setup avec les paramètres silencieux
             const process = require('child_process');
             
