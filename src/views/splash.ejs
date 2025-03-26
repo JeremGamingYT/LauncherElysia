@@ -6,10 +6,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #00F2FE;
-            --bg-darker: #1d1d1d;
-            --text-primary: #f8fafc;
-            --border-color: rgba(45, 195, 255, 0.2);
+            --primary: #FF7D00;
+            --primary-hover: #E66D00;
+            --primary-glow: rgba(255, 125, 0, 0.15);
+            --bg-darker: #18191C;
+            --bg-dark: #1E2024;
+            --text-primary: #FFFFFF;
+            --text-secondary: #B9BBBE;
+            --border-color: rgba(50, 52, 56, 0.6);
+            --card-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            
+            --border-radius-sm: 4px;
+            --border-radius-md: 8px;
+            --border-radius-lg: 12px;
         }
 
         * {
@@ -31,36 +40,32 @@
         }
 
         .splash-container {
-            background: var(--bg-darker);
+            background: var(--bg-dark);
             padding: 32px;
-            border-radius: 24px;
+            border-radius: var(--border-radius-lg);
             text-align: center;
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5),
-                        0 0 20px var(--primary-glow);
+            box-shadow: var(--card-shadow);
             border: 1px solid var(--border-color);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            animation: fadeIn 0.5s ease-out;
+            animation: fadeIn 0.3s ease-out;
+            width: 320px;
         }
 
         .logo {
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             margin-bottom: 24px;
-            animation: pulse 2s infinite;
-            border-radius: 20px;
-            box-shadow: 0 0 20px var(--primary-glow);
+            animation: pulse 3s infinite ease-in-out;
+            border-radius: var(--border-radius-lg);
         }
 
         .loading-bar {
-            width: 240px;
+            width: 100%;
             height: 4px;
-            background: rgba(99, 102, 241, 0.1);
-            border-radius: 4px;
+            background: rgba(255, 125, 0, 0.2);
+            border-radius: var(--border-radius-sm);
             overflow: hidden;
             margin: 24px auto;
             position: relative;
-            box-shadow: 0 0 10px var(--primary-glow);
         }
 
         .loading-progress {
@@ -69,38 +74,29 @@
             top: 0;
             height: 100%;
             width: 0%;
-            background: linear-gradient(
-                90deg,
-                var(--primary) 0%,
-                #818cf8 50%,
-                var(--primary) 100%
-            );
-            animation: loading 2s infinite;
-            border-radius: 4px;
-            box-shadow: 0 0 10px var(--primary);
+            background: var(--primary);
+            animation: loading 2s infinite ease-in-out;
+            border-radius: var(--border-radius-sm);
         }
 
         .status-text {
             font-size: 14px;
             color: var(--text-primary);
-            opacity: 0.9;
             margin-top: 16px;
             font-weight: 500;
-            text-shadow: 0 0 10px var(--primary-glow);
         }
 
         .version-text {
             font-size: 12px;
-            color: var(--text-primary);
-            opacity: 0.6;
+            color: var(--text-secondary);
             margin-top: 8px;
             font-weight: 400;
         }
 
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.03); }
-            100% { transform: scale(1); }
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.02); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
         }
 
         @keyframes loading {
@@ -115,43 +111,16 @@
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: scale(0.95);
+                transform: translateY(10px);
             }
             to {
                 opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        /* Ajout d'un effet de brillance */
-        .splash-container::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(
-                circle,
-                var(--primary-glow) 0%,
-                transparent 70%
-            );
-            opacity: 0.1;
-            animation: rotate 10s linear infinite;
-            pointer-events: none;
-        }
-
-        @keyframes rotate {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
+                transform: translateY(0);
             }
         }
 
         .error-message {
-            color: #ef4444;
+            color: #ED4245;
             font-size: 12px;
             margin-top: 8px;
             opacity: 0;
@@ -171,7 +140,7 @@
         }
 
         .status-text.error {
-            color: #ef4444;
+            color: #ED4245;
         }
     </style>
 </head>

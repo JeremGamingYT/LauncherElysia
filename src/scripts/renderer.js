@@ -125,6 +125,12 @@ function resetAuthUI() {
     avatarStatus.classList.remove('online');
     logoutBtn.style.display = 'none';
     updateLaunchUI('idle');
+    
+    // S'assurer que la page de jeu reste visible si c'est celle qui est actuellement active
+    const activePage = document.querySelector('.nav-btn.active');
+    if (activePage && activePage.dataset.page === 'play') {
+        document.querySelector('.page-play').style.display = 'flex';
+    }
 }
 
 // Gestion des événements du jeu
@@ -159,9 +165,21 @@ ipcRenderer.on('game-closed', (event, code) => {
     statusText.textContent = 'Prêt à jouer';
     console.log('État après game-closed:', { isGameRunning, isAuthenticated });
 
+    // Mettre à jour les statistiques
+    updateGameStats();
+
     // Optionnellement, informer l'utilisateur si le jeu s'est fermé de manière inattendue
     if (code !== 0 && code !== null) {
         alert(`Le jeu s'est fermé avec le code de sortie ${code}`);
+    }
+});
+
+// Écouter les mises à jour du temps de jeu
+ipcRenderer.on('play-time-update', (event, data) => {
+    // Mettre à jour l'affichage du temps de jeu
+    const playtimeElement = document.getElementById('playtime');
+    if (playtimeElement) {
+        playtimeElement.textContent = `Temps joué: ${data.formattedTime}`;
     }
 });
 
@@ -316,10 +334,30 @@ logoutBtn.addEventListener('click', async () => {
         return;
     }
 
+    // Mémoriser l'onglet actif avant la déconnexion
+    const currentActiveTab = document.querySelector('.nav-btn.active');
+    const wasOnPlayTab = currentActiveTab && currentActiveTab.dataset.page === 'play';
+
     try {
         const result = await ipcRenderer.invoke('logout');
         if (result.success) {
             resetAuthUI();
+            
+            // Rétablir l'onglet "jouer" s'il était actif avant la déconnexion
+            if (wasOnPlayTab) {
+                // Sélectionner l'onglet jouer
+                const playTabButton = document.querySelector('.nav-btn[data-page="play"]');
+                if (playTabButton) {
+                    // Simuler un clic sur l'onglet jouer
+                    playTabButton.click();
+                } else {
+                    // Fallback au cas où le bouton n'est pas trouvé
+                    document.querySelectorAll('.main-content > div').forEach(page => {
+                        page.style.display = 'none';
+                    });
+                    document.querySelector('.page-play').style.display = 'flex';
+                }
+            }
         } else {
             throw new Error(result.error || 'Erreur lors de la déconnexion');
         }
@@ -362,8 +400,8 @@ launchButton.addEventListener('click', async () => {
             // Mise à jour de l'interface avec les infos du profil
             await updateAuthUI(authResult.profile);
             
-            // Lancer le jeu directement après l'authentification
-            launchGame();
+            // Ne pas lancer le jeu automatiquement après l'authentification
+            updateLaunchUI('idle', 'Connexion réussie! Cliquez sur JOUER pour lancer le jeu.');
             return;
         }
 
@@ -411,11 +449,17 @@ document.querySelectorAll('.nav-btn').forEach(button => {
         
         // Masquer toutes les pages
         document.querySelectorAll('.main-content > div').forEach(page => {
-            page.style.display = 'none';
+            // Ajouter une vérification pour éviter l'erreur sur null
+            if (page) {
+                page.style.display = 'none';
+            }
         });
         
         // Afficher la page correspondante
-        document.querySelector(`.page-${page}`).style.display = 'flex';
+        const targetPage = document.querySelector(`.page-${page}`);
+        if (targetPage) {
+            targetPage.style.display = 'flex';
+        }
     });
 });
 
@@ -429,7 +473,10 @@ initSlider();
 // Ajouter un nouvel événement pour le pré-lancement
 ipcRenderer.on('pre-launch', () => {
     updateLaunchUI('launch', 'Finalisation du lancement...');
-    progressBar.style.width = '95%';
+    // Vérifier que progressBar n'est pas null avant d'accéder à sa propriété style
+    if (progressBar) {
+        progressBar.style.width = '95%';
+    }
 });
 
 // Nouvelle fonction pour mettre à jour les stats
@@ -439,8 +486,13 @@ async function updateGameStats() {
         const playtimeElement = document.getElementById('playtime');
         const versionElement = document.getElementById('game-version');
         
-        playtimeElement.textContent = `Temps joué: ${formatPlayTime(stats.playTime)}`;
-        versionElement.textContent = `Version: ${stats.version}`;
+        if (playtimeElement) {
+            playtimeElement.textContent = `Temps joué: ${formatPlayTime(stats.playTime)}`;
+        }
+        
+        if (versionElement) {
+            versionElement.textContent = `Version: ${stats.version}`;
+        }
     } catch (error) {
         console.error('Erreur récupération stats:', error);
     }
@@ -452,6 +504,9 @@ function formatPlayTime(seconds) {
     const minutes = Math.floor((seconds % 3600) / 60);
     return `${hours}h ${minutes}m`;
 }
+
+// Mettre à jour les statistiques toutes les minutes
+setInterval(updateGameStats, 60000);
 
 // Appeler updateGameStats au chargement
 document.addEventListener('DOMContentLoaded', updateGameStats);
@@ -476,3 +531,120 @@ if (uninstallBtn) {
         }
     });
 }
+
+// Fonctions pour les actualités et mises à jour
+async function fetchDiscordNews() {
+    try {
+        const newsContainer = document.querySelector('.news-container');
+        if (!newsContainer) return;
+
+        // Afficher un message de chargement
+        newsContainer.innerHTML = '<div class="loading">Chargement des actualités...</div>';
+
+        const result = await ipcRenderer.invoke('fetch-discord-news');
+        
+        if (result.success && result.news && result.news.length > 0) {
+            // Vider le conteneur
+            newsContainer.innerHTML = '';
+            
+            // Afficher les actualités
+            result.news.forEach(item => {
+                const newsItem = document.createElement('div');
+                newsItem.className = 'news-item';
+                
+                let imageHtml = '';
+                if (item.image) {
+                    imageHtml = `
+                        <div class="news-image">
+                            <img src="${item.image}" alt="${item.title}" loading="lazy">
+                        </div>
+                    `;
+                }
+                
+                newsItem.innerHTML = `
+                    <h3>${item.title}</h3>
+                    <div class="news-meta">
+                        <span class="news-author">${item.author}</span>
+                        <span class="news-date">${new Date(item.timestamp).toLocaleDateString()}</span>
+                    </div>
+                    <div class="news-content">${item.content}</div>
+                    ${imageHtml}
+                    <a href="${item.url}" class="news-link" target="_blank">Voir sur Discord</a>
+                `;
+                
+                newsContainer.appendChild(newsItem);
+            });
+        } else {
+            // Afficher un message si aucune actualité
+            newsContainer.innerHTML = '<div class="no-content">Aucune actualité disponible pour le moment.</div>';
+        }
+    } catch (error) {
+        console.error('Erreur lors de la récupération des actualités Discord:', error);
+        const newsContainer = document.querySelector('.news-container');
+        if (newsContainer) {
+            newsContainer.innerHTML = '<div class="error">Erreur lors du chargement des actualités.</div>';
+        }
+    }
+}
+
+async function fetchUpdates() {
+    try {
+        const updatesContainer = document.querySelector('.updates-container');
+        if (!updatesContainer) return;
+
+        // Afficher un message de chargement
+        updatesContainer.innerHTML = '<div class="loading">Chargement des mises à jour...</div>';
+
+        const result = await ipcRenderer.invoke('fetch-updates');
+        
+        if (result.success && result.updates && result.updates.length > 0) {
+            // Vider le conteneur
+            updatesContainer.innerHTML = '';
+            
+            // Afficher les mises à jour
+            result.updates.forEach(item => {
+                const updateItem = document.createElement('div');
+                updateItem.className = 'update-item';
+                
+                updateItem.innerHTML = `
+                    <div class="update-header">
+                        <h3>${item.title}</h3>
+                        <span class="update-version">Version: ${item.version || 'N/A'}</span>
+                        <span class="update-date">${new Date(item.date).toLocaleDateString()}</span>
+                    </div>
+                    <div class="update-content">${item.content}</div>
+                `;
+                
+                updatesContainer.appendChild(updateItem);
+            });
+        } else {
+            // Afficher un message si aucune mise à jour
+            updatesContainer.innerHTML = '<div class="no-content">Aucune mise à jour disponible pour le moment.</div>';
+        }
+    } catch (error) {
+        console.error('Erreur lors de la récupération des mises à jour:', error);
+        const updatesContainer = document.querySelector('.updates-container');
+        if (updatesContainer) {
+            updatesContainer.innerHTML = '<div class="error">Erreur lors du chargement des mises à jour.</div>';
+        }
+    }
+}
+
+// Charger les actualités et mises à jour lorsque les onglets correspondants sont cliqués
+document.querySelectorAll('.nav-btn').forEach(button => {
+    button.addEventListener('click', () => {
+        const page = button.dataset.page;
+        
+        if (page === 'news') {
+            fetchDiscordNews();
+        } else if (page === 'updates') {
+            fetchUpdates();
+        }
+    });
+});
+
+// Charger les mises à jour au démarrage (car souvent consultées)
+document.addEventListener('DOMContentLoaded', () => {
+    fetchUpdates();
+    updateGameStats();
+});

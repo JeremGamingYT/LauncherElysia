@@ -10,12 +10,14 @@ const axios = require('axios');
 const progress = require('progress-stream');
 const crypto = require('crypto');
 const os = require('os');
+const url = require('url');
 const { install, getVersionList, installDependencies } = require('@xmcl/installer');
 const { MinecraftLocation, Version } = require('@xmcl/core');
 const { Agent } = require('undici');
 const AutoUpdater = require('./modules/auto-updater');
 const ResourceManager = require('./modules/resource-manager');
 const AntiCheat = require('./modules/anti-cheat');
+const NewsModules = require('./modules/news');
 
 // Configuration du stockage local
 const store = new Store({
@@ -37,6 +39,8 @@ let gameRunning = false;
 let gameInstalled = false;
 let splashWindow = null;
 let gameStartTime = null;
+let playTimeTracker = null;
+let currentPlayTime = 0;
 
 // Discord 'Rich presence'
 const RPC = require('discord-rpc');
@@ -48,8 +52,8 @@ const rpc = new RPC.Client({ transport: 'ipc' });
 // Constantes pour Fabric et chemins
 const GAME_PATH = path.join(app.getPath('appData'), '.elysia');
 const javaPath = store.get('java.path', 'C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe')
-const FABRIC_VERSION = '0.15.11';
-const FABRIC_VERSION_LAUNCHER = 'fabric-loader-0.15.11-1.21';
+const FABRIC_VERSION = '0.16.10';
+const FABRIC_VERSION_LAUNCHER = 'fabric-loader-0.16.10-1.21.1';
 const FABRIC_INSTALLER_URL = `https://maven.fabricmc.net/net/fabricmc/fabric-installer/1.0.1/fabric-installer-1.0.1.jar`;
 const FABRIC_INSTALLER_PATH = path.join(app.getPath('temp'), `fabric-installer-1.0.1.jar`);
 
@@ -66,6 +70,21 @@ const antiCheat = new AntiCheat(GAME_PATH);
 
 // Configurer le serveur pour l'anti-cheat
 const SERVER_NAME = "Elysia";
+
+// News API configuration - utilisation d'un fichier JSON hébergé sur GitHub
+const newsJsonUrl = 'https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/news.json';
+
+// Initialiser les gestionnaires d'actualités et de mises à jour
+const discordNewsManager = new NewsModules.DiscordNewsManager({
+    newsUrl: newsJsonUrl,
+    limit: 10
+});
+
+const updatesManager = new NewsModules.UpdatesManager({
+    remoteUrl: 'https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/updates.json',
+    owner: 'JeremGamingYT',
+    repo: 'LauncherElysia'
+});
 
 // Fonction pour obtenir le chemin par défaut du dossier de jeu
 function getDefaultGamePath() {
@@ -87,7 +106,18 @@ function ensureGameDirectory(gamePath) {
 }
 
 function createWindow() {
-    // Création de la fenêtre principale
+    // Charger les données pour le template
+    let news = [];
+    let updates = [];
+
+    // Essayer de charger les mises à jour localement
+    try {
+        updates = store.get('updates', []);
+    } catch (error) {
+        console.error('Erreur lors du chargement des mises à jour:', error);
+    }
+
+    // Créer la fenêtre principale avec les données
     mainWindow = new BrowserWindow({
         width: 1280,
         height: 800,
@@ -123,31 +153,10 @@ function createWindow() {
     ensureGameDirectory(savedGamePath);
 
     const html = ejs.render(template, {
-        title: 'Elysia - Beta v1.6.6',
-        versions: ['Beta'],
-        memoryOptions: [2, 4, 6, 8],
-        news: [
-            {
-                title: '🚀 Update 1.6.4 - Améliorations et corrections',
-                content: 'Correction du problème d\'installation de Fabric, Téléchargement amélioré des fichiers d\'installation, Meilleure gestion des erreurs lors de l\'installation, Vérifications plus robustes des fichiers essentiels, Installation plus fiable même avec une connexion instable'
-            },
-            {
-                title: '🚀 Update 1.6.3 - Améliorations et corrections',
-                content: 'Amélioration de la recherche du fichier `resources.json`, correction du problème de double-clic pour lancer Minecraft, gestion optimisée du fichier `launcher_profiles.json`, meilleure compatibilité avec l\'installation des mods et ressources, interface utilisateur améliorée et plus réactive.'
-            },
-            {
-                title: '🎉 Update 14 - Version 1.5.0',
-                content: 'Nouveau module anti-cheat, gestion des ressources améliorée et nouvelle interface utilisateur.'
-            },
-            {
-                title: '🛡️ Update 12 - Sécurité renforcée',
-                content: 'Nouveau système de sécurité avancé avec détection des fichiers suspects.'
-            },
-            {
-                title: '🚀 Update 11.1 - Améliorations et corrections',
-                content: 'Ajout de nouveaux shaders et ressource packs. Correction de bugs mineurs.'
-            }
-        ],
+        title: 'Elysia - v.1.6.6 (BETA)',
+        versions: ['1.6.6'],
+        news: news,
+        updates: updates,
         cssPath: `file://${cssPath}`,
         jsPath: `file://${jsPath}`,
         gamePath: savedGamePath
@@ -178,7 +187,7 @@ function createWindow() {
 
     // Envoi du chemin du jeu au chargement
     mainWindow.webContents.on('did-finish-load', () => {
-        mainWindow.webContents.send('game-path', savedGamePath);
+        mainWindow.webContents.send('game-path', GAME_PATH);
     });
 
     mainWindow.on('close', async (event) => {
@@ -505,7 +514,14 @@ async function verifyFiles(event, modsList) {
 // Fonction pour installer un seul mod
 async function installSingleMod(modUrl, modPath, event) {
     try {
-        const response = await axios.get(modUrl, { responseType: 'stream' });
+        console.log(`Tentative de téléchargement du mod depuis: ${modUrl}`);
+        const response = await axios.get(modUrl, { 
+            responseType: 'stream',
+            validateStatus: function (status) {
+                return status >= 200 && status < 300; // Par défaut, seuls les statuts 2xx sont acceptés
+            }
+        });
+        
         const writer = fs.createWriteStream(modPath);
 
         return new Promise((resolve, reject) => {
@@ -514,7 +530,13 @@ async function installSingleMod(modUrl, modPath, event) {
             writer.on('error', reject);
         });
     } catch (error) {
-        console.error(`Erreur lors de l'installation du mod ${path.basename(modPath)}:`, error);
+        if (error.response && error.response.status === 404) {
+            console.error(`Mod non trouvé (404): ${path.basename(modPath)}`);
+            // On peut ici décider de continuer sans ce mod
+            // Pour éviter de bloquer tout le processus
+            return Promise.resolve();
+        }
+        console.error(`Erreur lors de l'installation du mod ${path.basename(modPath)}:`, error.message);
         throw error;
     }
 }
@@ -659,7 +681,7 @@ async function installFabric(event) {
         
         return new Promise((resolve, reject) => {
             const javaPath = store.get('java.path', 'java');
-            const command = `"${javaPath}" -jar "${FABRIC_INSTALLER_PATH}" client -dir "${GAME_PATH}" -mcversion 1.21 -loader ${FABRIC_VERSION}`;
+            const command = `"${javaPath}" -jar "${FABRIC_INSTALLER_PATH}" client -dir "${GAME_PATH}" -mcversion 1.21.1 -loader ${FABRIC_VERSION}`;
 
             console.log('Commande d\'installation Fabric:', command);
 
@@ -715,7 +737,7 @@ async function verifyModsInstallation() {
     }
 }
 
-// Nouvelle version avec détection du mode production :
+// Nouvelle version avec détection du mode production et meilleure gestion d'erreurs
 async function installMods(event) {
     try {
         // Récupérer le chemin du fichier resources.json
@@ -727,6 +749,8 @@ async function installMods(event) {
         const { mods } = await fs.readJson(resourcesJsonPath);
         const totalMods = mods.length;
         let installedMods = 0;
+        let failedMods = 0;
+        let notFoundMods = [];
     
         for (const mod of mods) {
             const modName = path.basename(mod.url);
@@ -742,16 +766,35 @@ async function installMods(event) {
                 await installSingleMod(mod.url, modPath, event);
                 installedMods++;
             } catch (error) {
-                console.error(`Erreur lors de l'installation du mod ${modName}:`, error);
+                if (error.response && error.response.status === 404) {
+                    console.error(`Mod non trouvé (404): ${modName}`);
+                    notFoundMods.push(modName);
+                } else {
+                    console.error(`Erreur lors de l'installation du mod ${modName}:`, error.message);
+                }
+                failedMods++;
                 // Continue despite the error
             }
         }
     
-        event.sender.send('install-progress', {
-            stage: 'complete',
-            progress: 100,
-            message: `${installedMods} mods installés avec succès`
-        });
+        // Message en fonction du résultat
+        if (failedMods === 0) {
+            event.sender.send('install-progress', {
+                stage: 'complete',
+                progress: 100,
+                message: `${installedMods} mods installés avec succès`
+            });
+        } else {
+            let message = `${installedMods} mods installés, ${failedMods} mods n'ont pas pu être installés`;
+            if (notFoundMods.length > 0) {
+                message += `. Mods non trouvés: ${notFoundMods.join(', ')}`;
+            }
+            event.sender.send('install-progress', {
+                stage: 'complete-with-errors',
+                progress: 100,
+                message: message
+            });
+        }
     
         return true;
     } catch (error) {
@@ -774,7 +817,7 @@ async function launchVanillaTemporary(event) {
             authorization: store.get('minecraft-token'),
             root: GAME_PATH,
             version: {
-                number: '1.21',
+                number: '1.21.1',
                 type: "release"
             },
             memory: {
@@ -819,7 +862,7 @@ async function launchVanillaTemporary(event) {
 // Modification de la fonction installVanilla
 async function installVanilla(event) {
     try {
-        const version = await getVersionList().then(list => list.versions.find(v => v.id === '1.21'));
+        const version = await getVersionList().then(list => list.versions.find(v => v.id === '1.21.1'));
         
         // Configuration de l'agent de téléchargement
         const agent = new Agent({
@@ -842,7 +885,7 @@ async function installVanilla(event) {
         await install(version, GAME_PATH, downloadOptions);
         
         // Installation des dépendances (bibliothèques et assets)
-        const resolvedVersion = await Version.parse(GAME_PATH, '1.21');
+        const resolvedVersion = await Version.parse(GAME_PATH, '1.21.1');
         await installDependencies(resolvedVersion, downloadOptions);
 
         console.log('Installation de Minecraft vanilla terminée');
@@ -1003,7 +1046,7 @@ async function setupDefaultServer() {
             // Début du serveur (compound)
             1, 0, 6, 104, 105, 100, 100, 101, 110, 0,  // hidden: 0 (byte)
             1, 0, 19, 112, 114, 101, 118, 101, 110, 116, 115, 67, 104, 97, 116, 82, 101, 112, 111, 114, 116, 115, 0,  // preventsChatsReports: 0 (byte)
-            8, 0, 2, 105, 112, 0, 18, 57, 49, 46, 49, 57, 55, 46, 54, 46, 50, 49, 50, 58, 50, 53, 53, 56, 48,  // ip: "91.197.6.212:25580" (string)
+            8, 0, 2, 105, 112, 0, 18, 59, 49, 46, 49, 57, 55, 46, 54, 46, 50, 49, 50, 58, 50, 53, 53, 56, 48,  // ip: "91.197.6.212:25580" (string)
             8, 0, 4, 110, 97, 109, 101, 0, 6, 69, 108, 121, 115, 105, 97,  // name: "Elysia" (string)
             0,  // Fin du compound serveur
             
@@ -1124,10 +1167,10 @@ ipcMain.handle('install-game', async (event) => {
 // Fonction pour vérifier l'installation de Minecraft
 async function verifyMinecraftInstallation() {
     try {
-        const minecraftPath = path.join(GAME_PATH, 'versions', '1.21');
+        const minecraftPath = path.join(GAME_PATH, 'versions', '1.21.1');
         const requiredFiles = [
-            path.join(minecraftPath, '1.21.json'),
-            path.join(minecraftPath, '1.21.jar')
+            path.join(minecraftPath, '1.21.1.json'),
+            path.join(minecraftPath, '1.21.1.jar')
         ];
 
         for (const file of requiredFiles) {
@@ -1184,7 +1227,7 @@ async function verifyFabricInstallation() {
 async function renameFabricJson() {
     try {
         const fabricVersionPath = path.join(GAME_PATH, 'versions', FABRIC_VERSION_LAUNCHER);
-        const currentJsonPath = path.join(fabricVersionPath, '1.21.json');
+        const currentJsonPath = path.join(fabricVersionPath, '1.21.1.json');
         const newJsonPath = path.join(fabricVersionPath, `${FABRIC_VERSION_LAUNCHER}.json`);
 
         // Vérifier si le fichier source existe
@@ -1197,6 +1240,74 @@ async function renameFabricJson() {
         }
     } catch (error) {
         console.error('Erreur lors du renommage du fichier JSON Fabric:', error);
+    }
+}
+
+// Fonction pour formater le temps
+function formatPlayTime(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours}h ${minutes}m`;
+}
+
+// Fonction pour démarrer le suivi du temps de jeu
+function startPlayTimeTracking() {
+    // Charger le temps de jeu existant
+    currentPlayTime = store.get('playTime', 0);
+    
+    // Enregistrer l'heure de démarrage
+    gameStartTime = Date.now();
+    
+    // Créer un intervalle pour mettre à jour le temps de jeu toutes les 30 secondes
+    playTimeTracker = setInterval(() => {
+        if (gameRunning && gameStartTime) {
+            // Calculer le temps écoulé depuis le début de la session
+            const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+            
+            // Mettre à jour le temps de jeu total
+            const updatedPlayTime = currentPlayTime + elapsedSeconds;
+            
+            // Enregistrer le temps dans le stockage
+            store.set('playTime', updatedPlayTime);
+            
+            // Envoyer la mise à jour à l'interface utilisateur
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('play-time-update', {
+                    playTime: updatedPlayTime,
+                    formattedTime: formatPlayTime(updatedPlayTime)
+                });
+            }
+        }
+    }, 30000); // Mise à jour toutes les 30 secondes
+}
+
+// Fonction pour arrêter le suivi du temps de jeu
+function stopPlayTimeTracking() {
+    // Nettoyer l'intervalle
+    if (playTimeTracker) {
+        clearInterval(playTimeTracker);
+        playTimeTracker = null;
+    }
+    
+    // Si le jeu était en cours d'exécution, enregistrer le temps final
+    if (gameRunning && gameStartTime) {
+        const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+        const finalPlayTime = currentPlayTime + elapsedSeconds;
+        
+        // Enregistrer le temps dans le stockage
+        store.set('playTime', finalPlayTime);
+        
+        // Réinitialiser les variables
+        gameStartTime = null;
+        currentPlayTime = finalPlayTime;
+        
+        // Envoyer la mise à jour finale à l'interface utilisateur
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('play-time-update', {
+                playTime: finalPlayTime,
+                formattedTime: formatPlayTime(finalPlayTime)
+            });
+        }
     }
 }
 
@@ -1223,7 +1334,7 @@ async function launchMinecraft(event, options) {
             authorization: token,
             root: GAME_PATH,
             version: {
-                number: '1.21',
+                number: '1.21.1',
                 type: "release",
                 custom: FABRIC_VERSION_LAUNCHER
             },
@@ -1334,6 +1445,8 @@ async function launchMinecraft(event, options) {
         await launcher.launch(opts);
         
         gameRunning = true;
+        // Démarrer le suivi du temps de jeu
+        startPlayTimeTracking();
         mainWindow.minimize();
 
         // Configurer le scan périodique de l'anti-cheat si activé
@@ -1364,6 +1477,9 @@ async function launchMinecraft(event, options) {
 
         // Nettoyer l'intervalle lorsque le jeu se termine
         launcher.on('close', () => {
+            // Arrêter le suivi du temps de jeu
+            stopPlayTimeTracking();
+            
             if (antiCheatInterval) {
                 clearInterval(antiCheatInterval);
                 antiCheatInterval = null;
@@ -1507,7 +1623,7 @@ async function loadConfigurations() {
         'java-path': javaPath,
         'game-directory': GAME_PATH,
         'fabric-version': FABRIC_VERSION,
-        'minecraft-version': '1.21'
+        'minecraft-version': '1.21.1'
     };
 
     Object.entries(configs).forEach(([key, value]) => {
@@ -1519,6 +1635,9 @@ async function loadConfigurations() {
 
 // Modification de la fonction pour tuer le processus Minecraft
 async function killMinecraftProcess() {
+    // Arrêter le suivi du temps de jeu
+    stopPlayTimeTracking();
+    
     if (process.platform === 'win32') {
         try {
             // Sur Windows, on utilise taskkill pour forcer la fermeture du processus Java
@@ -1549,18 +1668,19 @@ async function calculateFileHashFromUrl(url) {
     }
 }
 
-// Nouvelle fonction pour formater le temps
-function formatPlayTime(seconds) {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
-}
-
 // Handler pour récupérer les stats
 ipcMain.handle('get-game-stats', () => {
+    // Si le jeu est en cours, calculer le temps en temps réel
+    let playTime = store.get('playTime', 0);
+    
+    if (gameRunning && gameStartTime) {
+        const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+        playTime = currentPlayTime + elapsedSeconds;
+    }
+    
     return {
-        playTime: store.get('playTime', 0),
-        version: store.get('minecraft-version', '1.21')
+        playTime: playTime,
+        version: app.getVersion() || '1.6.6' // Utiliser la version du launcher au lieu de Minecraft
     };
 });
 
@@ -1768,3 +1888,82 @@ async function installResources(event) {
         throw error;
     }
 }
+
+// Ajouter des gestionnaires IPC pour les actualités et mises à jour
+ipcMain.handle('fetch-discord-news', async () => {
+    try {
+        const news = await discordNewsManager.fetchNews();
+        return { success: true, news };
+    } catch (error) {
+        console.error('Erreur lors de la récupération des actualités:', error);
+        return { 
+            success: false, 
+            error: error.message,
+            news: [
+                {
+                    id: 'error',
+                    title: 'Erreur de connexion',
+                    content: 'Impossible de récupérer les actualités. Veuillez vérifier votre connexion internet et réessayer.',
+                    author: 'Système',
+                    timestamp: new Date().toISOString()
+                }
+            ]
+        };
+    }
+});
+
+ipcMain.handle('fetch-updates', async () => {
+    try {
+        // Essayer d'abord de charger les mises à jour locales
+        await updatesManager.loadLocalUpdates();
+        let updates = updatesManager.getUpdates();
+        
+        // Si pas de mises à jour locales ou si on veut les dernières, récupérer à distance
+        if (updates.length === 0) {
+            console.log('Tentative de récupération des mises à jour via GitHub Releases API...');
+            try {
+                updates = await updatesManager.fetchRemoteUpdates();
+                console.log(`${updates.length} mises à jour récupérées depuis GitHub`);
+            } catch (remoteError) {
+                console.error('Erreur lors de la récupération distante:', remoteError);
+                
+                // En cas d'échec, utiliser des mises à jour par défaut
+                if (updates.length === 0) {
+                    updates = [
+                        {
+                            id: '0',
+                            version: app.getVersion() || '1.6.6',
+                            date: new Date().toISOString(),
+                            title: 'Launcher Elysia',
+                            description: 'Bienvenue dans le Launcher Elysia. Consultez les releases sur GitHub pour plus d\'informations sur les mises à jour.',
+                            content: 'Bienvenue dans le Launcher Elysia.<br><br>Consultez les releases sur GitHub pour plus d\'informations sur les mises à jour.',
+                            changes: ['Launcher initialisé']
+                        }
+                    ];
+                }
+            }
+        }
+        
+        // Stocker dans electron-store
+        store.set('updates', updates);
+        
+        return { success: true, updates };
+    } catch (error) {
+        console.error('Erreur lors de la récupération des mises à jour:', error);
+        
+        // Même en cas d'erreur globale, renvoyer une information par défaut
+        const defaultUpdates = [
+            {
+                id: '0',
+                version: app.getVersion() || '1.6.6',
+                date: new Date().toISOString(),
+                title: 'Information',
+                description: 'Impossible de récupérer les mises à jour. Vérifiez votre connexion Internet.',
+                content: 'Impossible de récupérer les mises à jour.<br><br>Vérifiez votre connexion Internet.',
+                changes: ['Launcher disponible']
+            }
+        ];
+        
+        return { success: true, updates: defaultUpdates };
+    }
+});
