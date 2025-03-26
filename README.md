@@ -19,6 +19,10 @@
   - Suppression des scripts serveur Discord obsolètes
   - Retrait de la documentation webhook non utilisée
 - 📦 Mise à jour des dépendances pour une meilleure sécurité
+- 🎨 Nouvelle interface utilisateur
+  - Design rafraîchi et plus moderne
+  - Amélioration de l'expérience utilisateur
+  - Navigation plus intuitive
 
 ### Version 1.6.5
 - 🔒 Correction de vulnérabilités de sécurité
