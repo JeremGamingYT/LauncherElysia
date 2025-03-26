@@ -1,6 +1,6 @@
 # Elysia Launcher
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
-[![Version](https://img.shields.io/badge/version-1.6.5-brightgreen.svg)](https://github.com/JeremGamingYT/LauncherElysia/releases)
+[![Version](https://img.shields.io/badge/version-1.7.1-brightgreen.svg)](https://github.com/JeremGamingYT/LauncherElysia/releases)
 [![Stars](https://img.shields.io/github/stars/JeremGamingYT/LauncherElysia?style=social)](https://github.com/JeremGamingYT/LauncherElysia)
 [![Downloads](https://img.shields.io/github/downloads/JeremGamingYT/LauncherElysia/total.svg)](https://github.com/JeremGamingYT/LauncherElysia/releases)
 
@@ -10,6 +10,15 @@
 </div>
 
 ## 🚀 Dernière mise à jour
+
+### Version 1.7.1
+- 🖼️ Optimisation du système d'actualités
+  - Suppression des images externes pour améliorer les performances
+  - Réduction de la dépendance aux ressources externes
+- 🧹 Nettoyage du code source
+  - Suppression des scripts serveur Discord obsolètes
+  - Retrait de la documentation webhook non utilisée
+- 📦 Mise à jour des dépendances pour une meilleure sécurité
 
 ### Version 1.6.5
 - 🔒 Correction de vulnérabilités de sécurité

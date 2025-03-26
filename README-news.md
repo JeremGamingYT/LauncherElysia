@@ -27,7 +27,7 @@ Le launcher Elysia affiche des actualités directement depuis un fichier JSON h�
       "content": "Contenu détaillé de l'actualité...",
       "author": "Nom de l'auteur",
       "timestamp": "2023-08-15T12:30:45Z",  // Format date ISO
-      "image": "https://url-image.png",     // URL d'image (optionnel)
+      "image": "",     // Champ d'image (préférablement vide pour des performances optimales)
       "url": "https://lien-vers-plus-d-infos"  // URL pour en savoir plus
     },
     // Ajoutez d'autres actualités ici
@@ -40,7 +40,7 @@ Le launcher Elysia affiche des actualités directement depuis un fichier JSON h�
 - Placez toujours les actualités les plus récentes en haut du tableau
 - Utilisez des ID uniques pour chaque actualité
 - Limitez le nombre d'actualités à 10 maximum pour des performances optimales
-- Utilisez des images d'une taille raisonnable (< 1MB) et au format 16:9
+- Laissez le champ "image" vide pour des performances optimales (depuis v1.7.1)
 - Vérifiez que votre JSON est valide avant de le publier
 
 ## Exemple pratique
