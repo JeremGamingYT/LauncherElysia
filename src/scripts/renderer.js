@@ -18,6 +18,9 @@ const gamePathInput = document.getElementById('game-path');
 const browseBtn = document.getElementById('browse-btn');
 const resetPathBtn = document.getElementById('reset-path');
 const uninstallBtn = document.getElementById('uninstall-btn');
+const clearCacheBtn = document.getElementById('clear-cache-btn');
+const tipBubble = document.getElementById('tip-bubble');
+const tipText = document.getElementById('tip-text');
 
 // États
 let isAuthenticated = false;
@@ -647,4 +650,84 @@ document.querySelectorAll('.nav-btn').forEach(button => {
 document.addEventListener('DOMContentLoaded', () => {
     fetchUpdates();
     updateGameStats();
+});
+
+// Gestion du bouton "Vider le cache"
+clearCacheBtn.addEventListener('click', async () => {
+    if (confirm('Êtes-vous sûr de vouloir vider le cache ? Cela supprimera tous les fichiers temporaires.')) {
+        try {
+            statusText.textContent = 'Nettoyage du cache en cours...';
+            
+            const result = await ipcRenderer.invoke('clear-cache');
+            
+            if (result.success) {
+                statusText.textContent = 'Cache vidé avec succès !';
+            } else {
+                statusText.textContent = `Erreur: ${result.error || 'Impossible de vider le cache'}`;
+            }
+            
+            setTimeout(() => {
+                updateLaunchUI('idle');
+            }, 3000);
+        } catch (error) {
+            console.error('Erreur lors du vidage du cache:', error);
+            statusText.textContent = `Erreur: ${error.message}`;
+            
+            setTimeout(() => {
+                updateLaunchUI('idle');
+            }, 3000);
+        }
+    }
+});
+
+// Système d'astuces
+const tips = [
+    "N'oublie pas de protéger ta base avant de te déconnecter !",
+    "Tu peux utiliser la touche F3 pour afficher les coordonnées en jeu.",
+    "Pense à faire des sauvegardes régulières de tes mondes.",
+    "Augmente la mémoire RAM pour améliorer les performances du jeu.",
+    "Utilise F11 pour passer en mode plein écran."
+];
+
+// Fonction pour afficher une astuce aléatoire
+function showRandomTip() {
+    // S'assurer que les éléments existent
+    if (!tipBubble || !tipText) return;
+    
+    // Choisir une astuce aléatoire
+    const randomTip = tips[Math.floor(Math.random() * tips.length)];
+    
+    // Mettre à jour le texte
+    tipText.textContent = `Astuce: ${randomTip}`;
+    
+    // Forcer le recalcul des dimensions
+    setTimeout(() => {
+        // Afficher l'astuce
+        tipBubble.classList.add('visible');
+        
+        // Masquer l'astuce après un délai
+        setTimeout(() => {
+            tipBubble.classList.remove('visible');
+        }, 6000);
+    }, 10);
+}
+
+// Afficher une astuce au démarrage après un court délai
+setTimeout(showRandomTip, 2000);
+
+// Afficher une astuce toutes les 5 minutes
+setInterval(showRandomTip, 300000);
+
+// Effet de survol sur la zone de contenu principal
+const mainContent = document.querySelector('.main-content');
+
+mainContent.addEventListener('mousemove', (e) => {
+    // Calculer la position relative de la souris
+    const rect = mainContent.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Mettre à jour les variables CSS utilisées pour le gradient
+    mainContent.style.setProperty('--x', `${(x / rect.width) * 100}%`);
+    mainContent.style.setProperty('--y', `${(y / rect.height) * 100}%`);
 });

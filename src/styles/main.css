@@ -610,8 +610,7 @@ body {
 }
 
 .danger-button:hover {
-    background: var(--danger);
-    color: white;
+    background: var(--danger-hover);
 }
 
 /* Game stats section - improved for darker theme */
@@ -864,4 +863,97 @@ body {
 .news-link:hover {
     color: var(--primary-hover);
     text-decoration: underline;
+}
+
+.warning-button {
+    font-weight: 600;
+    padding: 10px 16px;
+    background: var(--warning);
+    color: #333;
+    border: none;
+    border-radius: var(--border-radius-md);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: var(--button-transition);
+    width: auto;
+}
+
+.warning-button:hover {
+    filter: brightness(0.9);
+}
+
+.data-management-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Bulle de notification pour les astuces */
+.notification-bubble {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary-glow);
+    border: 1px solid var(--primary);
+    border-radius: var(--border-radius-lg);
+    padding: 12px 20px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    max-width: 80%;
+    width: auto;
+    z-index: 9999;
+    opacity: 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.notification-bubble.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: all;
+}
+
+.notification-bubble .tip-icon {
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+#tip-text {
+    text-align: left;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+/* Animation pour les onglets */
+.main-content {
+    position: relative;
+    overflow: hidden;
+}
+
+.main-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255, 125, 0, 0.1) 0%, rgba(255, 125, 0, 0) 60%);
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 0;
+}
+
+.main-content:hover::before {
+    opacity: 1;
 }

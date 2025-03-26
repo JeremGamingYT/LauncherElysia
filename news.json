@@ -6,7 +6,7 @@
       "content": "Nous sommes ravis de vous accueillir sur notre serveur Minecraft. N'hésitez pas à rejoindre notre Discord pour discuter avec la communauté !",
       "author": "Admin Elysia",
       "timestamp": "2023-08-15T12:30:45Z",
-      "image": "https://elysia.fr/assets/images/welcome.png",
+      "image": "",
       "url": "https://discord.gg/elysia"
     },
     {
@@ -15,7 +15,7 @@
       "content": "Une nouvelle mise à jour a été déployée avec plusieurs nouveaux défis et récompenses. Connectez-vous dès maintenant pour les découvrir !",
       "author": "Équipe Elysia",
       "timestamp": "2023-08-20T15:45:22Z",
-      "image": "https://elysia.fr/assets/images/update.png",
+      "image": "",
       "url": "https://discord.gg/elysia-announcements"
     },
     {
@@ -24,7 +24,7 @@
       "content": "Ne manquez pas notre événement spécial ce week-end avec des récompenses exclusives et des défis inédits. Les meilleurs joueurs seront récompensés !",
       "author": "Organisateur Elysia",
       "timestamp": "2023-08-25T18:15:30Z",
-      "image": "https://elysia.fr/assets/images/event.png",
+      "image": "",
       "url": "https://discord.gg/elysia-events"
     }
   ]

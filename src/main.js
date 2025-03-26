@@ -153,8 +153,8 @@ function createWindow() {
     ensureGameDirectory(savedGamePath);
 
     const html = ejs.render(template, {
-        title: 'Elysia - v.1.6.6 (BETA)',
-        versions: ['1.6.6'],
+        title: 'Elysia - v.1.7.1 (BETA)',
+        versions: ['1.7.1'],
         news: news,
         updates: updates,
         cssPath: `file://${cssPath}`,
@@ -300,66 +300,84 @@ app.whenReady().then(async () => {
 
     try {
         // Vérification des mises à jour
-        splashWindow.webContents.send('splash-status', {
-            message: 'Recherche de mises à jour...',
-            progress: 10
-        });
+        if (splashWindow && !splashWindow.isDestroyed()) {
+            splashWindow.webContents.send('splash-status', {
+                message: 'Recherche de mises à jour...',
+                progress: 10
+            });
+        }
 
         const updateInfo = await autoUpdater.checkForUpdates();
         
         if (updateInfo.hasUpdate && updateInfo.downloadUrl) {
-            splashWindow.webContents.send('splash-status', {
-                message: 'Téléchargement de la mise à jour...',
-                progress: 20
-            });
+            if (splashWindow && !splashWindow.isDestroyed()) {
+                splashWindow.webContents.send('splash-status', {
+                    message: 'Téléchargement de la mise à jour...',
+                    progress: 20
+                });
+            }
 
             // Écoutez les événements de progression du téléchargement
             autoUpdater.on('download-progress', (progressObj) => {
-                splashWindow.webContents.send('splash-status', {
-                    message: `Téléchargement: ${Math.round(progressObj.percent)}%`,
-                    progress: 20 + (progressObj.percent * 0.6)
-                });
+                if (splashWindow && !splashWindow.isDestroyed()) {
+                    splashWindow.webContents.send('splash-status', {
+                        message: `Téléchargement: ${Math.round(progressObj.percent)}%`,
+                        progress: 20 + (progressObj.percent * 0.6)
+                    });
+                }
             });
 
             const setupPath = await autoUpdater.downloadUpdate(updateInfo.downloadUrl);
 
-            splashWindow.webContents.send('splash-status', {
-                message: 'Installation de la mise à jour...',
-                progress: 80
-            });
+            if (splashWindow && !splashWindow.isDestroyed()) {
+                splashWindow.webContents.send('splash-status', {
+                    message: 'Installation de la mise à jour...',
+                    progress: 80
+                });
+            }
 
             await autoUpdater.installUpdate(setupPath);
         }
 
-        splashWindow.webContents.send('splash-status', {
-            message: 'Chargement des configurations...',
-            progress: 90
-        });
+        if (splashWindow && !splashWindow.isDestroyed()) {
+            splashWindow.webContents.send('splash-status', {
+                message: 'Chargement des configurations...',
+                progress: 90
+            });
+        }
         await loadConfigurations();
 
-        splashWindow.webContents.send('splash-status', {
-            message: 'Préparation du launcher...',
-            progress: 95
-        });
+        if (splashWindow && !splashWindow.isDestroyed()) {
+            splashWindow.webContents.send('splash-status', {
+                message: 'Préparation du launcher...',
+                progress: 95
+            });
+        }
 
         // Finalisation
-        splashWindow.webContents.send('splash-status', {
-            message: 'Démarrage...',
-            progress: 100
-        });
+        if (splashWindow && !splashWindow.isDestroyed()) {
+            splashWindow.webContents.send('splash-status', {
+                message: 'Démarrage...',
+                progress: 100
+            });
+        }
 
         // Attendre un court instant pour montrer 100%
         await new Promise(resolve => setTimeout(resolve, 500));
 
         // Afficher la fenêtre principale seulement à la fin
-        splashWindow.close();
+        if (splashWindow && !splashWindow.isDestroyed()) {
+            splashWindow.close();
+        }
         mainWindow.show();
 
     } catch (error) {
         console.error('Erreur lors du démarrage:', error);
-        splashWindow.webContents.send('splash-error', {
-            message: `Erreur: ${error.message}`
-        });
+        if (splashWindow && !splashWindow.isDestroyed()) {
+            splashWindow.webContents.send('splash-error', {
+                message: `Erreur: ${error.message}`
+            });
+        }
     }
 });
 
@@ -1680,7 +1698,7 @@ ipcMain.handle('get-game-stats', () => {
     
     return {
         playTime: playTime,
-        version: app.getVersion() || '1.6.6' // Utiliser la version du launcher au lieu de Minecraft
+        version: app.getVersion() || '1.7.1' // Utiliser la version du launcher au lieu de Minecraft
     };
 });
 
@@ -1698,6 +1716,14 @@ ipcMain.handle('check-auth', () => {
 // Fonction pour supprimer complètement les fichiers du launcher
 async function uninstallLauncher() {
     try {
+        console.log('Demande de désinstallation reçue');
+        if (mainWindow) {
+            mainWindow.webContents.send('uninstall-progress', { 
+                stage: 'preparing', 
+                message: 'Préparation de la désinstallation...' 
+            });
+        }
+        
         const pathsToClean = [
             path.join(app.getPath('appData'), '.elysia'), // Dossier principal du jeu
             path.join(app.getPath('userData')), // Dossier de configuration du launcher
@@ -1710,8 +1736,8 @@ async function uninstallLauncher() {
         // Informer l'utilisateur
         if (mainWindow) {
             mainWindow.webContents.send('uninstall-progress', { 
-                stage: 'prepare', 
-                message: 'Préparation de la désinstallation...' 
+                stage: 'removing', 
+                message: 'Suppression des fichiers...' 
             });
         }
 
@@ -1797,6 +1823,17 @@ ipcMain.handle('uninstall-launcher', async () => {
         return runNsisUninstaller();
     }
     return false;
+});
+
+// Écouteur pour vider le cache
+ipcMain.handle('clear-cache', async () => {
+    try {
+        const success = await clearLauncherCache();
+        return { success };
+    } catch (error) {
+        console.error('Erreur lors du vidage du cache:', error);
+        return { success: false, error: error.message };
+    }
 });
 
 // Fonction pour trouver le chemin valide de resources.json
@@ -1932,7 +1969,7 @@ ipcMain.handle('fetch-updates', async () => {
                     updates = [
                         {
                             id: '0',
-                            version: app.getVersion() || '1.6.6',
+                            version: app.getVersion() || '1.7.1',
                             date: new Date().toISOString(),
                             title: 'Launcher Elysia',
                             description: 'Bienvenue dans le Launcher Elysia. Consultez les releases sur GitHub pour plus d\'informations sur les mises à jour.',
@@ -1955,7 +1992,7 @@ ipcMain.handle('fetch-updates', async () => {
         const defaultUpdates = [
             {
                 id: '0',
-                version: app.getVersion() || '1.6.6',
+                version: app.getVersion() || '1.7.1',
                 date: new Date().toISOString(),
                 title: 'Information',
                 description: 'Impossible de récupérer les mises à jour. Vérifiez votre connexion Internet.',
@@ -1965,5 +2002,100 @@ ipcMain.handle('fetch-updates', async () => {
         ];
         
         return { success: true, updates: defaultUpdates };
+    }
+});
+
+// Fonction pour vider le cache du launcher
+async function clearLauncherCache() {
+    try {
+        const cachePaths = [
+            path.join(GAME_PATH, 'cache'),
+            path.join(app.getPath('userData'), 'Cache'),
+            path.join(app.getPath('userData'), 'Code Cache'),
+            path.join(app.getPath('temp'), '.elysia-temp')
+        ];
+
+        for (const cachePath of cachePaths) {
+            if (fs.existsSync(cachePath)) {
+                await fs.remove(cachePath);
+                console.log(`Cache supprimé: ${cachePath}`);
+            }
+        }
+
+        // Créer un dossier temporaire pour le launcher si nécessaire
+        const tempPath = path.join(app.getPath('temp'), '.elysia-temp');
+        if (!fs.existsSync(tempPath)) {
+            fs.mkdirSync(tempPath, { recursive: true });
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Erreur lors du vidage du cache:', error);
+        return false;
+    }
+}
+
+// Écouteur pour les interactions avec le gestionnaire de ressources (à côté des autres écouteurs)
+ipcMain.on('clear-cache', async (event) => {
+    try {
+        const success = await clearLauncherCache();
+        event.sender.send('cache-cleared', { success });
+    } catch (error) {
+        console.error('Erreur lors du vidage du cache:', error);
+        event.sender.send('cache-cleared', { success: false, error: error.message });
+    }
+});
+
+// Écouteurs pour la gestion des ressources (existants)
+ipcMain.on('install-resources', async (event) => {
+    try {
+        // Recréer les dossiers au cas où
+        await resourceManager.initialize();
+        
+        // Récupérer le chemin du fichier resources.json
+        const resourcesJsonPath = await findResourcesJsonPath();
+        
+        // Charger et installer les ressources depuis la configuration
+        const resourcesConfig = JSON.parse(await fs.readFile(resourcesJsonPath, 'utf8'));
+        
+        // Installation des resource packs
+        for (const pack of resourcesConfig.resourcepacks || []) {
+            event.sender.send('install-progress', {
+                stage: 'installing-resourcepack',
+                message: `Installation du pack de ressources: ${pack.name}`
+            });
+            await resourceManager.installResourcePack(pack.url, event);
+        }
+        
+        // Installation des shaders
+        for (const shader of resourcesConfig.shaders || []) {
+            event.sender.send('install-progress', {
+                stage: 'installing-shader',
+                message: `Installation du shader: ${shader.name}`
+            });
+            await resourceManager.installShader(shader.url, event);
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Erreur lors de l\'installation des ressources:', error);
+        throw error;
+    }
+});
+
+// Écouteur pour les interactions avec le gestionnaire d'anti-cheat
+ipcMain.on('anti-cheat-check', async (event, data) => {
+    const result = await antiCheat.runCheck(data.username, SERVER_NAME);
+    event.reply('anti-cheat-result', result);
+});
+
+// Écouteur pour vider le cache
+ipcMain.on('clear-cache', async (event) => {
+    try {
+        const success = await clearLauncherCache();
+        event.sender.send('cache-cleared', { success });
+    } catch (error) {
+        console.error('Erreur lors du vidage du cache:', error);
+        event.sender.send('cache-cleared', { success: false, error: error.message });
     }
 });
