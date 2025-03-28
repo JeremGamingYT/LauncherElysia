@@ -8,13 +8,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="notification-bubble" id="tip-bubble">
+    <!-- Bulle de notification pour les alertes générales -->
+    <div class="notification-bubble" id="notification-bubble">
         <svg class="tip-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
             <path d="M12 16v-4M12 8h.01"/>
         </svg>
-        <span id="tip-text">Astuce: N'oublie pas de protéger ta base avant de te déconnecter !</span>
+        <span id="notification-text">Notification</span>
     </div>
+    
+    <!-- Section dédiée aux astuces -->
+    <div class="tips-section" id="tips-section">
+        <div class="tips-header">
+            <svg class="tip-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                <path d="M12 16v-4M12 8h.01"/>
+            </svg>
+            Astuce
+        </div>
+        <span id="tip-text">N'oublie pas de protéger ta base avant de te déconnecter !</span>
+    </div>
+    
     <div class="titlebar">
         <div class="titlebar-title">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

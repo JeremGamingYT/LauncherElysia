@@ -61,7 +61,10 @@ const tempDir = path.join(app.getPath('temp')); // Récupère le dossier Temp
 const fabricInstallerName = 'fabric-installer-1.0.1.jar'; // Nom du fichier
 const fabricPath = path.join(tempDir, fabricInstallerName); // Combine le chemin et le nom du fichier
 
+// Constantes pour Java
+const JAVA_INSTALLER_FILENAME = 'jdk-21.0.5_windows-x64_bin.exe';
 const JAVA_DOWNLOAD_URL = 'https://download.oracle.com/java/21/archive/jdk-21.0.5_windows-x64_bin.exe';
+const JAVA_LOCAL_PATH = path.join(__dirname, '..', 'download', JAVA_INSTALLER_FILENAME);
 const JAVA_INSTALLER_PATH = path.join(app.getPath('temp'), 'jdk-21-installer.exe');
 
 // Ajouter avec les autres constantes
@@ -105,6 +108,27 @@ function ensureGameDirectory(gamePath) {
     }
 }
 
+// Fonction pour vérifier Java au démarrage
+async function checkJavaAtStartup() {
+    try {
+        const javaValid = await verifyJavaInstallation();
+        
+        if (!javaValid && mainWindow) {
+            mainWindow.webContents.on('did-finish-load', () => {
+                mainWindow.webContents.send('java-missing', {
+                    message: 'Java 21 n\'est pas installé',
+                    details: 'Java 21 est nécessaire pour lancer le jeu. Cliquez sur "Installer" pour l\'installer automatiquement.'
+                });
+            });
+        }
+        
+        return javaValid;
+    } catch (error) {
+        console.error('Erreur lors de la vérification de Java au démarrage:', error);
+        return false;
+    }
+}
+
 function createWindow() {
     // Charger les données pour le template
     let news = [];
@@ -123,6 +147,7 @@ function createWindow() {
         height: 800,
         minWidth: 1280,
         minHeight: 800,
+        resizable: false,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
@@ -189,6 +214,9 @@ function createWindow() {
     mainWindow.webContents.on('did-finish-load', () => {
         mainWindow.webContents.send('game-path', GAME_PATH);
     });
+
+    // Vérifier Java au démarrage
+    checkJavaAtStartup();
 
     mainWindow.on('close', async (event) => {
         if (gameRunning) {
@@ -922,60 +950,124 @@ async function installVanilla(event) {
 
 // Fonction pour vérifier l'installation de Java
 async function verifyJavaInstallation() {
-    const defaultJavaPath = 'C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe';
-    const storedJavaPath = store.get('java.path', defaultJavaPath);
-
     try {
-        await fs.access(storedJavaPath);
-        return true;
-    } catch (error) {
-        // Si le chemin spécifique n'existe pas, vérifions si Java 21 est disponible via command line
+        const defaultJavaPath = 'C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe';
+        const storedJavaPath = store.get('java.path', defaultJavaPath);
+
+        // Vérification du chemin stocké
+        try {
+            await fs.access(storedJavaPath);
+            console.log('Java 21 trouvé à:', storedJavaPath);
+            return true;
+        } catch (err) {
+            console.log('Chemin Java stocké non trouvé:', storedJavaPath);
+        }
+
+        // Vérifications de chemins communs d'installation de Java 21
+        const commonPaths = [
+            'C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe',
+            'C:\\Program Files\\Java\\jdk-21.0.5\\bin\\javaw.exe',
+            'C:\\Program Files\\Java\\jdk-21.0.0\\bin\\javaw.exe',
+            'C:\\Program Files (x86)\\Java\\jdk-21\\bin\\javaw.exe'
+        ];
+
+        for (const javaPath of commonPaths) {
+            try {
+                await fs.access(javaPath);
+                console.log('Java 21 trouvé à:', javaPath);
+                // Mettre à jour le chemin Java dans le store
+                store.set('java.path', javaPath);
+                return true;
+            } catch (err) {
+                // continue
+            }
+        }
+
+        // Vérification via commande
         return new Promise((resolve) => {
             exec('java -version', (error, stdout, stderr) => {
                 if (error) {
+                    console.log('Commande java -version a échoué:', error);
                     resolve(false);
                     return;
                 }
                 
-                // Vérifier si la version contient "21"
+                // Vérifier si Java 21 est disponible
                 const output = stderr || stdout;
-                if (output.includes('21')) {
+                console.log('Version Java détectée:', output);
+                
+                if (output.includes('21.') || output.includes('version "21')) {
+                    console.log('Java 21 détecté via commande');
                     resolve(true);
                 } else {
+                    console.log('Java 21 non détecté via commande');
                     resolve(false);
                 }
             });
         });
+    } catch (error) {
+        console.error('Erreur lors de la vérification de Java:', error);
+        return false;
     }
 }
 
 // Fonction pour télécharger et installer Java
 async function downloadAndInstallJava(event) {
     try {
-        event.sender.send('install-progress', { stage: 'downloading-java', message: 'Téléchargement de Java 21...' });
-        
-        // Téléchargement de Java
-        const writer = fs.createWriteStream(JAVA_INSTALLER_PATH);
-        const response = await axios({
-            url: JAVA_DOWNLOAD_URL,
-            method: 'GET',
-            responseType: 'stream'
-        });
+        // Vérifier si l'installateur existe localement
+        const javaLocalExists = await fs.pathExists(JAVA_LOCAL_PATH);
+        let installerPath;
 
-        await new Promise((resolve, reject) => {
-            response.data.pipe(writer);
-            writer.on('finish', resolve);
-            writer.on('error', reject);
-        });
+        if (javaLocalExists) {
+            console.log('Installateur Java 21 trouvé localement à:', JAVA_LOCAL_PATH);
+            event.sender.send('install-progress', { stage: 'using-local-java', message: 'Utilisation de l\'installateur Java 21 local...' });
+            // Copier l'installateur local vers le répertoire temp
+            await fs.copy(JAVA_LOCAL_PATH, JAVA_INSTALLER_PATH);
+            installerPath = JAVA_INSTALLER_PATH;
+        } else {
+            console.log('Téléchargement de l\'installateur Java 21 depuis:', JAVA_DOWNLOAD_URL);
+            event.sender.send('install-progress', { stage: 'downloading-java', message: 'Téléchargement de Java 21...' });
+            
+            // Téléchargement de Java
+            const writer = fs.createWriteStream(JAVA_INSTALLER_PATH);
+            const response = await axios({
+                url: JAVA_DOWNLOAD_URL,
+                method: 'GET',
+                responseType: 'stream'
+            });
+
+            await new Promise((resolve, reject) => {
+                response.data.pipe(writer);
+                writer.on('finish', resolve);
+                writer.on('error', reject);
+            });
+
+            installerPath = JAVA_INSTALLER_PATH;
+            
+            // Sauvegarder une copie dans le dossier download
+            try {
+                await fs.ensureDir(path.dirname(JAVA_LOCAL_PATH));
+                await fs.copy(JAVA_INSTALLER_PATH, JAVA_LOCAL_PATH);
+                console.log('Installateur Java 21 sauvegardé dans:', JAVA_LOCAL_PATH);
+            } catch (copyError) {
+                console.error('Erreur lors de la sauvegarde de l\'installateur Java:', copyError);
+                // On continue même si la sauvegarde échoue
+            }
+        }
 
         event.sender.send('install-progress', { stage: 'installing-java', message: 'Installation de Java 21...' });
 
-        // Installation silencieuse de Java
+        // Installation silencieuse de Java avec affichage de la progression
         await new Promise((resolve, reject) => {
-            const child = exec(`"${JAVA_INSTALLER_PATH}" /s`, { windowsHide: true });
+            const child = exec(`"${installerPath}" /s`, { windowsHide: true });
             child.on('close', (code) => {
-                if (code === 0) resolve();
-                else reject(new Error(`L'installation de Java 21 a échoué avec le code ${code}`));
+                if (code === 0) {
+                    console.log('Installation de Java 21 réussie');
+                    resolve();
+                } else {
+                    console.error(`L'installation de Java 21 a échoué avec le code ${code}`);
+                    reject(new Error(`L'installation de Java 21 a échoué avec le code ${code}`));
+                }
             });
         });
 
@@ -2097,5 +2189,24 @@ ipcMain.on('clear-cache', async (event) => {
     } catch (error) {
         console.error('Erreur lors du vidage du cache:', error);
         event.sender.send('cache-cleared', { success: false, error: error.message });
+    }
+});
+
+// Gérer l'installation de Java depuis l'UI
+ipcMain.handle('install-java', async (event) => {
+    try {
+        // Installer Java
+        await downloadAndInstallJava(event);
+        
+        // Informer l'interface que Java est installé
+        mainWindow.webContents.send('java-installed', {
+            message: 'Java 21 a été installé avec succès',
+            path: store.get('java.path')
+        });
+        
+        return { success: true };
+    } catch (error) {
+        console.error('Erreur lors de l\'installation de Java:', error);
+        return { success: false, error: error.message };
     }
 });

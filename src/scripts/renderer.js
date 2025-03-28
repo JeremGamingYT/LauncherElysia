@@ -21,6 +21,9 @@ const uninstallBtn = document.getElementById('uninstall-btn');
 const clearCacheBtn = document.getElementById('clear-cache-btn');
 const tipBubble = document.getElementById('tip-bubble');
 const tipText = document.getElementById('tip-text');
+const tipSection = document.getElementById('tips-section');
+const notificationBubble = document.getElementById('notification-bubble');
+const notificationText = document.getElementById('notification-text');
 
 // États
 let isAuthenticated = false;
@@ -324,9 +327,11 @@ resetPathBtn.addEventListener('click', async () => {
             setTimeout(() => {
                 gamePathInput.style.borderColor = '';
             }, 1000);
+            showNotification('Chemin du jeu réinitialisé');
         }
     } catch (error) {
-        alert('Erreur lors de la réinitialisation du chemin');
+        console.error('Erreur lors de la réinitialisation du chemin:', error);
+        showNotification('Erreur lors de la réinitialisation du chemin');
     }
 });
 
@@ -650,32 +655,37 @@ document.querySelectorAll('.nav-btn').forEach(button => {
 document.addEventListener('DOMContentLoaded', () => {
     fetchUpdates();
     updateGameStats();
+    
+    // Tester la notification avec un léger délai
+    setTimeout(() => {
+        showNotification('Bienvenue sur Elysia !');
+    }, 1000);
 });
 
 // Gestion du bouton "Vider le cache"
 clearCacheBtn.addEventListener('click', async () => {
     if (confirm('Êtes-vous sûr de vouloir vider le cache ? Cela supprimera tous les fichiers temporaires.')) {
         try {
-            statusText.textContent = 'Nettoyage du cache en cours...';
+            updateLaunchUI('install', 'Nettoyage du cache en cours...');
             
             const result = await ipcRenderer.invoke('clear-cache');
             
             if (result.success) {
-                statusText.textContent = 'Cache vidé avec succès !';
+                showNotification('Cache vidé avec succès !');
             } else {
-                statusText.textContent = `Erreur: ${result.error || 'Impossible de vider le cache'}`;
+                showNotification(`Erreur: ${result.error || 'Impossible de vider le cache'}`);
             }
             
             setTimeout(() => {
                 updateLaunchUI('idle');
-            }, 3000);
+            }, 1000);
         } catch (error) {
             console.error('Erreur lors du vidage du cache:', error);
-            statusText.textContent = `Erreur: ${error.message}`;
+            showNotification(`Erreur: ${error.message}`);
             
             setTimeout(() => {
                 updateLaunchUI('idle');
-            }, 3000);
+            }, 1000);
         }
     }
 });
@@ -692,23 +702,23 @@ const tips = [
 // Fonction pour afficher une astuce aléatoire
 function showRandomTip() {
     // S'assurer que les éléments existent
-    if (!tipBubble || !tipText) return;
+    if (!tipSection || !tipText) return;
     
     // Choisir une astuce aléatoire
     const randomTip = tips[Math.floor(Math.random() * tips.length)];
     
     // Mettre à jour le texte
-    tipText.textContent = `Astuce: ${randomTip}`;
+    tipText.textContent = randomTip;
     
     // Forcer le recalcul des dimensions
     setTimeout(() => {
         // Afficher l'astuce
-        tipBubble.classList.add('visible');
+        tipSection.classList.add('visible');
         
         // Masquer l'astuce après un délai
         setTimeout(() => {
-            tipBubble.classList.remove('visible');
-        }, 6000);
+            tipSection.classList.remove('visible');
+        }, 8000);
     }, 10);
 }
 
@@ -717,6 +727,21 @@ setTimeout(showRandomTip, 2000);
 
 // Afficher une astuce toutes les 5 minutes
 setInterval(showRandomTip, 300000);
+
+// Fonction pour afficher une notification
+function showNotification(message, duration = 5000) {
+    if (!notificationBubble || !notificationText) return;
+    
+    notificationText.textContent = message;
+    
+    setTimeout(() => {
+        notificationBubble.classList.add('visible');
+        
+        setTimeout(() => {
+            notificationBubble.classList.remove('visible');
+        }, duration);
+    }, 10);
+}
 
 // Effet de survol sur la zone de contenu principal
 const mainContent = document.querySelector('.main-content');
@@ -730,4 +755,105 @@ mainContent.addEventListener('mousemove', (e) => {
     // Mettre à jour les variables CSS utilisées pour le gradient
     mainContent.style.setProperty('--x', `${(x / rect.width) * 100}%`);
     mainContent.style.setProperty('--y', `${(y / rect.height) * 100}%`);
+});
+
+// Notification de Java manquant
+ipcRenderer.on('java-missing', (event, data) => {
+    console.log('Java manquant:', data);
+    
+    // Créer une notification
+    const notification = document.createElement('div');
+    notification.className = 'java-notification';
+    notification.innerHTML = `
+        <div class="java-notification-content">
+            <div class="notification-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                    <path d="M12 8v4M12 16h.01"/>
+                </svg>
+            </div>
+            <div class="notification-text">
+                <h3>${data.message}</h3>
+                <p>${data.details}</p>
+            </div>
+        </div>
+        <button class="install-java-btn">Installer Java 21</button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animer l'entrée de la notification
+    setTimeout(() => {
+        notification.classList.add('visible');
+        
+        // Supprimer après 3 secondes
+        setTimeout(() => {
+            notification.classList.remove('visible');
+            setTimeout(() => notification.remove(), 3000);
+        }, 3000);
+    }, 100);
+    
+    // Gestionnaire de clic pour le bouton d'installation
+    const installButton = notification.querySelector('.install-java-btn');
+    installButton.addEventListener('click', async () => {
+        installButton.disabled = true;
+        installButton.textContent = 'Installation en cours...';
+        
+        try {
+            const result = await ipcRenderer.invoke('install-java');
+            if (result.success) {
+                notification.querySelector('.notification-text h3').textContent = 'Java 21 installé avec succès';
+                notification.querySelector('.notification-text p').textContent = 'Vous pouvez maintenant lancer le jeu.';
+                installButton.textContent = 'Fermer';
+                installButton.addEventListener('click', () => {
+                    notification.classList.remove('visible');
+                    setTimeout(() => notification.remove(), 300);
+                }, { once: true });
+            } else {
+                notification.querySelector('.notification-text h3').textContent = 'Échec de l\'installation';
+                notification.querySelector('.notification-text p').textContent = result.error || 'Une erreur s\'est produite lors de l\'installation de Java.';
+                installButton.textContent = 'Réessayer';
+                installButton.disabled = false;
+            }
+        } catch (error) {
+            console.error('Erreur lors de l\'installation de Java:', error);
+            notification.querySelector('.notification-text h3').textContent = 'Échec de l\'installation';
+            notification.querySelector('.notification-text p').textContent = error.message || 'Une erreur s\'est produite lors de l\'installation de Java.';
+            installButton.textContent = 'Réessayer';
+            installButton.disabled = false;
+        }
+    });
+});
+
+// Notification d'installation de Java réussie
+ipcRenderer.on('java-installed', (event, data) => {
+    console.log('Java installé:', data);
+    
+    // Afficher une notification temporaire
+    const notification = document.createElement('div');
+    notification.className = 'java-success-notification';
+    notification.innerHTML = `
+        <div class="notification-icon success">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <path d="M22 4L12 14.01l-3-3"/>
+            </svg>
+        </div>
+        <div class="notification-text">
+            <h3>${data.message}</h3>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animer l'entrée de la notification
+    setTimeout(() => {
+        notification.classList.add('visible');
+        
+        // Supprimer après 3 secondes
+        setTimeout(() => {
+            notification.classList.remove('visible');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }, 100);
 });
