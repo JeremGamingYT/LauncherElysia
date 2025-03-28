@@ -6,7 +6,7 @@
 
 <div align="center">
   <img src="src/assets/icon.png" alt="Elysia Launcher Logo" width="200">
-  <h3>Un launcher Minecraft moderne et élégant</h3>
+  <h3>Launcher Minecraft Élysia</h3>
 </div>
 
 ## 🚀 Dernière mise à jour
