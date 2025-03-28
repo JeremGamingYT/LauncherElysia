@@ -235,7 +235,7 @@
         },
         {
             "name": "Visual Workbench",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/VisualWorkbench-v21.0.1-1.21-Fabric.jar.disabled"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/VisualWorkbench-v21.1.0-1.21.1-Fabric.jar"
         },
         {
             "name": "Yet Another Config Lib",
@@ -738,8 +738,8 @@
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/MoreCraftingTables-1.2.8%2B1.21-Fabric.jar"
         },
         {
-            "name": "",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
+            "name": "Dungeon Difficulty",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/dungeon_difficulty-3.0.0%2B1.21.1.jar"
         },
         {
             "name": "",
