@@ -100,11 +100,15 @@
         },
         {
             "name": "Diagonal Fences",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/DiagonalFences-v21.0.0-1.21-Fabric.jar.disabled"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/DiagonalFences-v21.1.1-1.21.1-Fabric.jar"
         },
         {
             "name": "Diagonal Windows",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/DiagonalWindows-v21.0.0-1.21-Fabric.jar.disabled"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/DiagonalWindows-v21.1.1-1.21.1-Fabric.jar"
+        },
+        {
+            "name": "Diagonal Walls",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/DiagonalWalls-v21.1.2-1.21.1-Fabric.jar"
         },
         {
             "name": "Easy Anvils",
@@ -179,7 +183,7 @@
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/PresenceFootsteps-1.10.0%2B1.21.jar"
         },        {
             "name": "PuzzlesLib",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/PuzzlesLib-v21.0.12-1.21-Fabric.jar.disabled"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/PuzzlesLib-v21.1.27-1.21.1-Fabric.jar"
         },
         {
             "name": "Quad",
@@ -235,7 +239,7 @@
         },
         {
             "name": "Visual Workbench",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/VisualWorkbench-v21.0.1-1.21-Fabric.jar.disabled"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/VisualWorkbench-v21.1.0-1.21.1-Fabric.jar"
         },
         {
             "name": "Yet Another Config Lib",
@@ -343,7 +347,7 @@
         },
         {
             "name": "Collective",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/collective-1.21.1-7.87.jar"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/collective-1.21.1-7.94.jar"
         },
         {
             "name": "Comforts",
@@ -494,10 +498,6 @@
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/mcw-fences-1.1.2-mc1.21fabric.jar"
         },
         {
-            "name": "MCW Furniture",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/mcw-furniture-3.3.0-mc1.21fabric.jar"
-        },
-        {
             "name": "MCW Lights",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/mcw-lights-1.1.1-mc1.21fabric.jar"
         },
@@ -535,7 +535,7 @@
         },
         {
             "name": "Moonlight",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/moonlight-1.21-2.17.12-fabric.jar"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/moonlight-1.21-2.17.30-fabric.jar"
         },
         {
             "name": "More Culling",
@@ -680,6 +680,94 @@
         {
             "name": "Malilib",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/malilib-fabric-1.21-0.21.7.jar"
+        },
+        {
+            "name": "Animated Doors",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/animated-doors-1.21.jar"
+        },
+        {
+            "name": "Actual Fishing",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/Actual%20Fishing-1.21.1-1.0.1-Fabric.jar"
+        },
+        {
+            "name": "Ketkets Furnicraft",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/ketkets-furnicraft-4.4.jar"
+        },
+        {
+            "name": "Carry On",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/carryon-fabric-1.21.1-2.2.2.11.jar"
+        },
+        {
+            "name": "Farmers Delight",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/FarmersDelight-1.21.1-3.0.1%2Brefabricated.jar"
+        },
+        {
+            "name": "Better Archeology",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/betterarcheology-fabric-1.2.1-1.21.jar"
+        },
+        {
+            "name": "Cut Through",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/CutThrough-v21.1.0-1.21.1-Fabric.jar"
+        },
+        {
+            "name": "Elytra Trims",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/elytratrims-fabric-3.5.6%2B1.21.jar"
+        },
+        {
+            "name": "Horse Expert",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/HorseExpert-v21.1.0-1.21.1-Fabric.jar"
+        },
+        {
+            "name": "Epic Knights",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/%5B1.21-fabric%5D-Epic-Knights-9.14.jar"
+        },
+        {
+            "name": "Illager Invasion",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/IllagerInvasion-v21.1.3-1.21.1-Fabric.jar"
+        },
+        {
+            "name": "Realistic Bees",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/realisticbees-1.21.1-4.1.jar"
+        },
+        {
+            "name": "Supplementaries",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/supplementaries-1.21-3.0.33-beta-fabric.jar"
+        },
+        {
+            "name": "Items Displayed",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/ItemsDisplayed%20-%20v1.3-1.21.1.jar"
+        },
+        {
+            "name": "More Crafting Tables",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/MoreCraftingTables-1.2.8%2B1.21-Fabric.jar"
+        },
+        {
+            "name": "Dungeon Difficulty",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/dungeon_difficulty-3.0.0%2B1.21.1.jar"
+        },
+        {
+            "name": "Easy NPC",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/easy_npc-fabric-1.21.1-5.9.0.jar"
+        },
+        {
+            "name": "Global Wind",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/globalwind-1.2.0%2B1.21.1.jar"
+        },
+        {
+            "name": "Particle Rain",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/particle-rain-3.0.5.jar"
+        },
+        {
+            "name": "Rain should extinguish campfire",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/rsec-fabric-1.21.1-1.1.jar"
+        },
+        {
+            "name": "Amendments",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/amendments-1.21-1.2.24-fabric.jar"
+        },
+        {
+            "name": "Perception",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/Perception-FABRIC-0.1.2.1%2B1.21.1.jar"
         }
     ]
 }
