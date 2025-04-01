@@ -1,16 +1,8 @@
 {
     "resourcepacks": [
         {
-            "name": "A Good Place Sample Pack",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/ressourcepacks/A_Good_Place_Sample_Pack.zip"
-        },
-        {
             "name": "Eyeless Fresh Moves",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/ressourcepacks/Eyeless_Fresh_Moves-v3.0.1.zip"
-        },
-        {
-            "name": "Fresh Moves",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/ElysiaDevInstaller/main/ressourcepacks/-1.21.2%20Fresh%20Moves%20v3.1%20(With%20Animated%20Eyes).zip"
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/ressourcepacks/freshmoves.zip"
         }
     ],
     "shaders": [
