@@ -857,3 +857,30 @@ ipcRenderer.on('java-installed', (event, data) => {
         }, 3000);
     }, 100);
 });
+
+// Fonction pour afficher un modal d'erreur
+function showErrorModal(message) {
+    const modal = document.createElement('div');
+    modal.className = 'error-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Erreur</h3>
+            <p>${message}</p>
+            <button class="modal-btn">OK</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Fermer le modal quand on clique sur le bouton ou sur la croix
+    const closeBtn = modal.querySelector('.close-modal');
+    const okBtn = modal.querySelector('.modal-btn');
+    
+    const closeModal = () => {
+        document.body.removeChild(modal);
+    };
+    
+    closeBtn.addEventListener('click', closeModal);
+    okBtn.addEventListener('click', closeModal);
+}
