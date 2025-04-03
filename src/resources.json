@@ -766,6 +766,14 @@
         {
             "name": "UnionLib",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/UnionLib-1.21.1-12.0.9-Fabric.jar"
+        },
+        {
+            "name": "",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
+        },
+        {
+            "name": "",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
         }
     ]
 }
