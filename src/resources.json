@@ -768,12 +768,12 @@
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/UnionLib-1.21.1-12.0.9-Fabric.jar"
         },
         {
-            "name": "",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
+            "name": "Better Combat",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/bettercombat-fabric-2.1.3%2B1.21.1.jar"
         },
         {
-            "name": "",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/"
+            "name": "Handcrafted",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/handcrafted-fabric-1.21.1-4.0.3.jar"
         }
     ]
 }
