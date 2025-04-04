@@ -774,6 +774,10 @@
         {
             "name": "Handcrafted",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/handcrafted-fabric-1.21.1-4.0.3.jar"
+        },
+        {
+            "name": "Player Animation Lib",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/player-animation-lib-fabric-2.0.1%2B1.21.1.jar"
         }
     ]
 }
