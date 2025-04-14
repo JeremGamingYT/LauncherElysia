@@ -1,7 +1,7 @@
 {
   "name": "elysia",
-  "version": "1.7.5",
-  "description": "Launcher Minecraft Elysia - Beta v1.7.5",
+  "version": "1.7.7",
+  "description": "Launcher Minecraft Elysia - Beta v1.7.7",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
@@ -115,6 +115,14 @@
       {
         "from": "resources.json",
         "to": "Resources/resources.json"
+      },
+      {
+        "from": "servers.dat",
+        "to": "servers.dat"
+      },
+      {
+        "from": "servers.dat",
+        "to": "Resources/servers.dat"
       }
     ]
   }

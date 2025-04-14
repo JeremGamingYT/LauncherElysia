@@ -44,16 +44,74 @@ memorySlider.addEventListener('input', (e) => {
     const value = e.target.value;
     memoryValue.textContent = value;
     
+    // Sauvegarder la valeur RAM dans le stockage
+    ipcRenderer.invoke('save-memory-setting', value);
+    
     // Animation du slider
     const percent = ((value - memorySlider.min) / (memorySlider.max - memorySlider.min)) * 100;
     memorySlider.style.background = `linear-gradient(to right, var(--primary) ${percent}%, var(--bg-light) ${percent}%)`;
 });
 
+// Gestion du toggle pour FirstPerson mod
+const firstPersonToggle = document.getElementById('firstperson-toggle');
+const firstPersonStatus = document.getElementById('firstperson-status');
+
+// Vérifier l'état initial du mod FirstPerson
+async function checkFirstPersonModStatus() {
+    try {
+        const result = await ipcRenderer.invoke('get-firstperson-status');
+        if (result.success) {
+            firstPersonToggle.checked = result.enabled;
+            updateFirstPersonStatusText(result.enabled);
+        } else {
+            console.error("Erreur lors de la vérification du statut du mod:", result.error);
+        }
+    } catch (error) {
+        console.error("Erreur lors de la vérification du statut du mod:", error);
+    }
+}
+
+// Mettre à jour le texte d'état du mod FirstPerson
+function updateFirstPersonStatusText(enabled) {
+    firstPersonStatus.textContent = enabled ? "Activé" : "Désactivé";
+}
+
+// Gérer le changement d'état du toggle
+firstPersonToggle.addEventListener('change', async (e) => {
+    const enabled = e.target.checked;
+    updateFirstPersonStatusText(enabled);
+    
+    try {
+        const result = await ipcRenderer.invoke('toggle-firstperson-mod', enabled);
+        if (!result.success) {
+            alert(`Erreur lors de la modification du statut du mod: ${result.error}`);
+            // Rétablir l'état précédent du toggle
+            firstPersonToggle.checked = !enabled;
+            updateFirstPersonStatusText(!enabled);
+        } else {
+            showNotification(`Mod First Person ${enabled ? 'activé' : 'désactivé'} avec succès.`);
+        }
+    } catch (error) {
+        console.error("Erreur lors de la modification du statut du mod:", error);
+        alert(`Erreur: ${error.message}`);
+        // Rétablir l'état précédent du toggle
+        firstPersonToggle.checked = !enabled;
+        updateFirstPersonStatusText(!enabled);
+    }
+});
+
 // Initialisation du slider
 const initSlider = () => {
-    const value = memorySlider.value;
-    const percent = ((value - memorySlider.min) / (memorySlider.max - memorySlider.min)) * 100;
-    memorySlider.style.background = `linear-gradient(to right, var(--primary) ${percent}%, var(--bg-light) ${percent}%)`;
+    // Récupérer la valeur RAM sauvegardée
+    ipcRenderer.invoke('get-memory-setting').then(savedValue => {
+        if (savedValue) {
+            memorySlider.value = savedValue;
+            memoryValue.textContent = savedValue;
+        }
+        const value = memorySlider.value;
+        const percent = ((value - memorySlider.min) / (memorySlider.max - memorySlider.min)) * 100;
+        memorySlider.style.background = `linear-gradient(to right, var(--primary) ${percent}%, var(--bg-light) ${percent}%)`;
+    });
 };
 
 // Fonction pour mettre à jour l'interface pendant le lancement
@@ -64,29 +122,34 @@ function updateLaunchUI(stage = 'idle', status = '') {
         'auth': {
             button: 'CONNEXION...',
             status: 'Authentification en cours',
-            progress: 25
+            progress: 25,
+            disabled: true
         },
         'install': {
             button: 'INSTALLATION...',
             status: 'Installation des composants',
-            progress: 50
+            progress: 50,
+            disabled: true
         },
         'download': {
             button: 'TÉLÉCHARGEMENT...',
             status: 'Téléchargement des fichiers',
-            progress: 75
+            progress: 75,
+            disabled: true
         },
         'launch': {
             button: 'LANCEMENT...',
             status: 'Démarrage du jeu',
-            progress: 90
+            progress: 90,
+            disabled: true
         },
         'idle': {
             button: isAuthenticated ? (isGameRunning ? 'EN COURS...' : 'JOUER') : 'SE CONNECTER',
             status: isAuthenticated ? 
                 (isGameRunning ? 'Minecraft est en cours d\'exécution' : 'Prêt à jouer') : 
                 'Connectez-vous pour jouer',
-            progress: 0
+            progress: 0,
+            disabled: isGameRunning
         }
     };
 
@@ -94,7 +157,7 @@ function updateLaunchUI(stage = 'idle', status = '') {
     
     launchButton.textContent = currentState.button;
     statusText.textContent = status || currentState.status;
-    launchButton.disabled = !['idle', 'error'].includes(stage);
+    launchButton.disabled = currentState.disabled;
     
     // Animation de la barre de progression
     if (stage !== 'idle') {
@@ -140,6 +203,27 @@ function resetAuthUI() {
 }
 
 // Gestion des événements du jeu
+ipcRenderer.on('pre-launch', () => {
+    console.log('Événement pre-launch reçu');
+    // Assurer que le bouton est désactivé pendant le lancement
+    isGameRunning = true; // Considérer que le jeu est en cours de lancement
+    updateLaunchUI('launch', 'Finalisation du lancement...');
+    
+    // Désactiver explicitement le bouton
+    launchButton.disabled = true;
+    
+    // Désactiver les contrôles
+    versionSelect.disabled = true;
+    memorySlider.disabled = true;
+    browseBtn.disabled = true;
+    resetPathBtn.disabled = true;
+    
+    // Vérifier que progressBar n'est pas null avant d'accéder à sa propriété style
+    if (progressBar) {
+        progressBar.style.width = '95%';
+    }
+});
+
 ipcRenderer.on('game-started', () => {
     console.log('Événement game-started reçu');
     isGameRunning = true;
@@ -153,6 +237,9 @@ ipcRenderer.on('game-started', () => {
     browseBtn.disabled = true;
     resetPathBtn.disabled = true;
 
+    // Forcer la désactivation du bouton
+    launchButton.disabled = true;
+
     console.log('État après game-started:', { isGameRunning, isAuthenticated });
 });
 
@@ -160,15 +247,19 @@ ipcRenderer.on('game-started', () => {
 ipcRenderer.on('game-closed', (event, code) => {
     console.log('Événement game-closed reçu avec le code:', code);
     isGameRunning = false;
-    updateLaunchUI('idle');
-
+    
     // Réactiver les contrôles
     versionSelect.disabled = false;
     memorySlider.disabled = false;
     browseBtn.disabled = false;
     resetPathBtn.disabled = false;
 
-    statusText.textContent = 'Prêt à jouer';
+    // Mettre à jour l'interface
+    updateLaunchUI('idle', 'Prêt à jouer');
+    
+    // S'assurer que le bouton est activé
+    launchButton.disabled = false;
+
     console.log('État après game-closed:', { isGameRunning, isAuthenticated });
 
     // Mettre à jour les statistiques
@@ -425,7 +516,15 @@ launchButton.addEventListener('click', async () => {
 // Fonction pour lancer le jeu
 async function launchGame() {
     try {
+        // Si le jeu est déjà en cours de lancement ou en cours d'exécution, ne rien faire
+        if (isGameRunning || launchButton.disabled) {
+            console.log('Le jeu est déjà en cours de lancement ou d\'exécution');
+            return;
+        }
+        
+        // Mettre à jour l'interface pour indiquer que le lancement est en cours
         updateLaunchUI('launch', 'Lancement du jeu...');
+        
         const result = await ipcRenderer.invoke('launch-game', {
             username: usernameInput.value,
             version: versionSelect.value,
@@ -439,6 +538,9 @@ async function launchGame() {
         console.error('Erreur lancement du jeu:', error);
         updateLaunchUI('error', `Erreur: ${error.message}`);
         showErrorModal(`Erreur: ${error.message}`);
+        
+        // Réinitialiser l'état du bouton en cas d'erreur
+        launchButton.disabled = false;
     }
 }
 
@@ -477,15 +579,7 @@ document.querySelector('.page-play').style.display = 'flex';
 // Initialisation de l'interface
 updateLaunchUI('idle');
 initSlider();
-
-// Ajouter un nouvel événement pour le pré-lancement
-ipcRenderer.on('pre-launch', () => {
-    updateLaunchUI('launch', 'Finalisation du lancement...');
-    // Vérifier que progressBar n'est pas null avant d'accéder à sa propriété style
-    if (progressBar) {
-        progressBar.style.width = '95%';
-    }
-});
+checkFirstPersonModStatus();
 
 // Nouvelle fonction pour mettre à jour les stats
 async function updateGameStats() {
@@ -664,14 +758,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Gestion du bouton "Vider le cache"
 clearCacheBtn.addEventListener('click', async () => {
-    if (confirm('Êtes-vous sûr de vouloir vider le cache ? Cela supprimera tous les fichiers temporaires.')) {
+    if (confirm('Êtes-vous sûr de vouloir vider le cache et réinitialiser le dossier .elysia ? Cela supprimera tous les fichiers téléchargés et nécessitera une réinstallation lors du prochain lancement.')) {
         try {
-            updateLaunchUI('install', 'Nettoyage du cache en cours...');
+            updateLaunchUI('install', 'Nettoyage complet en cours...');
             
+            console.log("Envoi de la demande de nettoyage du cache");
             const result = await ipcRenderer.invoke('clear-cache');
+            console.log("Résultat reçu:", result);
             
             if (result.success) {
-                showNotification('Cache vidé avec succès !');
+                showNotification('Cache et dossier .elysia vidés avec succès ! Les fichiers seront réinstallés au prochain lancement.');
             } else {
                 showNotification(`Erreur: ${result.error || 'Impossible de vider le cache'}`);
             }

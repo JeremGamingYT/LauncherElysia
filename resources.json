@@ -452,10 +452,6 @@
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/jamlib-fabric-1.2.2-build.2%2B1.21.1.jar"
         },
         {
-            "name": "JEI",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/jei-1.21-fabric-19.8.2.99.jar"
-        },
-        {
             "name": "Lamb Dynamic Lights",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/lambdynamiclights-3.0.0%2B1.21.1.jar.disabled"
         },

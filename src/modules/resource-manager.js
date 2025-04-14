@@ -49,30 +49,17 @@ class ResourceManager {
                 return { exists: false, needsUpdate: true };
             }
 
-            // Télécharger temporairement le fichier pour comparer les hash
-            const tempPath = path.join(this.gamePath, 'temp_' + path.basename(filePath));
-            const response = await axios({
-                url,
-                method: 'GET',
-                responseType: 'stream'
-            });
+            // Si le fichier existe et n'est pas vide, on le considère comme valide
+            try {
+                const stats = fs.statSync(filePath);
+                if (stats.size > 0) {
+                    return { exists: true, needsUpdate: false };
+                }
+            } catch (e) {
+                console.error(`Erreur lors de la vérification de ${filePath}:`, e);
+            }
 
-            await new Promise((resolve, reject) => {
-                response.data
-                    .pipe(fs.createWriteStream(tempPath))
-                    .on('finish', resolve)
-                    .on('error', reject);
-            });
-
-            const originalHash = await this.calculateFileHash(filePath);
-            const newHash = await this.calculateFileHash(tempPath);
-
-            await fs.remove(tempPath);
-
-            return {
-                exists: true,
-                needsUpdate: originalHash !== newHash
-            };
+            return { exists: false, needsUpdate: true };
         } catch (error) {
             console.error('Erreur lors de la vérification du fichier:', error);
             return { exists: false, needsUpdate: true };
@@ -186,14 +173,28 @@ class ResourceManager {
 
     async verifyResources() {
         try {
-            // Vérifier seulement si le dossier existe et contient des fichiers
-            const resourcepacksExist = await fs.pathExists(this.resourcepacksPath) 
-                && (await fs.readdir(this.resourcepacksPath)).length > 0;
-            
-            const shadersExist = await fs.pathExists(this.shadersPath) 
-                && (await fs.readdir(this.shadersPath)).length > 0;
+            // Vérifier l'existence et la validité des dossiers
+            if (!await fs.pathExists(this.resourcepacksPath)) {
+                await fs.ensureDir(this.resourcepacksPath);
+                return false;
+            }
 
-            return resourcepacksExist && shadersExist;
+            if (!await fs.pathExists(this.shadersPath)) {
+                await fs.ensureDir(this.shadersPath);
+                return false;
+            }
+            
+            // Lire le contenu des dossiers
+            const resourcepacks = await fs.readdir(this.resourcepacksPath);
+            const shaders = await fs.readdir(this.shadersPath);
+            
+            // Si au moins un fichier dans chaque dossier, les ressources sont considérées comme installées
+            const resourcepacksValid = resourcepacks.length > 0;
+            const shadersValid = shaders.length > 0;
+            
+            console.log(`Vérification des ressources: resourcepacks=${resourcepacksValid}, shaders=${shadersValid}`);
+            
+            return resourcepacksValid && shadersValid;
         } catch (error) {
             console.error('Erreur vérification ressources:', error);
             return false;

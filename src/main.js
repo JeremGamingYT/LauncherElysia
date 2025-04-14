@@ -14,6 +14,7 @@ const url = require('url');
 const { install, getVersionList, installDependencies } = require('@xmcl/installer');
 const { MinecraftLocation, Version } = require('@xmcl/core');
 const { Agent } = require('undici');
+const nbt = require('prismarine-nbt');
 const AutoUpdater = require('./modules/auto-updater');
 const ResourceManager = require('./modules/resource-manager');
 const AntiCheat = require('./modules/anti-cheat');
@@ -178,8 +179,8 @@ function createWindow() {
     ensureGameDirectory(savedGamePath);
 
     const html = ejs.render(template, {
-        title: 'Elysia - v.1.7.4 (BETA)',
-        versions: ['1.7.4'],
+        title: 'Elysia - v.1.7.7 (BETA)',
+        versions: ['1.7.7'],
         news: news,
         updates: updates,
         cssPath: `file://${cssPath}`,
@@ -327,6 +328,11 @@ app.whenReady().then(async () => {
     mainWindow.hide(); // La cacher temporairement
 
     try {
+        // Tenter de rafraîchir le token au démarrage
+        if (store.get('minecraft-token-refresh')) {
+            await refreshMinecraftToken();
+        }
+        
         // Vérification des mises à jour
         if (splashWindow && !splashWindow.isDestroyed()) {
             splashWindow.webContents.send('splash-status', {
@@ -354,7 +360,7 @@ app.whenReady().then(async () => {
                     });
                 }
             });
-
+            
             const setupPath = await autoUpdater.downloadUpdate(updateInfo.downloadUrl);
 
             if (splashWindow && !splashWindow.isDestroyed()) {
@@ -443,6 +449,9 @@ ipcMain.handle('microsoft-login', async () => {
     store.set('minecraft-token', token.mclc());
     store.set('minecraft-profile', profile);
     
+    // Sauvegarder le token de rafraîchissement pour les futures sessions
+    store.set('minecraft-token-refresh', xboxManager.msToken.refresh_token);
+    
     return {
       success: true,
       profile: profile
@@ -516,7 +525,7 @@ async function verifyMod(modUrl, modPath) {
     }
 }
 
-// Modifier la fonction verifyFiles pour gérer les cas où modsList n'est pas un tableau
+// Modifier la fonction verifyFiles pour être plus tolérante sur les vérifications
 async function verifyFiles(event, modsList) {
     try {
         if (!Array.isArray(modsList)) {
@@ -527,29 +536,35 @@ async function verifyFiles(event, modsList) {
         const modsPath = path.join(GAME_PATH, 'mods');
         await fs.ensureDir(modsPath);
 
+        // On vérifie uniquement si les fichiers existent, pas leur contenu
         const verificationResults = await Promise.all(
             modsList.map(async (mod) => {
                 const fileName = path.basename(new URL(mod.url).pathname);
                 const filePath = path.join(modsPath, fileName);
                 
-                // Vérifier existence fichier
+                // Vérifier l'existence du fichier uniquement
                 const exists = await fs.pathExists(filePath);
-                if (!exists) return { file: fileName, status: 'missing' };
-
-                // Vérifier intégrité fichier
-                const expectedHash = await calculateFileHashFromUrl(mod.url);
-                const actualHash = await calculateFileHash(filePath);
                 
-                return {
-                    file: fileName,
-                    status: actualHash === expectedHash ? 'valid' : 'modified'
-                };
+                // Si le fichier existe et a une taille > 0, on le considère comme valide
+                if (exists) {
+                    try {
+                        const stats = await fs.stat(filePath);
+                        if (stats.size > 0) {
+                            return { file: fileName, status: 'valid' };
+                        }
+                    } catch (e) {
+                        console.error(`Erreur lors de la vérification de ${fileName}:`, e);
+                    }
+                }
+                
+                return { file: fileName, status: 'missing' };
             })
         );
 
         return {
             missingFiles: verificationResults.filter(r => r.status === 'missing').map(r => r.file),
-            modifiedFiles: verificationResults.filter(r => r.status === 'modified').map(r => r.file)
+            // On ne se préoccupe plus des fichiers "modifiés"
+            modifiedFiles: []
         };
     } catch (error) {
         console.error('Erreur vérification fichiers:', error);
@@ -613,20 +628,24 @@ async function installMissingMods(modsToInstall, targetDir, event) {
 // Modifier la fonction checkFileIntegrity pour une vérification plus réaliste
 async function checkFileIntegrity(event) {
     try {
+        // Vérifier si le dossier mods existe
         const modsDir = path.join(GAME_PATH, 'mods');
-        const modsList = await fs.readJson(path.join(__dirname, 'resources.json'));
-        
-        // Vérifier seulement l'existence des fichiers, pas leur contenu
-        for (const mod of modsList) {
-            const fileName = path.basename(new URL(mod.url).pathname);
-            const modPath = path.join(modsDir, fileName);
-            
-            if (!await fs.pathExists(modPath)) {
-                console.log(`Mod manquant: ${fileName}`);
-                return false;
-            }
+        if (!await fs.pathExists(modsDir)) {
+            console.log('Dossier mods manquant');
+            return false;
         }
-        return true;
+        
+        // Vérifier le contenu du dossier
+        const modsFiles = await fs.readdir(modsDir);
+        
+        // Si le dossier contient des fichiers, considérer que l'installation est valide
+        if (modsFiles.length > 0) {
+            console.log(`Le dossier mods contient ${modsFiles.length} fichiers, considéré comme valide.`);
+            return true;
+        }
+        
+        console.log('Dossier mods vide');
+        return false;
     } catch (error) {
         console.error('Erreur de vérification:', error);
         return false;
@@ -761,24 +780,52 @@ async function installFabric(event) {
 // Modifier la fonction verifyModsInstallation
 async function verifyModsInstallation() {
     try {
-        const { mods } = await fs.readJson(path.join(__dirname, 'resources.json')); // Extraction du tableau mods
-        const modsDir = path.join(GAME_PATH, 'mods');
-
-        if (!await fs.pathExists(modsDir)) return false;
-
-        // Vérifier chaque mod
-        for (const mod of mods) { // Utilisation directe du tableau mods
-            const fileName = path.basename(new URL(mod.url).pathname);
-            const modFilePath = path.join(modsDir, fileName);
-            
-            if (!await fs.pathExists(modFilePath)) {
+        const modsPath = path.join(app.getPath('appData'), '.elysia', 'mods');
+        await fs.ensureDir(modsPath);
+        
+        // Vérifier si le dossier mods existe
+        const modsFiles = await fs.readdir(modsPath);
+        
+        // Si le dossier est vide, retourner false
+        if (modsFiles.length === 0) {
+            console.log('Le dossier mods est vide');
+            return false;
+        }
+        
+        // Vérifier les mods spécifiques (optionnel)
+        const resourcesData = await fs.readJson(path.join(__dirname, 'resources.json'));
+        const modsList = resourcesData.mods; // Accéder au tableau "mods" dans le fichier resources.json
+        
+        if (!modsList || !Array.isArray(modsList)) {
+            console.error("Le tableau de mods n'a pas été trouvé ou n'est pas valide");
+            return false;
+        }
+        
+        // Créer une map de noms de fichier pour la recherche rapide
+        const existingFilesMap = new Map(modsFiles.map(f => [f.toLowerCase(), true]));
+        
+        // Vérifier si tous les mods nécessaires sont présents
+        const missingMods = [];
+        for (const mod of modsList) {
+            const fileName = path.basename(new URL(mod.url).pathname).toLowerCase();
+            if (!existingFilesMap.has(fileName)) {
                 console.log(`Mod manquant: ${fileName}`);
-                return false;
+                missingMods.push(mod);
             }
         }
+        
+        // Si des mods sont manquants, stocker la liste pour une installation sélective
+        if (missingMods.length > 0) {
+            console.log(`${missingMods.length} mods manquants sur ${modsList.length}`);
+            store.set('missing-mods', missingMods);
+            return false;
+        }
+        
+        console.log('Tous les mods sont installés');
+        store.delete('missing-mods'); // Nettoyer la liste des mods manquants
         return true;
     } catch (error) {
-        console.error('Erreur vérification mods:', error);
+        console.error('Erreur lors de la vérification des mods:', error);
         return false;
     }
 }
@@ -786,19 +833,36 @@ async function verifyModsInstallation() {
 // Nouvelle version avec détection du mode production et meilleure gestion d'erreurs
 async function installMods(event) {
     try {
-        // Récupérer le chemin du fichier resources.json
-        const resourcesJsonPath = await findResourcesJsonPath();
-        const resourcesDirectory = path.dirname(resourcesJsonPath);
-        const modsDestPath = path.join(app.getPath('appData'), '.elysia', 'mods');
+        // Vérifier s'il y a une liste de mods manquants
+        let modsToInstall = store.get('missing-mods');
         
+        // Si pas de liste spécifique, installer tous les mods
+        if (!modsToInstall || !Array.isArray(modsToInstall) || modsToInstall.length === 0) {
+            // Récupérer le chemin du fichier resources.json
+            const resourcesJsonPath = await findResourcesJsonPath();
+            const resourcesData = await fs.readJson(resourcesJsonPath);
+            modsToInstall = resourcesData.mods;
+            
+            if (!modsToInstall || !Array.isArray(modsToInstall)) {
+                throw new Error("Impossible de charger la liste des mods");
+            }
+        }
+        
+        const modsDestPath = path.join(app.getPath('appData'), '.elysia', 'mods');
         await fs.ensureDir(modsDestPath);
-        const { mods } = await fs.readJson(resourcesJsonPath);
-        const totalMods = mods.length;
+        
+        const totalMods = modsToInstall.length;
         let installedMods = 0;
         let failedMods = 0;
         let notFoundMods = [];
     
-        for (const mod of mods) {
+        event.sender.send('install-progress', {
+            stage: 'installing-mods',
+            progress: 0,
+            message: `Installation de ${totalMods} mods...`
+        });
+    
+        for (const mod of modsToInstall) {
             const modName = path.basename(mod.url);
             const modPath = path.join(modsDestPath, modName);
     
@@ -841,6 +905,9 @@ async function installMods(event) {
                 message: message
             });
         }
+        
+        // Nettoyer la liste des mods manquants après l'installation
+        store.delete('missing-mods');
     
         return true;
     } catch (error) {
@@ -1139,42 +1206,69 @@ async function copyLauncherProfiles() {
 // Fonction pour configurer le serveur par défaut
 async function setupDefaultServer() {
     try {
-        const serversPath = path.join(GAME_PATH, 'servers.dat');
-        console.log('Configuration du serveur par défaut à:', serversPath);
+        // Chercher le fichier servers.dat dans tous les emplacements possibles (comme resources.json)
+        const possibleLocations = [
+            // Application resources
+            path.join(process.resourcesPath, 'servers.dat'),
+            path.join(process.resourcesPath, 'Resources', 'servers.dat'),
+            // Application root
+            path.join(app.getAppPath(), 'servers.dat'),
+            path.join(app.getPath('exe'), '..', 'servers.dat'),
+            // Application directory
+            path.join(app.getAppPath(), 'src', 'servers.dat'),
+            path.join(__dirname, '..', 'servers.dat'),
+            path.join(__dirname, 'servers.dat'),
+            // User data
+            path.join(app.getPath('userData'), 'servers.dat'),
+            // Minecraft original (fallback)
+            path.join(app.getPath('appData'), '.minecraft', 'servers.dat')
+        ];
         
-        // Créer un fichier servers.dat préformaté (format NBT binaire)
-        // Ce fichier contient un serveur avec:
-        // - name: "Elysia"
-        // - ip: "91.197.6.212:25580"
-        // - hidden: false
-        // - preventsChatsReports: false
-        const serverData = Buffer.from([
-            10, 0, 0,                 // Compound sans nom (racine)
-            9, 0, 7, 115, 101, 114, 118, 101, 114, 115,  // "servers" (liste)
-            10, 0, 0, 0, 1,           // 1 élément compound dans la liste
-            
-            // Début du serveur (compound)
-            1, 0, 6, 104, 105, 100, 100, 101, 110, 0,  // hidden: 0 (byte)
-            1, 0, 19, 112, 114, 101, 118, 101, 110, 116, 115, 67, 104, 97, 116, 82, 101, 112, 111, 114, 116, 115, 0,  // preventsChatsReports: 0 (byte)
-            8, 0, 2, 105, 112, 0, 17, 57, 49, 46, 49, 57, 55, 46, 54, 46, 50, 49, 50, 58, 50, 53, 53, 56, 48,  // ip: "91.197.6.212:25580" (string)
-            8, 0, 4, 110, 97, 109, 101, 0, 6, 69, 108, 121, 115, 105, 97,  // name: "Elysia" (string)
-            0,  // Fin du compound serveur
-            
-            0   // Fin du compound racine
-        ]);
+        console.log('Configuration du serveur par défaut...');
+        console.log('Searching for servers.dat in these locations:');
+        possibleLocations.forEach(loc => console.log(' - ' + loc));
+        
+        let sourcePath = null;
+        // Check all possible locations
+        for (const location of possibleLocations) {
+            try {
+                if (await fs.pathExists(location)) {
+                    console.log('Found servers.dat at:', location);
+                    sourcePath = location;
+                    break;
+                }
+            } catch (error) {
+                console.log('Error checking', location, error.message);
+            }
+        }
+        
+        // Si aucun fichier n'est trouvé, on pourrait créer un fichier de base 
+        // (mais pour l'instant, on renvoie juste une erreur)
+        if (!sourcePath) {
+            console.error('Erreur: Impossible de trouver un fichier servers.dat valide');
+            return false;
+        }
+        
+        const destPath = path.join(GAME_PATH, 'servers.dat');
         
         // S'assurer que le répertoire cible existe
         await fs.ensureDir(GAME_PATH);
         
-        // Écrire le fichier préformaté
-        await fs.writeFile(serversPath, serverData);
+        // Supprimer le fichier existant s'il y en a un
+        if (await fs.pathExists(destPath)) {
+            await fs.remove(destPath);
+            console.log('Ancien fichier servers.dat supprimé');
+        }
         
-        console.log('Serveur par défaut ajouté avec succès');
+        // Copier le fichier source vers .elysia
+        console.log(`Copie du fichier servers.dat depuis ${sourcePath} vers .elysia...`);
+        await fs.copy(sourcePath, destPath);
+        console.log('Fichier servers.dat copié avec succès');
+        
         return true;
     } catch (error) {
         console.error('Erreur lors de la configuration du serveur par défaut:', error);
-        console.error(error.stack); // Afficher la stack trace complète
-        // On continue même en cas d'erreur
+        console.error(error.stack);
         return false;
     }
 }
@@ -1182,20 +1276,14 @@ async function setupDefaultServer() {
 // Modification du handler d'installation pour ajouter la configuration du serveur
 ipcMain.handle('install-game', async (event) => {
     try {
-        // Vérifier et installer Java si nécessaire
-        const javaValid = await verifyJavaInstallation();
-        if (!javaValid) {
-            event.sender.send('install-progress', { stage: 'java-setup', message: 'Installation de Java...' });
-            await downloadAndInstallJava(event);
-        }
+        // Initialisation des variables de progression
+        let progress = 0;
+        let totalProgress = 2; // Nombre d'étapes dans l'installation
 
-        // Copier launcher_profiles.json avant l'installation
-        await copyLauncherProfiles();
-
-        // Vérifier l'installation de Minecraft
+        // Vérifier l'installation de vanilla Minecraft
         const minecraftValid = await verifyMinecraftInstallation();
         if (!minecraftValid) {
-            event.sender.send('install-progress', { stage: 'installing-minecraft', message: 'Installation de Minecraft...' });
+            event.sender.send('install-progress', { stage: 'installing-vanilla', message: 'Installation de Minecraft...' });
             await installVanilla(event);
         } else {
             console.log('Minecraft is already installed, skipping reinstallation.');
@@ -1203,6 +1291,7 @@ ipcMain.handle('install-game', async (event) => {
 
         // Vérifier l'installation de Fabric
         const fabricValid = await verifyFabricInstallation();
+        
         if (!fabricValid) {
             event.sender.send('install-progress', { stage: 'installing-fabric', message: 'Installation de Fabric...' });
             
@@ -1236,10 +1325,18 @@ ipcMain.handle('install-game', async (event) => {
         // Vérifier l'installation des mods
         const modsValid = await verifyModsInstallation();
         if (!modsValid) {
-            event.sender.send('install-progress', { stage: 'installing-mods', message: 'Installation des mods...' });
+            event.sender.send('install-progress', { 
+                stage: 'installing-mods', 
+                message: 'Installation des mods nécessaires...' 
+            });
             await installMods(event);
         } else {
             console.log('Mods are already installed and up to date, skipping reinstallation.');
+            // Notification à l'utilisateur que les mods sont déjà installés
+            event.sender.send('install-progress', { 
+                stage: 'mods-validated', 
+                message: 'Mods déjà installés, vérification terminée' 
+            });
         }
 
         // Vérifier et installer les ressources
@@ -1250,6 +1347,13 @@ ipcMain.handle('install-game', async (event) => {
                 message: 'Installation des ressources...'
             });
             await installResources(event);
+        } else {
+            console.log('Resources are already installed, skipping reinstallation.');
+            // Notification à l'utilisateur que les ressources sont déjà installées
+            event.sender.send('install-progress', { 
+                stage: 'resources-validated', 
+                message: 'Ressources déjà installées, vérification terminée' 
+            });
         }
         
         // Configurer le serveur par défaut
@@ -1425,9 +1529,15 @@ function stopPlayTimeTracking() {
 async function launchMinecraft(event, options) {
     try {
         // Vérifier et rafraîchir le token si nécessaire
-        const token = store.get('minecraft-token');
+        let token = store.get('minecraft-token');
         if (!token) {
-            throw new Error('Veuillez vous connecter avec votre compte Microsoft');
+            // Tenter de rafraîchir le token
+            const refreshed = await refreshMinecraftToken();
+            if (refreshed) {
+                token = store.get('minecraft-token');
+            } else {
+                throw new Error('Veuillez vous connecter avec votre compte Microsoft');
+            }
         }
 
         // Vérifier la présence de launcher_profiles.json
@@ -1439,6 +1549,9 @@ async function launchMinecraft(event, options) {
 
         await renameFabricJson();
 
+        // Récupérer la valeur RAM sauvegardée ou utiliser celle des options
+        const memorySetting = options.memory || store.get('memory-setting', 4);
+        
         const opts = {
             clientPackage: null,
             authorization: token,
@@ -1450,8 +1563,8 @@ async function launchMinecraft(event, options) {
             },
             javaPath: javaPath,
             memory: {
-                max: options.maxMemory || "2G",
-                min: options.minMemory || "1G"
+                max: `${memorySetting}G`,
+                min: "1G"
             },
             window: {
                 width: 1280,
@@ -1635,6 +1748,12 @@ ipcMain.handle('launch-game', async (event, options) => {
             };
         }
 
+        // Afficher un message de démarrage
+        event.sender.send('install-progress', {
+            stage: 'starting',
+            message: 'Préparation du lancement...'
+        });
+
         // Copier launcher_profiles.json avant toute opération
         await copyLauncherProfiles();
 
@@ -1673,24 +1792,44 @@ ipcMain.handle('launch-game', async (event, options) => {
             }
         }
 
-        // Remplacer la vérification d'intégrité par une simple existence
-        const modsValid = await verifyModsInstallation();
-        if (!modsValid) {
+        // Vérifier l'installation des mods
+        try {
+            const modsValid = await verifyModsInstallation();
+            if (!modsValid) {
+                const missingMods = store.get('missing-mods', []);
+                const missingCount = missingMods.length;
+                
+                event.sender.send('install-progress', {
+                    stage: 'installing-mods',
+                    message: `Installation de ${missingCount} mods manquants...`
+                });
+                
+                await installMods(event);
+            }
+        } catch (modsError) {
+            console.error('Erreur lors de la vérification des mods:', modsError);
             event.sender.send('install-progress', {
-                stage: 'installing-mods',
-                message: 'Installation des mods manquants...'
+                stage: 'warning',
+                message: 'Problème avec la vérification des mods - tentative de continuation'
             });
-            await installMods(event);
         }
 
         // Vérifier les ressources (resource packs et shaders)
-        const resourcesValid = await resourceManager.verifyResources();
-        if (!resourcesValid) {
+        try {
+            const resourcesValid = await resourceManager.verifyResources();
+            if (!resourcesValid) {
+                event.sender.send('install-progress', {
+                    stage: 'installing-resources',
+                    message: 'Création des dossiers et installation des ressources...'
+                });
+                await installResources(event);
+            }
+        } catch (resourcesError) {
+            console.error('Erreur lors de la vérification des ressources:', resourcesError);
             event.sender.send('install-progress', {
-                stage: 'installing-resources',
-                message: 'Création des dossiers et installation des ressources...'
+                stage: 'warning',
+                message: 'Problème avec les ressources - tentative de continuation'
             });
-            await installResources(event);
         }
 
         // Configurer le serveur par défaut
@@ -1698,15 +1837,24 @@ ipcMain.handle('launch-game', async (event, options) => {
             stage: 'configuring-server',
             message: 'Configuration du serveur par défaut...'
         });
-        console.log('Configuration du serveur par défaut avant le lancement...');
+        
         try {
             const serverSetupResult = await setupDefaultServer();
             console.log('Résultat de la configuration du serveur:', serverSetupResult ? 'Succès' : 'Échec');
         } catch (serverError) {
-            console.error('Erreur critique lors de la configuration du serveur:', serverError);
+            console.error('Erreur lors de la configuration du serveur:', serverError);
+            event.sender.send('install-progress', {
+                stage: 'warning',
+                message: 'Problème avec la configuration du serveur - tentative de continuation'
+            });
         }
 
         // Lancer le jeu
+        event.sender.send('install-progress', {
+            stage: 'launching',
+            message: 'Lancement de Minecraft...'
+        });
+        
         const launchResult = await launchMinecraft(event, options);
         return {
             success: true,
@@ -1714,6 +1862,10 @@ ipcMain.handle('launch-game', async (event, options) => {
         };
     } catch (error) {
         console.error('Erreur lors du lancement:', error);
+        event.sender.send('install-progress', {
+            stage: 'error',
+            message: `Erreur: ${error.message}`
+        });
         return {
             success: false,
             error: error.message
@@ -1790,7 +1942,7 @@ ipcMain.handle('get-game-stats', () => {
     
     return {
         playTime: playTime,
-        version: app.getVersion() || '1.7.4' // Utiliser la version du launcher au lieu de Minecraft
+        version: app.getVersion() || '1.7.7' // Utiliser la version du launcher au lieu de Minecraft
     };
 });
 
@@ -1875,10 +2027,17 @@ async function uninstallLauncher() {
 // Fonction pour exécuter le désinstallateur NSIS
 function runNsisUninstaller() {
     try {
-        const exeName = path.basename(process.execPath);
-        const installLocation = path.dirname(process.execPath);
-        const uninstallerPath = path.join(installLocation, 'Uninstall ' + exeName);
+        // D'abord, supprimez le dossier .elysia
+        if (fs.existsSync(GAME_PATH)) {
+            console.log(`Suppression du dossier .elysia complet: ${GAME_PATH}`);
+            fs.removeSync(GAME_PATH);
+        }
         
+        // Chercher le désinstallateur dans le dossier habituel d'installation
+        const appDataPath = path.join(os.homedir(), 'AppData', 'Local', 'Programs', 'Elysia');
+        const uninstallerPath = path.join(appDataPath, 'Uninstall Elysia.exe');
+        
+        // Vérifier d'abord le chemin dans AppData
         if (fs.existsSync(uninstallerPath)) {
             // Démarrer le désinstallateur
             require('child_process').spawn(uninstallerPath, [], {
@@ -1889,8 +2048,25 @@ function runNsisUninstaller() {
             // Fermer l'application
             app.quit();
             return true;
+        } 
+        
+        // Chemin de secours si le désinstallateur n'est pas trouvé dans AppData
+        const exeName = path.basename(process.execPath);
+        const installLocation = path.dirname(process.execPath);
+        const fallbackUninstallerPath = path.join(installLocation, 'Uninstall ' + exeName);
+        
+        if (fs.existsSync(fallbackUninstallerPath)) {
+            // Démarrer le désinstallateur
+            require('child_process').spawn(fallbackUninstallerPath, [], {
+                detached: true,
+                stdio: 'ignore'
+            }).unref();
+            
+            // Fermer l'application
+            app.quit();
+            return true;
         } else {
-            console.error('Désinstallateur introuvable:', uninstallerPath);
+            console.error('Désinstallateur introuvable:', uninstallerPath, 'et', fallbackUninstallerPath);
             return false;
         }
     } catch (error) {
@@ -1920,7 +2096,9 @@ ipcMain.handle('uninstall-launcher', async () => {
 // Écouteur pour vider le cache
 ipcMain.handle('clear-cache', async () => {
     try {
+        console.log("Demande de nettoyage complet du cache et du dossier .elysia");
         const success = await clearLauncherCache();
+        console.log(`Résultat du nettoyage: ${success ? 'Succès' : 'Échec'}`);
         return { success };
     } catch (error) {
         console.error('Erreur lors du vidage du cache:', error);
@@ -2061,7 +2239,7 @@ ipcMain.handle('fetch-updates', async () => {
                     updates = [
                         {
                             id: '0',
-                            version: app.getVersion() || '1.7.4',
+                            version: app.getVersion() || '1.7.7',
                             date: new Date().toISOString(),
                             title: 'Launcher Elysia',
                             description: 'Bienvenue dans le Launcher Elysia. Consultez les releases sur GitHub pour plus d\'informations sur les mises à jour.',
@@ -2084,7 +2262,7 @@ ipcMain.handle('fetch-updates', async () => {
         const defaultUpdates = [
             {
                 id: '0',
-                version: app.getVersion() || '1.7.4',
+                version: app.getVersion() || '1.7.7',
                 date: new Date().toISOString(),
                 title: 'Information',
                 description: 'Impossible de récupérer les mises à jour. Vérifiez votre connexion Internet.',
@@ -2112,6 +2290,20 @@ async function clearLauncherCache() {
                 await fs.remove(cachePath);
                 console.log(`Cache supprimé: ${cachePath}`);
             }
+        }
+
+        // Suppression complète du dossier .elysia
+        if (fs.existsSync(GAME_PATH)) {
+            console.log(`Suppression du dossier .elysia: ${GAME_PATH}`);
+            await fs.remove(GAME_PATH);
+            
+            // Recréer la structure des dossiers de base
+            await fs.ensureDir(GAME_PATH);
+            await fs.ensureDir(path.join(GAME_PATH, 'mods'));
+            await fs.ensureDir(path.join(GAME_PATH, 'resourcepacks'));
+            await fs.ensureDir(path.join(GAME_PATH, 'shaderpacks'));
+            await fs.ensureDir(path.join(GAME_PATH, 'versions'));
+            await fs.ensureDir(path.join(GAME_PATH, 'libraries'));
         }
 
         // Créer un dossier temporaire pour le launcher si nécessaire
@@ -2209,4 +2401,133 @@ ipcMain.handle('install-java', async (event) => {
         console.error('Erreur lors de l\'installation de Java:', error);
         return { success: false, error: error.message };
     }
+});
+
+// Ajouter cette nouvelle fonction pour sauvegarder le paramètre RAM
+ipcMain.handle('save-memory-setting', (event, memoryValue) => {
+    try {
+        store.set('memory-setting', memoryValue);
+        return true;
+    } catch (error) {
+        console.error('Erreur lors de la sauvegarde du paramètre RAM:', error);
+        return false;
+    }
+});
+
+// Ajouter cette nouvelle fonction pour récupérer le paramètre RAM
+ipcMain.handle('get-memory-setting', () => {
+    try {
+        return store.get('memory-setting', 4); // La valeur par défaut est 4
+    } catch (error) {
+        console.error('Erreur lors de la récupération du paramètre RAM:', error);
+        return 4; // La valeur par défaut est 4
+    }
+});
+
+// Ajouter cette fonction pour rafraîchir le token Minecraft
+async function refreshMinecraftToken() {
+    try {
+        const savedToken = store.get('minecraft-token-refresh');
+        
+        if (!savedToken) {
+            console.log('Aucun token de rafraîchissement disponible, authentification complète requise');
+            return false;
+        }
+        
+        console.log('Tentative de rafraîchissement du token Minecraft...');
+        
+        // Tenter de rafraîchir le token
+        const xboxManager = await authManager.refresh(savedToken);
+        // Obtenir un nouveau token Minecraft
+        const token = await xboxManager.getMinecraft();
+        
+        // Sauvegarder le nouveau token et le profil
+        const profile = {
+            name: token.profile.name,
+            id: token.profile.id
+        };
+        
+        store.set('minecraft-token', token.mclc());
+        store.set('minecraft-profile', profile);
+        
+        // Sauvegarder le token de rafraîchissement pour une utilisation ultérieure
+        store.set('minecraft-token-refresh', xboxManager.msToken.refresh_token);
+        
+        console.log('Token Minecraft rafraîchi avec succès');
+        return true;
+    } catch (error) {
+        console.error('Erreur lors du rafraîchissement du token:', error);
+        return false;
+    }
+}
+
+// Fonction pour activer/désactiver le mod FirstPerson
+async function toggleFirstPersonMod(enable) {
+    try {
+        const modsPath = path.join(app.getPath('appData'), '.elysia', 'mods');
+        await fs.ensureDir(modsPath);
+        
+        const files = await fs.readdir(modsPath);
+        const firstPersonRegex = /firstperson|firstperson-fabric-2.4.8-mc1.21.jar/i;
+        
+        for (const file of files) {
+            if (firstPersonRegex.test(file)) {
+                const filePath = path.join(modsPath, file);
+                
+                if (enable) {
+                    // Si le fichier est désactivé (se termine par .disabled)
+                    if (file.endsWith('.disabled')) {
+                        const newPath = path.join(modsPath, file.replace('.disabled', ''));
+                        await fs.rename(filePath, newPath);
+                        console.log(`Mod activé: ${file} -> ${file.replace('.disabled', '')}`);
+                    }
+                } else {
+                    // Si le fichier est activé (ne se termine pas par .disabled)
+                    if (!file.endsWith('.disabled')) {
+                        const newPath = path.join(modsPath, `${file}.disabled`);
+                        await fs.rename(filePath, newPath);
+                        console.log(`Mod désactivé: ${file} -> ${file}.disabled`);
+                    }
+                }
+            }
+        }
+        
+        return { success: true };
+    } catch (error) {
+        console.error('Erreur lors de la modification du statut du mod FirstPerson:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Fonction pour vérifier l'état actuel du mod FirstPerson
+async function checkFirstPersonModStatus() {
+    try {
+        const modsPath = path.join(app.getPath('appData'), '.elysia', 'mods');
+        await fs.ensureDir(modsPath);
+        
+        const files = await fs.readdir(modsPath);
+        const firstPersonRegex = /firstperson|firstperson-fabric-2.4.8-mc1.21.jar/i;
+        
+        for (const file of files) {
+            if (firstPersonRegex.test(file)) {
+                // Si le fichier est trouvé, vérifier s'il est activé ou désactivé
+                return { success: true, enabled: !file.endsWith('.disabled') };
+            }
+        }
+        
+        // Si le mod n'est pas trouvé, considérer comme désactivé
+        return { success: true, enabled: false };
+    } catch (error) {
+        console.error('Erreur lors de la vérification du statut du mod FirstPerson:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Handlers pour les fonctions IPC
+ipcMain.handle('toggle-firstperson-mod', async (event, enable) => {
+    return await toggleFirstPersonMod(enable);
+});
+
+ipcMain.handle('get-firstperson-status', async () => {
+    return await checkFirstPersonModStatus();
 });
