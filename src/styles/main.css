@@ -21,7 +21,7 @@ html, body { width:100%; height:100%; background: #0f0f14; font-family:'Poppins'
 /* ─────────────── sidebar ─────────────── */
 .sidebar {
   width: 72px;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(18, 18, 18, 0.8);
   display: flex; 
   flex-direction: column;
   align-items: center;
@@ -165,10 +165,45 @@ html, body { width:100%; height:100%; background: #0f0f14; font-family:'Poppins'
 .pill .fa { 
   color: rgba(255, 255, 255, 0.7); 
 }
-.pill.loading .fa-spinner {
-  animation: spin 1s linear infinite;
+.pill.loading {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-width: 200px;
+  justify-content: flex-start;
+  padding: 10px 18px;
+  height: auto;
+}
+.pill.loading::after {
+  content: none;
+}
+.pill.loading.progress::after {
+  content: none;
+}
+.pill.loading.progress .fa-spinner {
+  animation: spin 1s infinite linear;
+  margin-right: 8px;
+}
+.pill.loading.progress::before {
+  content: none;
+}
+.pill.loading.progress {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+#status-text {
+  opacity: 1;
+  color: #fff;
+  margin-left: 8px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes progressPulse {
+  0% { width: 0%; opacity: 0.5; }
+  50% { width: 100%; opacity: 1; }
+  100% { width: 0%; opacity: 0.5; }
+}
 .profile {
   display: flex; 
   align-items: center; 
@@ -321,7 +356,7 @@ html, body { width:100%; height:100%; background: #0f0f14; font-family:'Poppins'
 /* Preserve some original functionality */
 .titlebar {
   height: 48px;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(18, 18, 18, 0.8);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -866,6 +901,10 @@ html, body { width:100%; height:100%; background: #0f0f14; font-family:'Poppins'
 /* Animation pill loading */
 .pill.loading {
   position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 
 /* Suppression de l'effet progress bar */
@@ -877,28 +916,20 @@ html, body { width:100%; height:100%; background: #0f0f14; font-family:'Poppins'
   content: none;
 }
 
-@keyframes progressPulse {
-  0% { width: 0%; }
-  50% { width: 100%; }
-  100% { width: 0%; }
-}
-
 /* Animation pour le pill loading */
 .pill.loading.progress .fa-spinner {
-    animation: spin 1s infinite linear;
+  animation: spin 1s infinite linear;
 }
 
 /* Suppression de l'animation de la barre de progression dans le pill */
-.pill.loading.progress::after {
-    content: none;
+.pill.loading.progress::before {
+  content: none;
 }
 
-@keyframes progressBar {
-    0% { width: 0%; left: 0; right: auto; }
-    40% { width: 100%; left: 0; right: auto; }
-    50% { width: 100%; right: 0; left: auto; }
-    90% { width: 0%; right: 0; left: auto; }
-    100% { width: 0%; left: 0; right: auto; }
+@keyframes progressPulse {
+  0% { width: 0%; opacity: 0.5; }
+  50% { width: 100%; opacity: 1; }
+  100% { width: 0%; opacity: 0.5; }
 }
 
 /* Animation pour les transitions de contenu */
@@ -990,7 +1021,7 @@ html, body { width:100%; height:100%; background: #0f0f14; font-family:'Poppins'
 }
 
 .news-item, .update-item {
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(18, 18, 18, 0.8);
   border-radius: 16px;
   padding: 24px;
   display: flex;
@@ -1106,7 +1137,7 @@ html, body { width:100%; height:100%; background: #0f0f14; font-family:'Poppins'
 }
 
 .setting-item {
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(18, 18, 18, 0.8);
   border-radius: 16px;
   padding: 28px;
   margin-bottom: 28px;

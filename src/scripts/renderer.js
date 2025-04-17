@@ -203,17 +203,37 @@ async function updateAuthUI(profile) {
 function resetAuthUI() {
     isAuthenticated = false;
     currentUser = null;
-    usernameInput.value = '';
-    usernameInput.disabled = true;
-    avatar.style.backgroundImage = `url('https://minotar.net/avatar/steve')`;
-    avatarStatus.classList.remove('online');
-    logoutBtn.style.display = 'none';
+    
+    // Vérifier chaque élément DOM avant d'y accéder
+    if (usernameInput) {
+        usernameInput.value = '';
+        usernameInput.disabled = true;
+    }
+    
+    // Réinitialiser l'avatar
+    if (avatar) {
+        avatar.src = 'https://minotar.net/avatar/steve';
+    }
+    
+    if (avatarStatus) {
+        avatarStatus.classList.remove('online');
+    }
+    
+    // Réinitialiser les informations de profil dans la barre supérieure
+    const profileUsername = document.getElementById('username');
+    if (profileUsername) {
+        profileUsername.textContent = 'Non connecté';
+    }
+    
     updateLaunchUI('idle');
     
     // S'assurer que la page de jeu reste visible si c'est celle qui est actuellement active
     const activePage = document.querySelector('.nav-btn.active');
     if (activePage && activePage.dataset.page === 'play') {
-        document.querySelector('.page-play').style.display = 'flex';
+        const playPage = document.querySelector('.page-play');
+        if (playPage) {
+            playPage.style.display = 'flex';
+        }
     }
 }
 
@@ -304,21 +324,14 @@ function animateStatusChange(text) {
     
     // Animation de flash pour signaler le changement
     if (loadingPill) {
-        loadingPill.style.backgroundColor = 'rgba(255, 125, 50, 0.3)';
+        loadingPill.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
         setTimeout(() => {
             loadingPill.style.backgroundColor = '';
         }, 300);
     }
     
-    // Animation de fondu pour le texte
-    statusText.style.opacity = '0';
-    statusText.style.transform = 'translateY(5px)';
-    
-    setTimeout(() => {
-        statusText.textContent = text;
-        statusText.style.opacity = '1';
-        statusText.style.transform = 'translateY(0)';
-    }, 150);
+    // Modifier directement le texte sans animation d'opacité
+    statusText.textContent = text;
 }
 
 // Gestion des événements de progression avec animation
@@ -559,8 +572,9 @@ function setupLaunchButton() {
                     if (authResult && authResult.success) {
                         // Mettre à jour l'interface avec les données du profil
                         updateAuthUI(authResult.profile);
-                        // Après l'authentification réussie, lancer le jeu
-                        await launchGame();
+                        // Ne plus lancer automatiquement le jeu après connexion
+                        updateLaunchUI('idle', 'Connecté! Cliquez sur JOUER pour lancer le jeu.');
+                        launchBtn.disabled = false;
                     } else {
                         throw new Error(authResult.error || 'Échec de l\'authentification');
                     }

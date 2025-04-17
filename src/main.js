@@ -179,8 +179,8 @@ function createWindow() {
     ensureGameDirectory(savedGamePath);
 
     const html = ejs.render(template, {
-        title: 'Elysia - v.1.8.0 (BETA)',
-        versions: ['1.8.0'],
+        title: 'Elysia - v.1.8.1 (BETA)',
+        versions: ['1.8.1'],
         news: news,
         updates: updates,
         cssPath: `file://${cssPath}`,
@@ -1607,7 +1607,7 @@ async function launchMinecraft(event, options) {
             }
         });
 
-        launcher.on('close', (code) => {
+        launcher.on('close', async (code) => {
             console.log('Minecraft closed with code:', code);
             gameRunning = false;
             event.sender.send('game-closed', code);
@@ -1944,7 +1944,7 @@ ipcMain.handle('get-game-stats', () => {
     
     return {
         playTime: playTime,
-        version: app.getVersion() || '1.8.0' // Utiliser la version du launcher au lieu de Minecraft
+        version: app.getVersion() || '1.8.1' // Utiliser la version du launcher au lieu de Minecraft
     };
 });
 
@@ -2241,7 +2241,7 @@ ipcMain.handle('fetch-updates', async () => {
                     updates = [
                         {
                             id: '0',
-                            version: app.getVersion() || '1.8.0',
+                            version: app.getVersion() || '1.8.1',
                             date: new Date().toISOString(),
                             title: 'Launcher Elysia',
                             description: 'Bienvenue dans le Launcher Elysia. Consultez les releases sur GitHub pour plus d\'informations sur les mises à jour.',
@@ -2264,7 +2264,7 @@ ipcMain.handle('fetch-updates', async () => {
         const defaultUpdates = [
             {
                 id: '0',
-                version: app.getVersion() || '1.8.0',
+                version: app.getVersion() || '1.8.1',
                 date: new Date().toISOString(),
                 title: 'Information',
                 description: 'Impossible de récupérer les mises à jour. Vérifiez votre connexion Internet.',
@@ -2545,16 +2545,16 @@ app.on('ready', async () => {
       // Si non, essayer de le rafraîchir
       const isValid = await refreshMinecraftToken();
       
-      if (isValid) {
+      if (isValid && mainWindow && !mainWindow.isDestroyed()) {
         const refreshedProfile = store.get('minecraft-profile');
         mainWindow.webContents.send('auth-status', {
           isAuthenticated: true,
           profile: refreshedProfile
         });
       } else {
-        // Si le rafraîchissement a échoué, ne pas envoyer d'état d'authentification
-        // Cela permettra à l'utilisateur de se connecter normalement sans être forcé
-        console.log('Le token n\'a pas pu être rafraîchi, authentification requise');
+        // Si le rafraîchissement a échoué ou que la fenêtre n'est pas disponible,
+        // ne pas envoyer d'état d'authentification
+        console.log('Le token n\'a pas pu être rafraîchi ou la fenêtre n\'est pas disponible');
       }
     } catch (error) {
       console.error('Erreur lors de la vérification de l\'authentification:', error);

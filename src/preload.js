@@ -10,7 +10,16 @@ contextBridge.exposeInMainWorld('api', {
             'microsoft-login',
             'microsoft-logout',
             'fetch-discord-news',
-            'fetch-updates'
+            'fetch-updates',
+            'logout',
+            'launch-game',
+            'get-game-stats',
+            'save-memory-setting',
+            'uninstall-launcher',
+            'toggle-firstperson-mod',
+            'clear-launcher-cache',
+            'check-firstperson-status',
+            'save-server-selection'
         ];
         if (validChannels.includes(channel)) {
             return ipcRenderer.invoke(channel, data);
@@ -25,7 +34,8 @@ contextBridge.exposeInMainWorld('api', {
             'auth-status',
             'game-path',
             'uninstall-progress',
-            'pre-launch'
+            'pre-launch',
+            'download-progress'
         ];
         if (validChannels.includes(channel)) {
             ipcRenderer.on(channel, (event, ...args) => callback(...args));

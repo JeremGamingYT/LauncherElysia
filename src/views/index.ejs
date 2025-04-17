@@ -141,20 +141,27 @@
             </h3>
             
             <div class="setting-item">
-                <label for="version">
+                <label>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
-                        <path d="M3.3 7L12 12l8.7-5M12 22V12"/>
+                        <path d="M21 6v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2h4l2 2h8a2 2 0 012 2z"/>
                     </svg>
-                    Version
+                    Dossier d'installation
                 </label>
-                <div class="select-wrapper">
-                    <select id="version" class="version-select">
-                        <% versions.forEach(function(version) { %>
-                            <option value="<%= version %>"><%= version %></option>
-                        <% }); %>
-                    </select>
+                <div class="directory-input">
+                    <input type="text" id="game-path" readonly>
+                    <button id="browse-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+                        </svg>
+                    </button>
                 </div>
+                <button id="reset-path" class="reset-button">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 019-9 9 9 0 019 9 9 9 0 01-9 9m0-18C7.03 3 3 7.03 3 12"/>
+                        <path d="M12 7v5l4 4"/>
+                    </svg>
+                    Réinitialiser
+                </button>
             </div>
 
             <div class="setting-item memory-setting">
@@ -191,30 +198,6 @@
                     </label>
                     <span class="toggle-label" id="firstperson-status">Activé</span>
                 </div>
-            </div>
-
-            <div class="setting-item">
-                <label for="game-path">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
-                    </svg>
-                    Dossier d'installation
-                </label>
-                <div class="directory-input">
-                    <input type="text" id="game-path" readonly>
-                    <button id="browse-btn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
-                        </svg>
-                    </button>
-                </div>
-                <button id="reset-path" class="reset-button">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 12a9 9 0 019-9 9 9 0 019 9 9 9 0 01-9 9m0-18C7.03 3 3 7.03 3 12"/>
-                        <path d="M12 7v5l4 4"/>
-                    </svg>
-                    Réinitialiser
-                </button>
             </div>
 
             <div class="setting-item">
