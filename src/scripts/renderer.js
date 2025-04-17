@@ -8,7 +8,7 @@ const versionSelect = document.getElementById('version');
 const memorySlider = document.getElementById('memory-slider');
 const memoryValue = document.getElementById('memory-value');
 const progressBar = document.querySelector('.progress');
-const statusText = document.querySelector('.status-text');
+const statusText = document.getElementById('status-text');
 const minimizeBtn = document.querySelector('.minimize-btn');
 const closeBtn = document.querySelector('.close-btn');
 const avatar = document.querySelector('.avatar');
@@ -155,17 +155,23 @@ function updateLaunchUI(stage = 'idle', status = '') {
 
     const currentState = states[stage] || states.idle;
     
-    launchButton.textContent = currentState.button;
-    statusText.textContent = status || currentState.status;
-    launchButton.disabled = currentState.disabled;
+    if (launchButton) {
+        launchButton.textContent = currentState.button;
+        launchButton.disabled = currentState.disabled;
+    }
     
-    // Animation de la barre de progression
-    if (stage !== 'idle') {
-        progressBar.style.width = `${currentState.progress}%`;
-        progressBar.parentElement.classList.add('active');
-    } else {
-        progressBar.style.width = '0%';
-        progressBar.parentElement.classList.remove('active');
+    if (statusText) {
+        statusText.textContent = status || currentState.status;
+    }
+    
+    // Gérer l'animation de progression dans la pill loading
+    const loadingPill = document.querySelector('.pill.loading');
+    if (loadingPill) {
+        if (stage !== 'idle') {
+            loadingPill.classList.add('progress');
+        } else {
+            loadingPill.classList.remove('progress');
+        }
     }
     
     console.log('UI updated:', currentState);
@@ -175,10 +181,19 @@ function updateLaunchUI(stage = 'idle', status = '') {
 async function updateAuthUI(profile) {
     isAuthenticated = true;
     currentUser = profile;
-    usernameInput.value = profile.name;
-    usernameInput.disabled = true;
-    avatar.style.backgroundImage = `url('https://minotar.net/avatar/${profile.name}')`;
-    avatarStatus.classList.add('online');
+    
+    // Mettre à jour le nom d'utilisateur dans l'interface
+    const usernameElement = document.getElementById('username');
+    if (usernameElement) {
+        usernameElement.textContent = profile.name;
+    }
+    
+    // Mettre à jour l'avatar
+    const avatarElement = document.querySelector('.avatar');
+    if (avatarElement) {
+        avatarElement.src = `https://minotar.net/avatar/${profile.name}`;
+    }
+    
     logoutBtn.style.display = 'flex';
     updateLaunchUI('idle');
     updateGameStats();
@@ -280,70 +295,102 @@ ipcRenderer.on('play-time-update', (event, data) => {
     }
 });
 
-// Gestion des événements de progression
-ipcRenderer.on('install-progress', (event, data) => {
-    const statusText = document.querySelector('.status-text');
-    const progressBar = document.querySelector('.progress');
+// Fonction pour animer un changement de statut
+function animateStatusChange(text) {
+    const statusText = document.getElementById('status-text');
+    const loadingPill = document.querySelector('.pill.loading');
+    
+    if (!statusText) return;
+    
+    // Animation de flash pour signaler le changement
+    if (loadingPill) {
+        loadingPill.style.backgroundColor = 'rgba(255, 125, 50, 0.3)';
+        setTimeout(() => {
+            loadingPill.style.backgroundColor = '';
+        }, 300);
+    }
+    
+    // Animation de fondu pour le texte
+    statusText.style.opacity = '0';
+    statusText.style.transform = 'translateY(5px)';
+    
+    setTimeout(() => {
+        statusText.textContent = text;
+        statusText.style.opacity = '1';
+        statusText.style.transform = 'translateY(0)';
+    }, 150);
+}
 
+// Gestion des événements de progression avec animation
+ipcRenderer.on('install-progress', (event, data) => {
+    const loadingPill = document.querySelector('.pill.loading');
+    
+    // Activer l'animation de progression
+    if (loadingPill) {
+        loadingPill.classList.add('progress');
+    }
+
+    let statusMessage = '';
+    
     switch (data.stage) {
         case 'installing-vanilla':
-            statusText.textContent = data.message || 'Installation de Minecraft...';
+            statusMessage = data.message || 'Installation de Minecraft...';
             if (data.data) {
                 console.log('Installation Vanilla progress:', data.data);
             }
             break;
         case 'downloading-forge':
-            statusText.textContent = data.message || 'Téléchargement de Forge...';
+            statusMessage = data.message || 'Téléchargement de Forge...';
             break;
         case 'installing-forge':
-            statusText.textContent = data.message || 'Installation de Forge...';
+            statusMessage = data.message || 'Installation de Forge...';
             if (data.data) {
                 console.log('Installation Forge progress:', data.data);
             }
             break;
         case 'installing-mods':
-            statusText.textContent = data.message || 'Installation des mods...';
+            statusMessage = data.message || 'Installation des mods...';
             break;
         case 'downloading-mod':
-            statusText.textContent = `Téléchargement du mod : ${data.modName}`;
+            statusMessage = `Téléchargement du mod : ${data.modName}`;
             break;
         case 'mod-progress':
-            statusText.textContent = `Installation des mods : ${data.progress}%`;
-            progressBar.style.width = `${data.progress}%`;
+            statusMessage = `Installation des mods : ${data.progress}%`;
             break;
         case 'installing-resources':
-            statusText.textContent = data.message || 'Installation des ressources...';
+            statusMessage = data.message || 'Installation des ressources...';
             console.log('Installation des ressources...');
             break;
         case 'installing-resourcepack':
-            statusText.textContent = data.message || 'Installation du pack de ressources...';
+            statusMessage = data.message || 'Installation du pack de ressources...';
             console.log('Installation du pack de ressources:', data.message);
             break;
         case 'resourcepack-progress':
-            statusText.textContent = `Installation du pack de ressources : ${data.progress}%`;
-            progressBar.style.width = `${data.progress}%`;
+            statusMessage = `Installation du pack de ressources : ${data.progress}%`;
             console.log('Progression du pack de ressources:', data.progress + '%');
             break;
         case 'installing-shader':
-            statusText.textContent = data.message || 'Installation du shader...';
+            statusMessage = data.message || 'Installation du shader...';
             console.log('Installation du shader:', data.message);
             break;
         case 'shader-progress':
-            statusText.textContent = `Installation du shader : ${data.progress}%`;
-            progressBar.style.width = `${data.progress}%`;
+            statusMessage = `Installation du shader : ${data.progress}%`;
             console.log('Progression du shader:', data.progress + '%');
             break;
         case 'launching':
             updateLaunchUI('launch', 'Démarrage du client Minecraft...');
-            progressBar.style.width = `${data.progress}%`;
+            return; // updateLaunchUI gère déjà l'UI
             break;
         case 'verification':
             updateLaunchUI('install', `Vérification des fichiers: ${data.file}`);
-            progressBar.style.width = `${data.progress}%`;
+            return; // updateLaunchUI gère déjà l'UI
             break;
         default:
-            statusText.textContent = data.message || 'Installation en cours...';
+            statusMessage = data.message || 'Installation en cours...';
     }
+    
+    // Animer le changement de statut
+    animateStatusChange(statusMessage);
 });
 
 // Vérification du statut d'authentification au démarrage
@@ -360,17 +407,22 @@ ipcRenderer.on('game-path', (event, path) => {
 
 // Gestion des événements de désinstallation
 ipcRenderer.on('uninstall-progress', (event, data) => {
-    const statusText = document.querySelector('.status-text');
-    const progressBar = document.querySelector('.progress');
+    const loadingPill = document.querySelector('.pill.loading');
 
+    // Activer l'animation de progression
+    if (loadingPill) {
+        loadingPill.classList.add('progress');
+    }
+
+    let statusMessage = '';
+    
     switch (data.stage) {
         case 'prepare':
             updateLaunchUI('install', data.message || 'Préparation de la désinstallation...');
-            progressBar.style.width = '25%';
+            return; // updateLaunchUI gère déjà l'UI
             break;
         case 'removing':
-            statusText.textContent = data.message || 'Suppression des fichiers...';
-            progressBar.style.width = '75%';
+            statusMessage = data.message || 'Suppression des fichiers...';
             break;
         case 'complete':
             updateLaunchUI('idle', data.message || 'Désinstallation terminée.');
@@ -378,16 +430,21 @@ ipcRenderer.on('uninstall-progress', (event, data) => {
                 alert('Désinstallation terminée. Le launcher va maintenant se fermer.');
                 ipcRenderer.send('close-window');
             }, 2000);
+            return; // updateLaunchUI gère déjà l'UI
             break;
         case 'error':
             updateLaunchUI('error', data.message || 'Erreur lors de la désinstallation.');
             setTimeout(() => {
                 alert('Erreur lors de la désinstallation: ' + data.message);
             }, 1000);
+            return; // updateLaunchUI gère déjà l'UI
             break;
         default:
-            statusText.textContent = data.message || 'Désinstallation en cours...';
+            statusMessage = data.message || 'Désinstallation en cours...';
     }
+    
+    // Animer le changement de statut
+    animateStatusChange(statusMessage);
 });
 
 // Gestion du bouton de sélection du dossier
@@ -477,41 +534,46 @@ async function installForge() {
         return true;
     } catch (error) {
         console.error('Erreur lors de l\'installation de Forge:', error);
-        const statusText = document.querySelector('.status-text');
+        const statusText = document.getElementById('status-text');
         statusText.textContent = `Erreur: ${error.message}`;
         return false;
     }
 }
 
-// Gestion du lancement du jeu
-launchButton.addEventListener('click', async () => {
-    try {
-        // Vérifier d'abord si l'utilisateur est authentifié
-        if (!isAuthenticated) {
-            // Si non authentifié, lancer le processus de connexion Microsoft
-            updateLaunchUI('auth', 'Connexion en cours...');
-            const authResult = await ipcRenderer.invoke('microsoft-login');
-            
-            if (!authResult.success) {
-                throw new Error(authResult.error || 'Échec de l\'authentification');
+// Ajouter un gestionnaire pour le bouton de lancement
+function setupLaunchButton() {
+    const launchBtn = document.getElementById('launch-btn');
+    if (launchBtn) {
+        launchBtn.addEventListener('click', async () => {
+            if (isAuthenticated) {
+                // Si l'utilisateur est authentifié, lancer le jeu
+                await launchGame();
+            } else {
+                // Si l'utilisateur n'est pas authentifié, lancer l'authentification
+                try {
+                    launchBtn.disabled = true;
+                    updateLaunchUI('auth', 'Connexion en cours...');
+                    
+                    const authResult = await ipcRenderer.invoke('microsoft-login');
+                    
+                    if (authResult && authResult.success) {
+                        // Mettre à jour l'interface avec les données du profil
+                        updateAuthUI(authResult.profile);
+                        // Après l'authentification réussie, lancer le jeu
+                        await launchGame();
+                    } else {
+                        throw new Error(authResult.error || 'Échec de l\'authentification');
+                    }
+                } catch (error) {
+                    console.error('Erreur d\'authentification:', error);
+                    updateLaunchUI('idle', 'Erreur: ' + error.message);
+                    launchBtn.disabled = false;
+                    showErrorModal('Erreur d\'authentification: ' + error.message);
+                }
             }
-            
-            // Mise à jour de l'interface avec les infos du profil
-            await updateAuthUI(authResult.profile);
-            
-            // Ne pas lancer le jeu automatiquement après l'authentification
-            updateLaunchUI('idle', 'Connexion réussie! Cliquez sur JOUER pour lancer le jeu.');
-            return;
-        }
-
-        // Si authentifié, lancer le jeu directement
-        launchGame();
-    } catch (error) {
-        console.error('Erreur lancement:', error);
-        updateLaunchUI('error', `Erreur: ${error.message}`);
-        showErrorModal(`Erreur: ${error.message}`);
+        });
     }
-});
+}
 
 // Fonction pour lancer le jeu
 async function launchGame() {
@@ -544,37 +606,24 @@ async function launchGame() {
     }
 }
 
-// Gestion de la navigation entre les pages
-document.querySelectorAll('.nav-btn').forEach(button => {
+// Gestion de la navigation
+document.querySelectorAll('.nav a').forEach(button => {
     button.addEventListener('click', () => {
-        const page = button.dataset.page;
-        
-        // Retirer la classe active de tous les boutons
-        document.querySelectorAll('.nav-btn').forEach(btn => {
+        // Enlever la classe active de tous les liens
+        document.querySelectorAll('.nav a').forEach(btn => {
             btn.classList.remove('active');
         });
         
-        // Ajouter la classe active au bouton cliqué
+        // Ajouter la classe active au lien cliqué
         button.classList.add('active');
-        
-        // Masquer toutes les pages
-        document.querySelectorAll('.main-content > div').forEach(page => {
-            // Ajouter une vérification pour éviter l'erreur sur null
-            if (page) {
-                page.style.display = 'none';
-            }
-        });
-        
-        // Afficher la page correspondante
-        const targetPage = document.querySelector(`.page-${page}`);
-        if (targetPage) {
-            targetPage.style.display = 'flex';
-        }
     });
 });
 
 // Au chargement, afficher la page play par défaut
-document.querySelector('.page-play').style.display = 'flex';
+const pagePlayElement = document.querySelector('.page-play');
+if (pagePlayElement) {
+    pagePlayElement.style.display = 'flex';
+}
 
 // Initialisation de l'interface
 updateLaunchUI('idle');
@@ -842,16 +891,18 @@ function showNotification(message, duration = 5000) {
 // Effet de survol sur la zone de contenu principal
 const mainContent = document.querySelector('.main-content');
 
-mainContent.addEventListener('mousemove', (e) => {
-    // Calculer la position relative de la souris
-    const rect = mainContent.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    // Mettre à jour les variables CSS utilisées pour le gradient
-    mainContent.style.setProperty('--x', `${(x / rect.width) * 100}%`);
-    mainContent.style.setProperty('--y', `${(y / rect.height) * 100}%`);
-});
+if (mainContent) {
+    mainContent.addEventListener('mousemove', (e) => {
+        // Calculer la position relative de la souris
+        const rect = mainContent.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // Mettre à jour les variables CSS utilisées pour le gradient
+        mainContent.style.setProperty('--x', `${(x / rect.width) * 100}%`);
+        mainContent.style.setProperty('--y', `${(y / rect.height) * 100}%`);
+    });
+}
 
 // Notification de Java manquant
 ipcRenderer.on('java-missing', (event, data) => {
@@ -980,3 +1031,608 @@ function showErrorModal(message) {
     closeBtn.addEventListener('click', closeModal);
     okBtn.addEventListener('click', closeModal);
 }
+
+// Fonctions pour le nouveau design
+async function changeServer(serverName, title, description) {
+    // Mettre à jour l'arrière-plan
+    const mainElement = document.querySelector('.main');
+    if (mainElement) {
+        // Obtenir le chemin de l'image de fond
+        const bgImageUrl = await getAssetPath('backgrounds', `${serverName}.jpg`);
+        console.log(`Setting background to: ${bgImageUrl}`);
+        mainElement.style.background = `url('${bgImageUrl}') center/cover no-repeat`;
+    }
+    
+    // Mettre à jour le titre et la description
+    const titleElement = document.querySelector('.title');
+    const descElement = document.querySelector('.desc');
+    const backBtnElement = document.querySelector('.back-btn');
+    
+    if (titleElement) {
+        titleElement.textContent = title.toUpperCase();
+    }
+    
+    if (descElement) {
+        descElement.textContent = description;
+    }
+    
+    // Mettre à jour le bouton de retour
+    if (backBtnElement) {
+        backBtnElement.style.display = 'inline-flex';
+    }
+    
+    // Stocker le serveur sélectionné (uniquement si la méthode existe)
+    try {
+        console.log(`Attempting to save server selection: ${serverName}`);
+        // Vérifier si la méthode existe avant de l'appeler
+        if (typeof ipcRenderer.invoke === 'function') {
+            // Envelopper dans un try/catch pour éviter les erreurs
+            ipcRenderer.invoke('save-server-selection', serverName).catch(err => {
+                console.warn('Warning: Failed to save server selection:', err.message);
+                // On ne bloque pas l'exécution si ça échoue
+            });
+        }
+    } catch (err) {
+        console.warn('Warning: Could not save server selection:', err.message);
+        // On ne bloque pas l'exécution si ça échoue
+    }
+}
+
+// Initialiser le serveur au démarrage
+async function initSelectedServer() {
+    try {
+        // Utiliser elysia par défaut sans appeler get-server-selection
+        const serverName = 'elysia';
+        console.log(`Serveur sélectionné: ${serverName}`);
+        
+        // Mettre à jour l'interface pour le serveur sélectionné
+        if (serverName === 'elysia') {
+            await changeServer('elysia', 'ÉLYSIA', 'Plongez dans un univers épique de factions où PvP, PvE et événements légendaires forgent votre destinée.');
+        }
+    } catch (error) {
+        console.error('Erreur lors de l\'initialisation du serveur:', error);
+    }
+}
+
+// Événement chargement du DOM
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialiser l'application
+    initApp();
+});
+
+// Fonction d'initialisation de l'application
+function initApp() {
+    console.log('Initialisation de l\'application');
+    
+    // Initialiser l'interface
+    updateLaunchUI('idle');
+    initSlider();
+    checkFirstPersonModStatus();
+    
+    // Configurer le bouton de lancement
+    setupLaunchButton();
+    
+    // Gestionnaire pour les icônes dans la sidebar
+    setupNavigationHandlers();
+    
+    // Initialiser le serveur sélectionné
+    initSelectedServer();
+    
+    // Charger les mises à jour
+    fetchUpdates();
+    
+    // Mettre à jour les statistiques
+    updateGameStats();
+    
+    // Afficher une notification de bienvenue
+    setTimeout(() => {
+        showNotification('Bienvenue sur Elysia !');
+    }, 1000);
+}
+
+// Gestionnaires de navigation
+function setupNavigationHandlers() {
+    console.log('Configuration des gestionnaires de navigation');
+    
+    // Gestionnaire pour le bouton de retour
+    const backBtn = document.querySelector('.back-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Clic sur le bouton de retour');
+            showServerSelection();
+        });
+    }
+    
+    // Appliquer des classes de transition au contenu principal
+    const contentElements = document.querySelectorAll('.content, .main');
+    contentElements.forEach(el => {
+        el.classList.add('content-transition');
+    });
+    
+    // Gestionnaire pour les icônes dans la sidebar
+    document.querySelectorAll('.nav a').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log(`Clic sur l'onglet ${link.dataset.page}`);
+            
+            // Enlever la classe active de tous les liens
+            document.querySelectorAll('.nav a').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Ajouter la classe active au lien cliqué
+            link.classList.add('active');
+            
+            // Récupérer la page à afficher
+            const page = link.dataset.page;
+            
+            // Transition de sortie pour les pages overlay actuellement affichées
+            const activeOverlays = document.querySelectorAll('.page-news.active, .page-updates.active, .page-settings.active');
+            activeOverlays.forEach(overlay => {
+                overlay.classList.remove('active');
+                // Après la transition de sortie, masquer complètement
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 300); // Correspond à la durée de la transition CSS
+            });
+
+            // Afficher la page correspondante avec transition
+            if (page === 'home') {
+                console.log('Affichage de la page d\'accueil');
+                // Ajouter une légère animation au contenu principal
+                const content = document.querySelector('.content');
+                if (content) {
+                    content.style.opacity = '0';
+                    content.style.transform = 'translateY(10px)';
+                    setTimeout(() => {
+                        content.style.opacity = '1';
+                        content.style.transform = 'translateY(0)';
+                    }, 50);
+                }
+            } else if (page === 'news') {
+                console.log('Affichage de la page Actualités');
+                const newsPage = document.querySelector('.page-news');
+                if (newsPage) {
+                    newsPage.style.display = 'block';
+                    // Petit délai pour que la transition soit visible
+                    setTimeout(() => {
+                        newsPage.classList.add('active');
+                    }, 50);
+                    fetchDiscordNews();
+                }
+            } else if (page === 'updates') {
+                console.log('Affichage de la page Mises à jour');
+                const updatesPage = document.querySelector('.page-updates');
+                if (updatesPage) {
+                    updatesPage.style.display = 'block';
+                    // Petit délai pour que la transition soit visible
+                    setTimeout(() => {
+                        updatesPage.classList.add('active');
+                    }, 50);
+                    fetchUpdates();
+                }
+            } else if (page === 'settings') {
+                console.log('Affichage de la page Paramètres');
+                const settingsPage = document.querySelector('.page-settings');
+                if (settingsPage) {
+                    settingsPage.style.display = 'block';
+                    // Petit délai pour que la transition soit visible
+                    setTimeout(() => {
+                        settingsPage.classList.add('active');
+                    }, 50);
+                }
+            }
+        });
+    });
+    
+    // Gestionnaire pour le bouton de paramètres dans la page d'accueil
+    const configButton = document.querySelector('.btn.config');
+    if (configButton) {
+        configButton.addEventListener('click', () => {
+            console.log('Clic sur le bouton Paramètres');
+            
+            // Mettre à jour la navigation dans la sidebar
+            document.querySelectorAll('.nav a').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const settingsLink = document.querySelector('.nav a[data-page="settings"]');
+            if (settingsLink) {
+                settingsLink.classList.add('active');
+            }
+            
+            // Transition de sortie pour les pages overlay actuellement affichées
+            const activeOverlays = document.querySelectorAll('.page-news.active, .page-updates.active');
+            activeOverlays.forEach(overlay => {
+                overlay.classList.remove('active');
+                // Après la transition de sortie, masquer complètement
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 300); // Correspond à la durée de la transition CSS
+            });
+            
+            // Afficher la page des paramètres avec transition
+            const settingsPage = document.querySelector('.page-settings');
+            if (settingsPage) {
+                settingsPage.style.display = 'block';
+                // Petit délai pour que la transition soit visible
+                setTimeout(() => {
+                    settingsPage.classList.add('active');
+                }, 50);
+            }
+        });
+    }
+}
+
+// Fonction pour afficher une liste de serveurs
+async function showServerSelection() {
+    console.log('Affichage de la sélection de serveur');
+    
+    // Obtenir le chemin de l'image de fond
+    const bgImageUrl = await getAssetPath('backgrounds', 'classic.png');
+    console.log('Background image URL for server selection:', bgImageUrl);
+    
+    const serverSelectionHTML = `
+        <div id="server-selection" class="server-selection">
+            <h2>SÉLECTION DE SERVEUR</h2>
+            <div class="server-list">
+                <div class="server-item" data-server="elysia">
+                    <div class="server-bg" style="background-image: url('${bgImageUrl}')"></div>
+                    <div class="server-info">
+                        <h3>ÉLYSIA</h3>
+                        <p>Plongez dans un univers épique de factions où PvP, PvE et événements légendaires forgent votre destinée.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const content = document.querySelector('.content');
+    
+    // Cacher les éléments actuels
+    const backBtn = document.querySelector('.back-btn');
+    const titleElem = document.querySelector('.title');
+    const descElem = document.querySelector('.desc');
+    const actionsElem = document.querySelector('.actions');
+    const footerElem = document.querySelector('.footer');
+    
+    if (backBtn) backBtn.style.display = 'none';
+    if (titleElem) titleElem.style.display = 'none';
+    if (descElem) descElem.style.display = 'none';
+    if (actionsElem) actionsElem.style.display = 'none';
+    if (footerElem) footerElem.style.display = 'none';
+    
+    // Ajouter la sélection de serveur
+    const serverSelectionElement = document.createElement('div');
+    serverSelectionElement.innerHTML = serverSelectionHTML;
+    if (content) {
+        content.appendChild(serverSelectionElement.firstElementChild);
+        
+        // Ajouter des gestionnaires d'événements aux serveurs
+        document.querySelectorAll('.server-item').forEach(serverItem => {
+            serverItem.addEventListener('click', async () => {
+                const serverName = serverItem.dataset.server;
+                const servers = {
+                    'elysia': {
+                        title: 'Élysia',
+                        description: 'Plongez dans un univers épique de factions où PvP, PvE et événements légendaires forgent votre destinée.'
+                    }
+                };
+                
+                // Supprimer la sélection de serveur
+                const selectionElem = document.getElementById('server-selection');
+                if (selectionElem) {
+                    selectionElem.remove();
+                }
+                
+                // Afficher les éléments cachés
+                if (backBtn) backBtn.style.display = 'inline-flex';
+                if (titleElem) titleElem.style.display = 'block';
+                if (descElem) descElem.style.display = 'block';
+                if (actionsElem) actionsElem.style.display = 'flex';
+                if (footerElem) footerElem.style.display = 'flex';
+                
+                // Changer le serveur
+                await changeServer(serverName, servers[serverName].title, servers[serverName].description);
+            });
+        });
+    }
+}
+
+// Log image loading issues
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('Checking image loading...');
+    
+    // Get the base URL for the application
+    const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+    console.log('Application base URL:', baseUrl);
+    
+    // Display all image paths for debugging
+    console.log('All image elements on page:');
+    document.querySelectorAll('img').forEach(img => {
+        console.log(`Image element: src="${img.src}", alt="${img.alt}"`);
+    });
+    
+    // Check logo loading
+    const logoImg = document.querySelector('.sidebar .logo img');
+    if (logoImg) {
+        console.log('Logo element found, current src:', logoImg.src);
+        logoImg.addEventListener('load', () => {
+            console.log('Logo image loaded successfully');
+        });
+        logoImg.addEventListener('error', async (e) => {
+            console.error('Logo image failed to load:', e);
+            console.log('Attempting to fix logo path...');
+            
+            // Utiliser notre fonction utilitaire pour obtenir le chemin correct
+            const logoPath = await getAssetPath('', 'logo.png');
+            console.log('Using asset path utility for logo:', logoPath);
+            logoImg.src = logoPath;
+        });
+    } else {
+        console.error('Logo element not found in DOM');
+    }
+    
+    // Fix logo path preemptively
+    if (logoImg) {
+        try {
+            console.log('Preemptively fixing logo path...');
+            const logoPath = await getAssetPath('', 'logo.png');
+            console.log('Using asset path utility for logo:', logoPath);
+            logoImg.src = logoPath;
+        } catch (err) {
+            console.error('Failed to preemptively fix logo path:', err);
+        }
+    }
+    
+    // Log all background images in CSS
+    console.log('Checking all elements with background-image CSS property:');
+    const allElements = document.querySelectorAll('*');
+    allElements.forEach(async (el) => {
+        const style = window.getComputedStyle(el);
+        const bgImage = style.backgroundImage;
+        if (bgImage && bgImage !== 'none') {
+            console.log(`Element ${el.tagName} has background-image: ${bgImage}`);
+            // For server-bg elements specifically
+            if (el.classList.contains('server-bg')) {
+                console.log('Found server-bg element with background-image:', bgImage);
+                // Try to fix server-bg background if it appears to be missing
+                if (bgImage === 'none' || bgImage === '') {
+                    console.log('Attempting to fix server-bg background...');
+                    const bgPath = await getAssetPath('backgrounds', 'classic.png');
+                    el.style.backgroundImage = `url("${bgPath}")`;
+                }
+            }
+        }
+    });
+});
+
+// Ajouter juste après le code de diagnostic pour les images
+// Améliorer la navigation dans la sidebar
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Initialisation de la navigation de la barre latérale...');
+    
+    // Obtenir tous les liens de navigation
+    const navLinks = document.querySelectorAll('.nav a');
+    
+    // Vérifier que les liens de navigation sont trouvés
+    console.log(`${navLinks.length} liens de navigation trouvés`);
+    
+    // Enlever les gestionnaires d'événements existants pour éviter les doublons
+    navLinks.forEach(link => {
+        // Clone l'élément pour supprimer tous les gestionnaires d'événements
+        const newLink = link.cloneNode(true);
+        link.parentNode.replaceChild(newLink, link);
+    });
+    
+    // Ajouter de nouveaux gestionnaires d'événements
+    document.querySelectorAll('.nav a').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            const page = link.getAttribute('data-page');
+            console.log(`Clic sur l'onglet ${page}`);
+            
+            // Enlever la classe active de tous les liens
+            document.querySelectorAll('.nav a').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Ajouter la classe active au lien cliqué
+            link.classList.add('active');
+            
+            // Récupérer la page à afficher
+            handlePageNavigation(page);
+        });
+    });
+});
+
+// Fonction pour gérer la navigation entre les pages
+function handlePageNavigation(page) {
+    console.log(`Navigation vers la page: ${page}`);
+    
+    // Transition de sortie pour les pages overlay actuellement affichées
+    const activeOverlays = document.querySelectorAll('.page-news.active, .page-updates.active, .page-settings.active');
+    activeOverlays.forEach(overlay => {
+        overlay.classList.remove('active');
+        // Après la transition de sortie, masquer complètement
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 300); // Correspond à la durée de la transition CSS
+    });
+
+    // Afficher la page correspondante avec transition
+    if (page === 'home') {
+        console.log('Affichage de la page d\'accueil');
+        // Ajouter une légère animation au contenu principal
+        const content = document.querySelector('.content');
+        if (content) {
+            content.style.opacity = '0';
+            content.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                content.style.opacity = '1';
+                content.style.transform = 'translateY(0)';
+            }, 50);
+        }
+    } else if (page === 'news') {
+        console.log('Affichage de la page Actualités');
+        const newsPage = document.querySelector('.page-news');
+        if (newsPage) {
+            newsPage.style.display = 'block';
+            // Petit délai pour que la transition soit visible
+            setTimeout(() => {
+                newsPage.classList.add('active');
+            }, 50);
+            if (typeof fetchDiscordNews === 'function') {
+                fetchDiscordNews();
+            }
+        }
+    } else if (page === 'updates') {
+        console.log('Affichage de la page Mises à jour');
+        const updatesPage = document.querySelector('.page-updates');
+        if (updatesPage) {
+            updatesPage.style.display = 'block';
+            // Petit délai pour que la transition soit visible
+            setTimeout(() => {
+                updatesPage.classList.add('active');
+            }, 50);
+            if (typeof fetchUpdates === 'function') {
+                fetchUpdates();
+            }
+        }
+    } else if (page === 'settings') {
+        console.log('Affichage de la page Paramètres');
+        const settingsPage = document.querySelector('.page-settings');
+        if (settingsPage) {
+            settingsPage.style.display = 'block';
+            // Petit délai pour que la transition soit visible
+            setTimeout(() => {
+                settingsPage.classList.add('active');
+            }, 50);
+        }
+    }
+}
+
+// Fonction utilitaire pour obtenir des chemins absolus vers les ressources
+async function getAssetPath(assetType, fileName) {
+    console.log(`Getting path for ${assetType}/${fileName}`);
+    
+    try {
+        // Essayer d'abord avec IPC
+        const result = await ipcRenderer.invoke('get-asset-path', assetType, fileName);
+        if (result.success) {
+            console.log('Got asset path from main process:', result.url);
+            return result.url;
+        } else {
+            console.warn('Failed to get asset path from main process:', result.error);
+        }
+    } catch (err) {
+        console.warn('Error invoking get-asset-path:', err);
+    }
+    
+    // Fallback methods
+    let assetPath = `./${assetType}/${fileName}`;
+    
+    try {
+        // Différentes stratégies de fallback
+        try {
+            // Tenter d'utiliser le module path
+            const path = require('path');
+            const appPath = process.cwd();
+            
+            // Construire le chemin absolu
+            if (assetType === 'backgrounds') {
+                assetPath = path.join(appPath, 'assets', 'backgrounds', fileName);
+            } else {
+                assetPath = path.join(appPath, 'assets', fileName);
+            }
+            
+            console.log('Asset absolute path:', assetPath);
+            return `file://${assetPath}`;
+        } catch (err) {
+            console.warn('Failed to get path with path module:', err);
+            
+            // Fallback: essayer d'utiliser l'URL de base
+            const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+            if (assetType === 'backgrounds') {
+                assetPath = `${baseUrl}/assets/backgrounds/${fileName}`;
+            } else {
+                assetPath = `${baseUrl}/assets/${fileName}`;
+            }
+            console.log('Asset URL with baseUrl:', assetPath);
+            return assetPath;
+        }
+    } catch (err) {
+        console.error('All path resolution strategies failed:', err);
+        // Dernier recours: chemin relatif simple
+        if (assetType === 'backgrounds') {
+            return `./assets/backgrounds/${fileName}`;
+        } else {
+            return `./assets/${fileName}`;
+        }
+    }
+}
+
+// Gestionnaires pour les boutons de fermeture des onglets (supprimés)
+const pageSettings = document.querySelector('.page-settings');
+const pageNews = document.querySelector('.page-news');
+const pageUpdates = document.querySelector('.page-updates');
+
+// Fonction pour fermer les onglets avec animation
+function closeAllTabs() {
+    if (pageSettings) {
+        pageSettings.classList.remove('active');
+        setTimeout(() => {
+            pageSettings.style.display = 'none';
+        }, 300);
+    }
+    if (pageNews) {
+        pageNews.classList.remove('active');
+        setTimeout(() => {
+            pageNews.style.display = 'none';
+        }, 300);
+    }
+    if (pageUpdates) {
+        pageUpdates.classList.remove('active');
+        setTimeout(() => {
+            pageUpdates.style.display = 'none';
+        }, 300);
+    }
+}
+
+// Gestionnaires pour les liens de navigation
+document.querySelectorAll('.nav a').forEach(navLink => {
+    navLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // Retirer la classe active de tous les liens
+        document.querySelectorAll('.nav a').forEach(link => {
+            link.classList.remove('active');
+        });
+        
+        // Ajouter la classe active au lien cliqué
+        navLink.classList.add('active');
+        
+        // Fermer tous les onglets
+        closeAllTabs();
+        
+        // Ouvrir l'onglet correspondant
+        const page = navLink.getAttribute('data-page');
+        if (page === 'home') {
+            // Ne rien faire, on est déjà sur la page d'accueil
+        } else if (page === 'news') {
+            pageNews.style.display = 'block';
+            // Déclencher un reflow avant d'ajouter la classe
+            void pageNews.offsetWidth;
+            pageNews.classList.add('active');
+        } else if (page === 'updates') {
+            pageUpdates.style.display = 'block';
+            void pageUpdates.offsetWidth;
+            pageUpdates.classList.add('active');
+        } else if (page === 'settings') {
+            pageSettings.style.display = 'block';
+            void pageSettings.offsetWidth;
+            pageSettings.classList.add('active');
+        }
+    });
+});

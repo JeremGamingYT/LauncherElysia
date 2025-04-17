@@ -179,8 +179,8 @@ function createWindow() {
     ensureGameDirectory(savedGamePath);
 
     const html = ejs.render(template, {
-        title: 'Elysia - v.1.7.7 (BETA)',
-        versions: ['1.7.7'],
+        title: 'Elysia - v.1.8.0 (BETA)',
+        versions: ['1.8.0'],
         news: news,
         updates: updates,
         cssPath: `file://${cssPath}`,
@@ -248,10 +248,12 @@ async function createSplashWindow() {
     const templatePath = path.join(__dirname, 'views', 'splash.ejs');
     const template = fs.readFileSync(templatePath, 'utf-8');
     const logoPath = path.join(__dirname, 'assets', 'logo.png').replace(/\\/g, '/');
+    const bgImagePath = path.join(__dirname, 'assets', 'backgrounds', 'elysia.jpg').replace(/\\/g, '/');
     
     const html = ejs.render(template, {
         version: app.getVersion(),
-        logoPath: `file://${logoPath}`
+        logoPath: `file://${logoPath}`,
+        bgImagePath: `file://${bgImagePath}`
     });
 
     const tempPath = path.join(app.getPath('temp'), 'splash.html');
@@ -1942,7 +1944,7 @@ ipcMain.handle('get-game-stats', () => {
     
     return {
         playTime: playTime,
-        version: app.getVersion() || '1.7.7' // Utiliser la version du launcher au lieu de Minecraft
+        version: app.getVersion() || '1.8.0' // Utiliser la version du launcher au lieu de Minecraft
     };
 });
 
@@ -2239,7 +2241,7 @@ ipcMain.handle('fetch-updates', async () => {
                     updates = [
                         {
                             id: '0',
-                            version: app.getVersion() || '1.7.7',
+                            version: app.getVersion() || '1.8.0',
                             date: new Date().toISOString(),
                             title: 'Launcher Elysia',
                             description: 'Bienvenue dans le Launcher Elysia. Consultez les releases sur GitHub pour plus d\'informations sur les mises à jour.',
@@ -2262,7 +2264,7 @@ ipcMain.handle('fetch-updates', async () => {
         const defaultUpdates = [
             {
                 id: '0',
-                version: app.getVersion() || '1.7.7',
+                version: app.getVersion() || '1.8.0',
                 date: new Date().toISOString(),
                 title: 'Information',
                 description: 'Impossible de récupérer les mises à jour. Vérifiez votre connexion Internet.',
@@ -2530,4 +2532,71 @@ ipcMain.handle('toggle-firstperson-mod', async (event, enable) => {
 
 ipcMain.handle('get-firstperson-status', async () => {
     return await checkFirstPersonModStatus();
+});
+
+// Vérification de l'authentification au démarrage
+app.on('ready', async () => {
+  const token = store.get('minecraft-token');
+  const profile = store.get('minecraft-profile');
+  
+  if (token && profile) {
+    try {
+      // Vérifier si le token est toujours valide
+      // Si non, essayer de le rafraîchir
+      const isValid = await refreshMinecraftToken();
+      
+      if (isValid) {
+        const refreshedProfile = store.get('minecraft-profile');
+        mainWindow.webContents.send('auth-status', {
+          isAuthenticated: true,
+          profile: refreshedProfile
+        });
+      } else {
+        // Si le rafraîchissement a échoué, ne pas envoyer d'état d'authentification
+        // Cela permettra à l'utilisateur de se connecter normalement sans être forcé
+        console.log('Le token n\'a pas pu être rafraîchi, authentification requise');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la vérification de l\'authentification:', error);
+    }
+  }
+});
+
+// Gestionnaire pour la sauvegarde de la sélection de serveur
+ipcMain.handle('save-server-selection', (event, serverName) => {
+    console.log(`Sauvegarde de la sélection de serveur: ${serverName}`);
+    try {
+        store.set('selected-server', serverName);
+        return { success: true };
+    } catch (error) {
+        console.error('Erreur lors de la sauvegarde de la sélection de serveur:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+// Gestionnaire pour obtenir les chemins d'accès aux ressources
+ipcMain.handle('get-asset-path', (event, assetType, fileName) => {
+    console.log(`Récupération du chemin pour ${assetType}/${fileName}`);
+    try {
+        const assetPath = path.join(__dirname, 'assets');
+        
+        let filePath;
+        if (assetType === 'backgrounds') {
+            filePath = path.join(assetPath, 'backgrounds', fileName);
+        } else {
+            filePath = path.join(assetPath, fileName);
+        }
+        
+        // Vérifier si le fichier existe
+        if (fs.existsSync(filePath)) {
+            console.log(`Fichier trouvé: ${filePath}`);
+            return { success: true, path: filePath, url: `file://${filePath.replace(/\\/g, '/')}` };
+        } else {
+            console.error(`Fichier non trouvé: ${filePath}`);
+            return { success: false, error: 'Fichier non trouvé', searchedPath: filePath };
+        }
+    } catch (error) {
+        console.error('Erreur lors de la récupération du chemin de ressource:', error);
+        return { success: false, error: error.message };
+    }
 });
