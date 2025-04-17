@@ -245,13 +245,13 @@ ipcRenderer.on('pre-launch', () => {
     updateLaunchUI('launch', 'Finalisation du lancement...');
     
     // Désactiver explicitement le bouton
-    launchButton.disabled = true;
+    if (launchButton) launchButton.disabled = true;
     
     // Désactiver les contrôles
-    versionSelect.disabled = true;
-    memorySlider.disabled = true;
-    browseBtn.disabled = true;
-    resetPathBtn.disabled = true;
+    if (versionSelect) versionSelect.disabled = true;
+    if (memorySlider) memorySlider.disabled = true;
+    if (browseBtn) browseBtn.disabled = true;
+    if (resetPathBtn) resetPathBtn.disabled = true;
     
     // Vérifier que progressBar n'est pas null avant d'accéder à sa propriété style
     if (progressBar) {
@@ -267,13 +267,13 @@ ipcRenderer.on('game-started', () => {
     updateLaunchUI('idle', 'Lancement réussi !');
     
     // Désactiver les contrôles
-    versionSelect.disabled = true;
-    memorySlider.disabled = true;
-    browseBtn.disabled = true;
-    resetPathBtn.disabled = true;
+    if (versionSelect) versionSelect.disabled = true;
+    if (memorySlider) memorySlider.disabled = true;
+    if (browseBtn) browseBtn.disabled = true;
+    if (resetPathBtn) resetPathBtn.disabled = true;
 
     // Forcer la désactivation du bouton
-    launchButton.disabled = true;
+    if (launchButton) launchButton.disabled = true;
 
     console.log('État après game-started:', { isGameRunning, isAuthenticated });
 });
@@ -284,16 +284,16 @@ ipcRenderer.on('game-closed', (event, code) => {
     isGameRunning = false;
     
     // Réactiver les contrôles
-    versionSelect.disabled = false;
-    memorySlider.disabled = false;
-    browseBtn.disabled = false;
-    resetPathBtn.disabled = false;
+    if (versionSelect) versionSelect.disabled = false;
+    if (memorySlider) memorySlider.disabled = false;
+    if (browseBtn) browseBtn.disabled = false;
+    if (resetPathBtn) resetPathBtn.disabled = false;
 
     // Mettre à jour l'interface
     updateLaunchUI('idle', 'Prêt à jouer');
     
     // S'assurer que le bouton est activé
-    launchButton.disabled = false;
+    if (launchButton) launchButton.disabled = false;
 
     console.log('État après game-closed:', { isGameRunning, isAuthenticated });
 
@@ -602,9 +602,10 @@ async function launchGame() {
         updateLaunchUI('launch', 'Lancement du jeu...');
         
         const result = await ipcRenderer.invoke('launch-game', {
-            username: usernameInput.value,
-            version: versionSelect.value,
-            memory: memorySlider.value
+            username: usernameInput ? usernameInput.value : '',
+            // Utiliser une valeur par défaut au lieu de versionSelect.value
+            version: '1.21.1',
+            memory: memorySlider ? memorySlider.value : '4'
         });
 
         if (!result.success) {

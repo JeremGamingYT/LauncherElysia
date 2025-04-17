@@ -179,8 +179,8 @@ function createWindow() {
     ensureGameDirectory(savedGamePath);
 
     const html = ejs.render(template, {
-        title: 'Elysia - v.1.8.1 (BETA)',
-        versions: ['1.8.1'],
+        title: 'Elysia - v.1.8.2 (BETA)',
+        versions: ['1.8.2'],
         news: news,
         updates: updates,
         cssPath: `file://${cssPath}`,
@@ -1944,7 +1944,7 @@ ipcMain.handle('get-game-stats', () => {
     
     return {
         playTime: playTime,
-        version: app.getVersion() || '1.8.1' // Utiliser la version du launcher au lieu de Minecraft
+        version: app.getVersion() || '1.8.2' // Utiliser la version du launcher au lieu de Minecraft
     };
 });
 
@@ -2241,7 +2241,7 @@ ipcMain.handle('fetch-updates', async () => {
                     updates = [
                         {
                             id: '0',
-                            version: app.getVersion() || '1.8.1',
+                            version: app.getVersion() || '1.8.2',
                             date: new Date().toISOString(),
                             title: 'Launcher Elysia',
                             description: 'Bienvenue dans le Launcher Elysia. Consultez les releases sur GitHub pour plus d\'informations sur les mises à jour.',
@@ -2264,7 +2264,7 @@ ipcMain.handle('fetch-updates', async () => {
         const defaultUpdates = [
             {
                 id: '0',
-                version: app.getVersion() || '1.8.1',
+                version: app.getVersion() || '1.8.2',
                 date: new Date().toISOString(),
                 title: 'Information',
                 description: 'Impossible de récupérer les mises à jour. Vérifiez votre connexion Internet.',
