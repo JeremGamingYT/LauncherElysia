@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
+
 const Store = require('electron-store');
 const ejs = require('ejs');
 const fs = require('fs-extra');
@@ -17,8 +18,11 @@ const { Agent } = require('undici');
 const nbt = require('prismarine-nbt');
 const AutoUpdater = require('./modules/auto-updater');
 const ResourceManager = require('./modules/resource-manager');
-const AntiCheat = require('./modules/anti-cheat');
+// Anti-cheat désactivé pour éviter les faux positifs avec les antivirus
+// const AntiCheat = require('./modules/anti-cheat');
 const NewsModules = require('./modules/news');
+const DiscordRPCManager = require('./modules/discord-rpc');
+const net = require('net');
 
 // Configuration du stockage local
 const store = new Store({
@@ -44,11 +48,8 @@ let playTimeTracker = null;
 let currentPlayTime = 0;
 
 // Discord 'Rich presence'
-const RPC = require('discord-rpc');
 const clientId = '1296879619563327498';
-
-// Crée un client RPC
-const rpc = new RPC.Client({ transport: 'ipc' });
+const discordRPC = new DiscordRPCManager(clientId);
 
 // Constantes pour Fabric et chemins
 const GAME_PATH = path.join(app.getPath('appData'), '.elysia');
@@ -70,7 +71,8 @@ const JAVA_INSTALLER_PATH = path.join(app.getPath('temp'), 'jdk-21-installer.exe
 
 // Ajouter avec les autres constantes
 const resourceManager = new ResourceManager(GAME_PATH);
-const antiCheat = new AntiCheat(GAME_PATH);
+// Anti-cheat désactivé pour éviter les faux positifs avec les antivirus
+// const antiCheat = new AntiCheat(GAME_PATH);
 
 // Configurer le serveur pour l'anti-cheat
 const SERVER_NAME = "Elysia";
@@ -142,6 +144,9 @@ function createWindow() {
         console.error('Erreur lors du chargement des mises à jour:', error);
     }
 
+    // Détecter la version de Windows
+    const isWindows11 = os.release().startsWith('10.0.2') || parseFloat(os.release().split('.')[2]) >= 22000;
+    
     // Créer la fenêtre principale avec les données
     mainWindow = new BrowserWindow({
         width: 1280,
@@ -154,7 +159,44 @@ function createWindow() {
             contextIsolation: false,
             webSecurity: false
         },
-        frame: false
+        frame: false,
+        transparent: true,
+        backgroundColor: '#00000000',
+        roundedCorners: true,
+        show: false // Ne pas afficher immédiatement pour éviter les flashs
+    });
+
+    // Appliquer CSS pour les bords arrondis sur Windows
+    mainWindow.webContents.on('did-finish-load', () => {
+        mainWindow.webContents.insertCSS(`
+            body, html {
+                border-radius: 10px !important;
+                overflow: hidden !important;
+            }
+            .container, #app, .window-frame, .main {
+                border-radius: 10px !important;
+                overflow: hidden !important;
+            }
+            .titlebar {
+                border-top-left-radius: 10px !important;
+                border-top-right-radius: 10px !important;
+            }
+            .sidebar {
+                border-bottom-left-radius: 10px !important;
+            }
+            .main {
+                border-bottom-right-radius: 10px !important;
+            }
+        `);
+
+        // Activer la vibrancy sous Windows 10/11 pour améliorer l'effet de transparence
+        if (process.platform === 'win32') {
+            try {
+                mainWindow.setVibrancy('dark');
+            } catch (e) {
+                console.log('Vibrancy not supported', e);
+            }
+        }
     });
 
     // Gestion des contrôles de fenêtre
@@ -162,8 +204,29 @@ function createWindow() {
         mainWindow.minimize();
     });
 
-    ipcMain.on('close-window', () => {
-        mainWindow.close();
+    ipcMain.on('close-window', async () => {
+        try {
+            // Si Minecraft est en cours d'exécution, on le tue d'abord
+            if (gameRunning) {
+                await killMinecraftProcess();
+                gameRunning = false;
+            }
+            
+            // On force la destruction de la fenêtre pour s'assurer qu'elle se ferme
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.destroy();
+            }
+            
+            // Quitter l'application
+            app.quit();
+        } catch (error) {
+            console.error('Erreur lors de la fermeture:', error);
+            // En cas d'erreur, on force quand même la fermeture
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.destroy();
+            }
+            app.exit(0);
+        }
     });
 
     // Lecture et rendu du template EJS
@@ -179,8 +242,8 @@ function createWindow() {
     ensureGameDirectory(savedGamePath);
 
     const html = ejs.render(template, {
-        title: 'Elysia - v.1.8.2 (BETA)',
-        versions: ['1.8.2'],
+        title: 'Elysia - v.2.0.2 (BETA)',
+        versions: ['2.0.2'],
         news: news,
         updates: updates,
         cssPath: `file://${cssPath}`,
@@ -214,6 +277,17 @@ function createWindow() {
     // Envoi du chemin du jeu au chargement
     mainWindow.webContents.on('did-finish-load', () => {
         mainWindow.webContents.send('game-path', GAME_PATH);
+        
+        // Force les bords arrondis en redimensionnant légèrement la fenêtre
+        const size = mainWindow.getSize();
+        mainWindow.setSize(size[0] + 1, size[1]);
+        setTimeout(() => {
+            mainWindow.setSize(size[0], size[1]);
+            // Afficher la fenêtre principale une fois prête
+            if (!mainWindow.isVisible()) {
+                mainWindow.show();
+            }
+        }, 100);
     });
 
     // Vérifier Java au démarrage
@@ -230,6 +304,9 @@ function createWindow() {
 }
 
 async function createSplashWindow() {
+    // Détecter la version de Windows
+    const isWindows11 = os.release().startsWith('10.0.2') || parseFloat(os.release().split('.')[2]) >= 22000;
+    
     splashWindow = new BrowserWindow({
         width: 400,
         height: 400,
@@ -242,7 +319,9 @@ async function createSplashWindow() {
         center: true,
         resizable: false,
         skipTaskbar: true,
-        backgroundColor: '#00000000'
+        backgroundColor: '#00000000',
+        roundedCorners: true,
+        show: false // Ne pas afficher immédiatement pour éviter les flashs
     });
 
     const templatePath = path.join(__dirname, 'views', 'splash.ejs');
@@ -259,6 +338,39 @@ async function createSplashWindow() {
     const tempPath = path.join(app.getPath('temp'), 'splash.html');
     fs.writeFileSync(tempPath, html);
     splashWindow.loadFile(tempPath);
+
+    // Appliquer CSS pour les bords arrondis
+    splashWindow.webContents.on('did-finish-load', () => {
+        splashWindow.webContents.insertCSS(`
+            body, html {
+                border-radius: 10px !important;
+                overflow: hidden !important;
+            }
+            .splash-container {
+                border-radius: 10px !important;
+                overflow: hidden !important;
+            }
+        `);
+
+        // Activer la vibrancy pour améliorer l'effet de transparence
+        if (process.platform === 'win32') {
+            try {
+                splashWindow.setVibrancy('dark');
+            } catch (e) {
+                console.log('Vibrancy not supported', e);
+            }
+        }
+
+        // Afficher la fenêtre une fois que tout est chargé
+        splashWindow.show();
+        
+        // Force les bords arrondis en redimensionnant légèrement la fenêtre
+        const size = splashWindow.getSize();
+        splashWindow.setSize(size[0] + 1, size[1]);
+        setTimeout(() => {
+            splashWindow.setSize(size[0], size[1]);
+        }, 100);
+    });
 
     // Attendre que la fenêtre soit prête
     await new Promise(resolve => splashWindow.once('ready-to-show', resolve));
@@ -405,7 +517,17 @@ app.whenReady().then(async () => {
         if (splashWindow && !splashWindow.isDestroyed()) {
             splashWindow.close();
         }
-        mainWindow.show();
+        if (!mainWindow.isVisible()) {
+            // Force les bords arrondis avant d'afficher
+            const size = mainWindow.getSize();
+            mainWindow.setSize(size[0] + 1, size[1]);
+            setTimeout(() => {
+                mainWindow.setSize(size[0], size[1]);
+                mainWindow.show();
+            }, 100);
+        } else {
+            mainWindow.focus();
+        }
 
     } catch (error) {
         console.error('Erreur lors du démarrage:', error);
@@ -1474,6 +1596,15 @@ function startPlayTimeTracking() {
     // Enregistrer l'heure de démarrage
     gameStartTime = Date.now();
     
+    // Incrémenter le compteur de sessions
+    const sessionCount = store.get('session-count', 0) + 1;
+    store.set('session-count', sessionCount);
+    
+    // Enregistrer la date et l'heure de la session
+    const now = new Date();
+    const formattedDate = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    store.set('last-session-date', formattedDate);
+    
     // Créer un intervalle pour mettre à jour le temps de jeu toutes les 30 secondes
     playTimeTracker = setInterval(() => {
         if (gameRunning && gameStartTime) {
@@ -1490,6 +1621,7 @@ function startPlayTimeTracking() {
             if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.webContents.send('play-time-update', {
                     playTime: updatedPlayTime,
+                    sessionTime: elapsedSeconds,
                     formattedTime: formatPlayTime(updatedPlayTime)
                 });
             }
@@ -1513,6 +1645,12 @@ function stopPlayTimeTracking() {
         // Enregistrer le temps dans le stockage
         store.set('playTime', finalPlayTime);
         
+        // Vérifier si c'est la session la plus longue
+        const longestSession = store.get('longest-session', 0);
+        if (elapsedSeconds > longestSession) {
+            store.set('longest-session', elapsedSeconds);
+        }
+        
         // Réinitialiser les variables
         gameStartTime = null;
         currentPlayTime = finalPlayTime;
@@ -1521,6 +1659,7 @@ function stopPlayTimeTracking() {
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('play-time-update', {
                 playTime: finalPlayTime,
+                sessionTime: elapsedSeconds,
                 formattedTime: formatPlayTime(finalPlayTime)
             });
         }
@@ -1635,6 +1774,8 @@ async function launchMinecraft(event, options) {
 
         // Initialiser et exécuter l'anti-cheat
         if (SERVER_NAME) {
+            // ANTI-CHEAT DÉSACTIVÉ
+            /*
             antiCheat.initialize(SERVER_NAME);
             
             // Analyse anti-cheat avant le lancement
@@ -1658,6 +1799,7 @@ async function launchMinecraft(event, options) {
                 // On laisse un délai pour que l'utilisateur puisse voir le message
                 await new Promise(resolve => setTimeout(resolve, 3000));
             }
+            */
         }
 
         // Ajouter un délai visuel pour la transition
@@ -1673,11 +1815,19 @@ async function launchMinecraft(event, options) {
         // Démarrer le suivi du temps de jeu
         startPlayTimeTracking();
         mainWindow.minimize();
+        
+        // Mettre à jour Discord Rich Presence
+        discordRPC.setPlaying({
+            serverName: SERVER_NAME,
+            gameVersion: '1.21.1'
+        });
 
         // Configurer le scan périodique de l'anti-cheat si activé
         let antiCheatInterval = null;
 
         if (SERVER_NAME) {
+            // ANTI-CHEAT DÉSACTIVÉ
+            /*
             // Exécuter un scan toutes les 5 minutes pendant le jeu
             antiCheatInterval = setInterval(async () => {
                 if (gameRunning) {
@@ -1695,6 +1845,7 @@ async function launchMinecraft(event, options) {
                     }
                 }
             }, 5 * 60 * 1000); // 5 minutes
+            */
         }
 
         // Envoyer la confirmation de démarrage
@@ -1704,6 +1855,9 @@ async function launchMinecraft(event, options) {
         launcher.on('close', () => {
             // Arrêter le suivi du temps de jeu
             stopPlayTimeTracking();
+            
+            // Remettre à jour le statut Discord Rich Presence
+            discordRPC.setInLauncher();
             
             if (antiCheatInterval) {
                 clearInterval(antiCheatInterval);
@@ -1942,9 +2096,17 @@ ipcMain.handle('get-game-stats', () => {
         playTime = currentPlayTime + elapsedSeconds;
     }
     
+    // Récupérer les statistiques enregistrées
+    const sessionCount = store.get('session-count', 0);
+    const lastSessionDate = store.get('last-session-date', null);
+    const longestSession = store.get('longest-session', 0);
+    
     return {
         playTime: playTime,
-        version: app.getVersion() || '1.8.2' // Utiliser la version du launcher au lieu de Minecraft
+        sessionCount: sessionCount,
+        lastSessionDate: lastSessionDate,
+        longestSession: longestSession,
+        version: app.getVersion() || '2.0.2'
     };
 });
 
@@ -2241,7 +2403,7 @@ ipcMain.handle('fetch-updates', async () => {
                     updates = [
                         {
                             id: '0',
-                            version: app.getVersion() || '1.8.2',
+                            version: app.getVersion() || '2.0.2',
                             date: new Date().toISOString(),
                             title: 'Launcher Elysia',
                             description: 'Bienvenue dans le Launcher Elysia. Consultez les releases sur GitHub pour plus d\'informations sur les mises à jour.',
@@ -2264,7 +2426,7 @@ ipcMain.handle('fetch-updates', async () => {
         const defaultUpdates = [
             {
                 id: '0',
-                version: app.getVersion() || '1.8.2',
+                version: app.getVersion() || '2.0.2',
                 date: new Date().toISOString(),
                 title: 'Information',
                 description: 'Impossible de récupérer les mises à jour. Vérifiez votre connexion Internet.',
@@ -2469,28 +2631,48 @@ async function toggleFirstPersonMod(enable) {
         const modsPath = path.join(app.getPath('appData'), '.elysia', 'mods');
         await fs.ensureDir(modsPath);
         
-        const files = await fs.readdir(modsPath);
-        const firstPersonRegex = /firstperson|firstperson-fabric-2.4.8-mc1.21.jar/i;
+        // Get the correct filename from resources.json
+        const resourcesPath = path.join(__dirname, 'resources.json');
+        const resourcesData = await fs.readJson(resourcesPath);
         
-        for (const file of files) {
-            if (firstPersonRegex.test(file)) {
-                const filePath = path.join(modsPath, file);
-                
-                if (enable) {
-                    // Si le fichier est désactivé (se termine par .disabled)
-                    if (file.endsWith('.disabled')) {
-                        const newPath = path.join(modsPath, file.replace('.disabled', ''));
-                        await fs.rename(filePath, newPath);
-                        console.log(`Mod activé: ${file} -> ${file.replace('.disabled', '')}`);
-                    }
-                } else {
-                    // Si le fichier est activé (ne se termine pas par .disabled)
-                    if (!file.endsWith('.disabled')) {
-                        const newPath = path.join(modsPath, `${file}.disabled`);
-                        await fs.rename(filePath, newPath);
-                        console.log(`Mod désactivé: ${file} -> ${file}.disabled`);
-                    }
-                }
+        // Find the First Person mod entry
+        const firstPersonMod = resourcesData.mods.find(mod => mod.name === "First Person");
+        
+        if (!firstPersonMod) {
+            console.error("First Person mod not found in resources.json");
+            return { success: false, error: "First Person mod not found in configuration" };
+        }
+        
+        // Extract the filename from the URL
+        const modUrl = firstPersonMod.url;
+        const modFileName = modUrl.substring(modUrl.lastIndexOf('/') + 1);
+        
+        // Check if the mod file exists in either active or disabled state
+        const files = await fs.readdir(modsPath);
+        const modFile = files.find(file => 
+            file === modFileName || file === `${modFileName}.disabled`
+        );
+        
+        if (!modFile) {
+            console.log("First Person mod file not found, may need to be downloaded first");
+            return { success: true, needsDownload: true };
+        }
+        
+        const filePath = path.join(modsPath, modFile);
+        
+        if (enable) {
+            // Si le fichier est désactivé (se termine par .disabled)
+            if (modFile.endsWith('.disabled')) {
+                const newPath = path.join(modsPath, modFile.replace('.disabled', ''));
+                await fs.rename(filePath, newPath);
+                console.log(`Mod activé: ${modFile} -> ${modFile.replace('.disabled', '')}`);
+            }
+        } else {
+            // Si le fichier est activé (ne se termine pas par .disabled)
+            if (!modFile.endsWith('.disabled')) {
+                const newPath = path.join(modsPath, `${modFile}.disabled`);
+                await fs.rename(filePath, newPath);
+                console.log(`Mod désactivé: ${modFile} -> ${modFile}.disabled`);
             }
         }
         
@@ -2507,18 +2689,33 @@ async function checkFirstPersonModStatus() {
         const modsPath = path.join(app.getPath('appData'), '.elysia', 'mods');
         await fs.ensureDir(modsPath);
         
-        const files = await fs.readdir(modsPath);
-        const firstPersonRegex = /firstperson|firstperson-fabric-2.4.8-mc1.21.jar/i;
+        // Get the correct filename from resources.json
+        const resourcesPath = path.join(__dirname, 'resources.json');
+        const resourcesData = await fs.readJson(resourcesPath);
         
-        for (const file of files) {
-            if (firstPersonRegex.test(file)) {
-                // Si le fichier est trouvé, vérifier s'il est activé ou désactivé
-                return { success: true, enabled: !file.endsWith('.disabled') };
-            }
+        // Find the First Person mod entry
+        const firstPersonMod = resourcesData.mods.find(mod => mod.name === "First Person");
+        
+        if (!firstPersonMod) {
+            console.error("First Person mod not found in resources.json");
+            return { success: false, error: "First Person mod not found in configuration" };
         }
         
-        // Si le mod n'est pas trouvé, considérer comme désactivé
-        return { success: true, enabled: false };
+        // Extract the filename from the URL
+        const modUrl = firstPersonMod.url;
+        const modFileName = modUrl.substring(modUrl.lastIndexOf('/') + 1);
+        
+        // Check if the mod file exists in either active or disabled state
+        const files = await fs.readdir(modsPath);
+        const modFile = files.find(file => 
+            file === modFileName || file === `${modFileName}.disabled`
+        );
+        
+        if (!modFile) {
+            return { success: true, enabled: false };
+        }
+        
+        return { success: true, enabled: !modFile.endsWith('.disabled') };
     } catch (error) {
         console.error('Erreur lors de la vérification du statut du mod FirstPerson:', error);
         return { success: false, error: error.message };
@@ -2600,3 +2797,361 @@ ipcMain.handle('get-asset-path', (event, assetType, fileName) => {
         return { success: false, error: error.message };
     }
 });
+
+// Anti-cheat désactivé pour éviter les faux positifs avec les antivirus
+// const AntiCheat = require('./modules/anti-cheat');
+
+// Configuration du stockage local
+// ... existing code ...
+
+// Fonction pour interroger un serveur Minecraft et obtenir les informations des joueurs
+async function queryMinecraftServer(host, port = 25565) {
+  return new Promise((resolve, reject) => {
+    const socket = new net.Socket();
+    let data = Buffer.alloc(0);
+    let responseReceived = false;
+    
+    // Timeout après 5 secondes
+    socket.setTimeout(5000, () => {
+      socket.destroy();
+      reject(new Error('Timeout lors de la connexion au serveur'));
+    });
+
+    socket.connect(port, host, () => {
+      console.log(`Connexion établie avec ${host}:${port}`);
+      
+      // Envoyer un packet handshake puis un packet status
+      try {
+      const handshakePacket = buildHandshakePacket(host, port);
+      const statusPacket = Buffer.from([0x01, 0x00]);
+      
+      socket.write(handshakePacket);
+      socket.write(statusPacket);
+        
+        console.log('Packets handshake et status envoyés');
+      } catch (err) {
+        console.error('Erreur lors de l\'envoi des packets:', err);
+        socket.destroy();
+        reject(err);
+      }
+    });
+
+    socket.on('data', (chunk) => {
+      console.log(`Données reçues: ${chunk.length} octets`);
+      data = Buffer.concat([data, chunk]);
+      
+      try {
+        // Essayer de parser la réponse
+        const response = parseResponse(data);
+        responseReceived = true;
+        socket.end();
+        resolve(response);
+      } catch (e) {
+        // Si on ne peut pas encore parser, attendre plus de données
+        if (e.message !== 'Données incomplètes') {
+          console.error('Erreur de parsing:', e.message);
+          socket.end();
+          reject(e);
+        } else {
+          console.log('Données incomplètes, en attente de plus de données...');
+        }
+      }
+    });
+
+    socket.on('error', (err) => {
+      console.error(`Erreur de socket: ${err.message}`);
+      reject(err);
+    });
+
+    socket.on('end', () => {
+      console.log('Connexion terminée par le serveur');
+      if (!responseReceived) {
+        reject(new Error('La connexion a été fermée sans réponse complète'));
+      }
+    });
+
+    socket.on('close', () => {
+      console.log('Connexion fermée');
+      if (!responseReceived) {
+      reject(new Error('Connexion fermée sans réponse complète'));
+      }
+    });
+  });
+}
+
+// Fonction pour construire le packet handshake
+function buildHandshakePacket(host, port) {
+  const hostBytes = Buffer.from(host, 'utf8');
+  
+  // Calculer la taille du packet: 
+  // 1 (packet ID) + 1 (protocol version) + 1 (host length) + hostBytes.length + 2 (port) + 1 (next state)
+  const packetLength = 1 + 1 + 1 + hostBytes.length + 2 + 1;
+  
+  // Calculer la taille du VarInt pour la longueur du packet
+  const packetLengthVarInt = writeVarInt(packetLength);
+  
+  // Créer le buffer pour le packet complet
+  const packet = Buffer.alloc(packetLengthVarInt.length + packetLength);
+  
+  let offset = 0;
+  
+  // Écrire la longueur du packet
+  packetLengthVarInt.copy(packet, offset);
+  offset += packetLengthVarInt.length;
+  
+  // Écrire l'ID du packet (0x00 pour handshake)
+  packet.writeUInt8(0x00, offset);
+  offset += 1;
+  
+  // Écrire la version du protocole (VarInt 47 pour 1.8+, 340 pour 1.12.2, 754 pour 1.16.5, 760 pour 1.21.1)
+  packet.writeUInt8(0x00, offset); // Utiliser protocol -1 (status ping)
+  offset += 1;
+  
+  // Écrire la longueur de l'hôte
+  packet.writeUInt8(hostBytes.length, offset);
+  offset += 1;
+  
+  // Écrire l'hôte
+  hostBytes.copy(packet, offset);
+  offset += hostBytes.length;
+  
+  // Écrire le port
+  packet.writeUInt16BE(port, offset);
+  offset += 2;
+  
+  // Écrire l'état suivant (1 pour status)
+  packet.writeUInt8(0x01, offset);
+  
+  return packet;
+}
+
+// Fonction pour écrire un VarInt
+function writeVarInt(value) {
+  const bytes = [];
+  
+  do {
+    let temp = value & 0x7F;
+    value >>>= 7;
+    if (value !== 0) {
+      temp |= 0x80;
+    }
+    bytes.push(temp);
+  } while (value !== 0);
+  
+  return Buffer.from(bytes);
+}
+
+// Fonction pour parser la réponse du serveur
+function parseResponse(data) {
+  // Vérifier si nous avons au moins la taille du packet
+  if (data.length < 5) {
+    throw new Error('Données incomplètes');
+  }
+  
+  // Le premier byte peut être un VarInt qui indique la longueur des données
+  // Nous devons décoder le VarInt et nous assurer d'avoir suffisamment de données
+  let offset = 0;
+  let packetLength = 0;
+  let shift = 0;
+  
+  // Lire le VarInt de la longueur du packet
+  do {
+    if (offset >= data.length) {
+      throw new Error('Données incomplètes');
+    }
+    
+    const b = data.readUInt8(offset++);
+    packetLength |= (b & 0x7F) << shift;
+    shift += 7;
+    
+    if (shift > 35) {
+      throw new Error('VarInt trop long');
+    }
+    
+    if ((b & 0x80) === 0) {
+      break;
+    }
+  } while (true);
+  
+  // Vérifier si nous avons toutes les données du packet
+  if (data.length < offset + packetLength) {
+    throw new Error('Données incomplètes');
+  }
+  
+  // Lire l'ID du packet (devrait être 0x00 pour la réponse de statut)
+  const packetId = data.readUInt8(offset);
+  offset += 1;
+  
+  if (packetId !== 0x00) {
+    throw new Error(`ID de packet invalide: ${packetId}`);
+  }
+  
+  // Lire la longueur de la chaîne JSON (peut être un VarInt ou un simple UInt)
+  let jsonLength = 0;
+  shift = 0;
+  
+  // Essayer de lire comme un VarInt
+  do {
+    if (offset >= data.length) {
+      throw new Error('Données incomplètes');
+    }
+    
+    const b = data.readUInt8(offset++);
+    jsonLength |= (b & 0x7F) << shift;
+    shift += 7;
+    
+    if (shift > 35) {
+      throw new Error('VarInt trop long');
+    }
+    
+    if ((b & 0x80) === 0) {
+      break;
+    }
+  } while (true);
+  
+  // Vérifier si nous avons assez de données
+  if (data.length < offset + jsonLength) {
+    throw new Error('Données incomplètes');
+  }
+  
+  // Lire la chaîne JSON
+  const jsonStr = data.toString('utf8', offset, offset + jsonLength);
+  
+  try {
+    console.log('Réponse JSON reçue:', jsonStr);
+    const serverInfo = JSON.parse(jsonStr);
+    return {
+      online: serverInfo.players?.online || 0,
+      max: serverInfo.players?.max || 0,
+      description: serverInfo.description?.text || serverInfo.description || '',
+      version: serverInfo.version?.name || ''
+    };
+  } catch (e) {
+    console.error('Contenu JSON invalide:', jsonStr);
+    throw new Error('Erreur lors de l\'analyse de la réponse JSON: ' + e.message);
+  }
+}
+
+// Exposer la fonction à l'interface utilisateur
+ipcMain.handle('query-server', async (event, { host, port }) => {
+  try {
+    console.log(`Tentative de connexion au serveur Minecraft: ${host}:${port}`);
+    const result = await queryMinecraftServer(host, port);
+    console.log(`Informations du serveur: ${JSON.stringify(result)}`);
+    return {
+      success: true,
+      ...result
+    };
+  } catch (error) {
+    console.error('Erreur lors de la requête au serveur:', error);
+    return { 
+      success: false,
+      error: error.message, 
+      online: 0, 
+      max: 0,
+      description: 'Serveur non disponible'
+    };
+  }
+});
+
+// Configuration du stockage local
+// ... existing code ...
+
+// Fonction pour traiter les URLs minecraft://
+function processMinecraftUrl(url) {
+  try {
+    console.log(`Traitement de l'URL minecraft:// reçue: ${url}`);
+    
+    // Extraire les paramètres de l'URL
+    const urlObj = new URL(url);
+    const serverAddress = urlObj.hostname;
+    const portStr = urlObj.port;
+    const port = portStr ? parseInt(portStr) : 25565;
+    
+    console.log(`Serveur extrait: ${serverAddress}:${port}`);
+    
+    // Si la fenêtre principale existe et n'est pas détruite, y envoyer l'information
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('minecraft-url-received', {
+        serverAddress,
+        port
+      });
+    } else {
+      console.warn('La fenêtre principale n\'existe pas ou a été détruite lors du traitement de l\'URL');
+    }
+  } catch (error) {
+    console.error('Erreur lors du traitement de l\'URL minecraft://', error);
+  }
+}
+
+async function startApp() {
+    // Vérifie si une instance est déjà en cours d'exécution
+    const isFirstInstance = app.requestSingleInstanceLock();
+    
+    if (!isFirstInstance) {
+        app.quit();
+        return;
+    }
+    
+    // Sélectionne automatiquement le protocole minecraft:// et urls minecraft quand trouvés
+    if (process.defaultApp) {
+        if (process.argv.length >= 2) {
+            app.setAsDefaultProtocolClient('minecraft', process.execPath, [
+                path.resolve(process.argv[1])
+            ]);
+        }
+    } else {
+        app.setAsDefaultProtocolClient('minecraft');
+    }
+    
+    // Configure les événements pour la seconde instance
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+        // Si une seconde instance est lancée, l'utilisateur a cliqué sur un protocole minecraft://
+        // Il faut restaurer la fenêtre principale et traiter le protocole
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.focus();
+            
+            // Recherche du protocole minecraft:// dans la ligne de commande
+            const url = commandLine.find(arg => arg.startsWith('minecraft://'));
+            if (url) {
+                // Traiter l'URL minecraft:// ici
+                processMinecraftUrl(url);
+            }
+        }
+    });
+    
+    app.on('open-url', (event, url) => {
+        event.preventDefault();
+        // Traiter l'URL minecraft:// ici
+        processMinecraftUrl(url);
+    });
+    
+    app.whenReady().then(async () => {
+        createWindow();
+        
+        // Initialise Discord Rich Presence
+        await discordRPC.initialize();
+        discordRPC.setInLauncher();
+        
+        // Vérifie les mises à jour au démarrage
+        await checkForUpdates();
+        
+        // Vérifie l'intégrité du jeu au démarrage
+        await checkFileIntegrity();
+        
+        // Vérifie Java au démarrage
+        await checkJavaAtStartup();
+
+        app.on('activate', function () {
+            if (BrowserWindow.getAllWindows().length === 0) createWindow();
+        });
+    });
+    
+    // Ajouter la fermeture de Discord RPC lors de la fermeture de l'application
+    app.on('will-quit', () => {
+        discordRPC.disconnect();
+    });
+}
+
+startApp();

@@ -27,8 +27,14 @@ const notificationText = document.getElementById('notification-text');
 
 // États
 let isAuthenticated = false;
-let currentUser = null;
 let isGameRunning = false;
+let isLaunching = false;
+let currentUser = null;
+let currentServerConfig = {
+    host: '91.197.6.212', // Adresse du serveur par défaut
+    port: 25580           // Port par défaut Minecraft
+};
+let serverQueryInterval = null; // Variable pour stocker l'intervalle de requête serveur
 
 // Gestion des contrôles de fenêtre
 minimizeBtn.addEventListener('click', () => {
@@ -276,6 +282,18 @@ ipcRenderer.on('game-started', () => {
     if (launchButton) launchButton.disabled = true;
 
     console.log('État après game-started:', { isGameRunning, isAuthenticated });
+
+    // Mettre à jour les statistiques
+    updateGameStats();
+
+    // Mettre à jour les statistiques de session quand le jeu démarre
+    const sessionCount = parseInt(localStorage.getItem('session-count') || '0') + 1;
+    localStorage.setItem('session-count', sessionCount);
+    
+    // Enregistrer la date et l'heure de la dernière session
+    const now = new Date();
+    const formattedDate = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    localStorage.setItem('last-session-date', formattedDate);
 });
 
 // Gestion de la fermeture du jeu
@@ -653,7 +671,13 @@ async function updateGameStats() {
         const versionElement = document.getElementById('game-version');
         
         if (playtimeElement) {
-            playtimeElement.textContent = `Temps joué: ${formatPlayTime(stats.playTime)}`;
+            // Afficher simplement "Temps de jeu: --" par défaut
+            playtimeElement.textContent = `Temps de jeu: --`;
+            
+            // Seulement afficher le temps réel si le jeu a déjà été joué et n'est pas en cours d'exécution
+            if (!isGameRunning && stats.playTime > 0) {
+                playtimeElement.textContent = `Temps joué: ${formatDetailedPlayTime(stats.playTime)}`;
+            }
         }
         
         if (versionElement) {
@@ -664,11 +688,12 @@ async function updateGameStats() {
     }
 }
 
-// Fonction de formatage du temps
-function formatPlayTime(seconds) {
+// Formatage plus détaillé du temps de jeu
+function formatDetailedPlayTime(seconds) {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
+    const remainingSeconds = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
 // Mettre à jour les statistiques toutes les minutes
@@ -1015,7 +1040,7 @@ ipcRenderer.on('java-installed', (event, data) => {
         // Supprimer après 3 secondes
         setTimeout(() => {
             notification.classList.remove('visible');
-            setTimeout(() => notification.remove(), 300);
+            setTimeout(() => notification.remove(), 3000);
         }, 3000);
     }, 100);
 });
@@ -1048,7 +1073,7 @@ function showErrorModal(message) {
 }
 
 // Fonctions pour le nouveau design
-async function changeServer(serverName, title, description) {
+async function changeServer(serverName, title, description, serverHost = null) {
     // Mettre à jour l'arrière-plan
     const mainElement = document.querySelector('.main');
     if (mainElement) {
@@ -1074,6 +1099,22 @@ async function changeServer(serverName, title, description) {
     // Mettre à jour le bouton de retour
     if (backBtnElement) {
         backBtnElement.style.display = 'inline-flex';
+    }
+    
+    // Mettre à jour la configuration du serveur si fournie
+    if (serverHost) {
+        // Si serverHost contient un port (format host:port)
+        if (serverHost.includes(':')) {
+            const [host, port] = serverHost.split(':');
+            currentServerConfig.host = host;
+            currentServerConfig.port = parseInt(port, 10) || 25565;
+        } else {
+            currentServerConfig.host = serverHost;
+            currentServerConfig.port = 25565; // Port par défaut
+        }
+        
+        // Rafraîchir immédiatement le statut du serveur
+        updateServerStatus();
     }
     
     // Stocker le serveur sélectionné (uniquement si la méthode existe)
@@ -1102,7 +1143,12 @@ async function initSelectedServer() {
         
         // Mettre à jour l'interface pour le serveur sélectionné
         if (serverName === 'elysia') {
-            await changeServer('elysia', 'ÉLYSIA', 'Plongez dans un univers épique de factions où PvP, PvE et événements légendaires forgent votre destinée.');
+            await changeServer(
+                'elysia', 
+                'ÉLYSIA', 
+                'Plongez dans un univers épique de factions où PvP, PvE et événements légendaires forgent votre destinée.',
+                '91.197.6.212:25580'  // Adresse avec port correct
+            );
         }
     } catch (error) {
         console.error('Erreur lors de l\'initialisation du serveur:', error);
@@ -1143,6 +1189,9 @@ function initApp() {
     setTimeout(() => {
         showNotification('Bienvenue sur Elysia !');
     }, 1000);
+    
+    // Démarrer les mises à jour du statut du serveur
+    startServerStatusUpdates();
 }
 
 // Gestionnaires de navigation
@@ -1650,4 +1699,85 @@ document.querySelectorAll('.nav a').forEach(navLink => {
             pageSettings.classList.add('active');
         }
     });
+});
+
+// Fonction pour mettre à jour le nombre de joueurs en ligne
+async function updateServerStatus() {
+    const onlinePlayersElement = document.getElementById('online-players');
+    if (!onlinePlayersElement) return;
+
+    try {
+        // Appeler la fonction du processus principal
+        const result = await ipcRenderer.invoke('query-server', currentServerConfig);
+        
+        if (result.error) {
+            console.error('Erreur serveur:', result.error);
+            onlinePlayersElement.textContent = '--';
+            return;
+        }
+        
+        // Ajouter une classe pour l'animation
+        onlinePlayersElement.classList.add('updating');
+        
+        // Mettre à jour l'élément avec le nombre de joueurs en ligne
+        onlinePlayersElement.textContent = `${result.online}/${result.max}`;
+        
+        // Retirer la classe d'animation après un délai
+        setTimeout(() => {
+            onlinePlayersElement.classList.remove('updating');
+        }, 500);
+        
+        // Mettre à jour d'autres informations si nécessaire
+        console.log('Info serveur:', result);
+    } catch (error) {
+        console.error('Erreur lors de la récupération des infos serveur:', error);
+        onlinePlayersElement.textContent = '--';
+    }
+}
+
+// Démarrer les requêtes de statut serveur à intervalles réguliers
+function startServerStatusUpdates() {
+    // D'abord, effectuer une mise à jour immédiate
+    updateServerStatus();
+    
+    // Ensuite, configurer un intervalle pour les mises à jour régulières (toutes les 60 secondes)
+    if (serverQueryInterval) {
+        clearInterval(serverQueryInterval);
+    }
+    
+    serverQueryInterval = setInterval(updateServerStatus, 60000); // 60 secondes
+}
+
+// Arrêter les requêtes de statut serveur
+function stopServerStatusUpdates() {
+    if (serverQueryInterval) {
+        clearInterval(serverQueryInterval);
+        serverQueryInterval = null;
+    }
+}
+
+// Gestionnaire pour le bouton Temps de jeu
+document.getElementById('playtime-btn').addEventListener('click', async function() {
+    try {
+        const stats = await ipcRenderer.invoke('get-game-stats');
+        
+        // Mettre à jour les valeurs dans le modal
+        document.getElementById('total-playtime').textContent = formatDetailedPlayTime(stats.playTime);
+        
+        // Récupérer d'autres statistiques depuis l'IPC
+        document.getElementById('session-count').textContent = stats.sessionCount || 0;
+        
+        // Dernière session
+        document.getElementById('last-session').textContent = stats.lastSessionDate || '--/--/---- --:--';
+        
+        // Afficher le modal
+        document.querySelector('.playtime-modal').style.display = 'block';
+    } catch (error) {
+        console.error('Erreur lors de la récupération des statistiques de jeu:', error);
+    }
+});
+
+// Gestionnaire pour fermer le modal
+document.querySelector('.playtime-modal .close-modal').addEventListener('click', function() {
+    document.querySelector('.playtime-modal').style.display = 'none';
 });

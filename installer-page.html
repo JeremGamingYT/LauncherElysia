@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Installation du Launcher Elysia</title>
+  <link rel="stylesheet" href="installer.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+  <!-- Titlebar pour les contrôles de fenêtre -->
+  <div class="titlebar">
+    <div class="titlebar-title">
+      Installation du Launcher Elysia
+    </div>
+    <div class="titlebar-controls">
+      <button class="minimize-btn" title="Réduire">
+        <svg width="12" height="2" viewBox="0 0 12 2">
+          <path d="M0 0h12v2H0z" fill="currentColor"/>
+        </svg>
+      </button>
+      <button class="close-btn" title="Fermer">
+        <svg width="12" height="12" viewBox="0 0 12 12">
+          <path d="M1 1l10 10m0-10L1 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="header">
+    <img src="icon.ico" alt="Elysia Logo">
+    <h1>Installation du Launcher Elysia</h1>
+  </div>
+  
+  <div class="content">
+    <h2 class="title">BIENVENUE</h2>
+    <p class="desc">
+      Bienvenue dans l'installation du Launcher Elysia, votre passerelle vers l'univers de Minecraft.
+    </p>
+    
+    <div class="license">
+      <h3>Licence d'utilisation</h3>
+      <p>
+        Le Launcher Elysia est un logiciel conçu pour faciliter le lancement de Minecraft et la gestion des mods.
+        En installant ce logiciel, vous acceptez les conditions d'utilisation suivantes :
+      </p>
+      <p>
+        1. Vous êtes autorisé à utiliser ce logiciel à des fins personnelles uniquement.<br>
+        2. La redistribution du logiciel est interdite sans autorisation écrite.<br>
+        3. Le launcher n'est pas affilié à Mojang Studios ni à Microsoft.<br>
+        4. L'équipe d'Elysia n'est pas responsable des problèmes liés à Minecraft ou aux mods installés.<br>
+      </p>
+    </div>
+    
+    <div class="checkbox-container">
+      <input type="checkbox" id="accept-license">
+      <label for="accept-license">J'accepte les termes de la licence</label>
+    </div>
+    
+    <div class="directory-selection">
+      <p>Dossier d'installation :</p>
+      <div class="directory-input">
+        <input type="text" id="install-dir" readonly>
+        <button id="browse-button">
+          <i class="fa fa-folder-open"></i> Parcourir
+        </button>
+      </div>
+    </div>
+    
+    <div class="checkbox-container">
+      <input type="checkbox" id="desktop-shortcut" checked>
+      <label for="desktop-shortcut">Créer un raccourci sur le bureau</label>
+    </div>
+    
+    <div class="checkbox-container">
+      <input type="checkbox" id="start-menu-shortcut" checked>
+      <label for="start-menu-shortcut">Créer un raccourci dans le menu Démarrer</label>
+    </div>
+    
+    <div class="progress">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    
+    <div class="installation-info" id="installation-info">
+      Prêt à installer
+    </div>
+    
+    <div class="buttons-container">
+      <button id="cancel-button">
+        <i class="fa fa-times"></i> Annuler
+      </button>
+      <button id="install-button" disabled>
+        <i class="fa fa-download"></i> Installer
+      </button>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <p>© 2023-2026 Elysia - Tous droits réservés</p>
+  </div>
+  
+  <script>
+    // JavaScript pour l'interface d'installation
+    document.addEventListener('DOMContentLoaded', function() {
+      // Définir l'interface externe pour communiquer avec NSIS
+      window.external = window.external || {};
+      
+      // Gestion de la case à cocher de la licence
+      document.getElementById('accept-license').addEventListener('change', function() {
+        document.getElementById('install-button').disabled = !this.checked;
+      });
+      
+      // Gestion du bouton parcourir (sera géré par NSIS)
+      document.getElementById('browse-button').addEventListener('click', function() {
+        if (window.external.browseForFolder) {
+          window.external.browseForFolder();
+        }
+      });
+      
+      // Gestion du bouton d'installation
+      document.getElementById('install-button').addEventListener('click', function() {
+        if (window.external.startInstallation) {
+          window.external.startInstallation();
+        }
+      });
+      
+      // Gestion du bouton d'annulation
+      document.getElementById('cancel-button').addEventListener('click', function() {
+        if (window.external.closeInstaller) {
+          window.external.closeInstaller();
+        }
+      });
+      
+      // Gestion de la fermeture de fenêtre
+      document.querySelector('.close-btn').addEventListener('click', function() {
+        if (window.external.closeInstaller) {
+          window.external.closeInstaller();
+        }
+      });
+      
+      // Gestion de la minimisation de fenêtre
+      document.querySelector('.minimize-btn').addEventListener('click', function() {
+        if (window.external.minimizeWindow) {
+          window.external.minimizeWindow();
+        }
+      });
+    });
+  </script>
+</body>
+</html> 

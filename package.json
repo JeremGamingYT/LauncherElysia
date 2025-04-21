@@ -1,13 +1,16 @@
 {
   "name": "elysia",
-  "version": "1.8.2",
-  "description": "Launcher Minecraft Elysia - Beta v1.8.2",
+  "version": "2.0.2",
+  "description": "Launcher Minecraft Elysia - Beta v2.0.2",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "test": "electron ./src/test.js",
     "dev": "electron . --dev",
     "build": "electron-builder",
+    "build-simple": "electron-builder --dir --win --x64",
+    "build-installer": "node build-installer.js",
+    "create-installer": "node build-installer.js",
     "postinstall": "electron-builder install-app-deps",
     "clean": "rimraf dist node_modules"
   },
@@ -44,7 +47,11 @@
   "devDependencies": {
     "electron": "^25.8.4",
     "electron-builder": "^24.6.4",
-    "rimraf": "^5.0.5"
+    "electron-reloader": "^1.2.3",
+    "fs-extra": "^11.2.0",
+    "makensis": "^2.0.8",
+    "rimraf": "^5.0.5",
+    "sharp": "^0.32.6"
   },
   "build": {
     "appId": "fr.elysia.launcher",
@@ -84,12 +91,13 @@
     },
     "win": {
       "target": [
-        "nsis"
+        "nsis",
+        "zip",
+        "dir"
       ],
       "icon": "src/assets/icon.ico",
       "publisherName": "Elysia",
-      "requestedExecutionLevel": "asInvoker",
-      "artifactName": "${productName}-Setup-${version}.${ext}"
+      "requestedExecutionLevel": "asInvoker"
     },
     "nsis": {
       "oneClick": false,
@@ -101,11 +109,15 @@
       "installerIcon": "src/assets/icon.ico",
       "uninstallerIcon": "src/assets/icon.ico",
       "installerHeaderIcon": "src/assets/icon.ico",
-      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "artifactName": "elysia-setup.${ext}",
       "license": "LICENSE",
       "deleteAppDataOnUninstall": true,
       "runAfterFinish": true,
-      "include": "installer.nsh"
+      "include": "build/installer.nsh",
+      "differentialPackage": false,
+      "installerSidebar": "src/assets/installer-sidebar.bmp",
+      "uninstallerSidebar": "src/assets/installer-sidebar.bmp",
+      "warningsAsErrors": false
     },
     "extraResources": [
       {

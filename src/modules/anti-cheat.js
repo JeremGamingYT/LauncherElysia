@@ -30,8 +30,8 @@ class AntiCheat {
       'xray', 'wallhack', 'esp', 'cheat', 'hack'
     ];
     
-    // Configuration directe du webhook Discord dans le code
-    this.webhookUrl = "https://discord.com/api/webhooks/1353904859153432596/qEzS5sb6H9LVzHCiHJP7_s7hhou584xlOI6TV2gOK_eiWSbh25z-c6b58qX9tjY9bfZ6"; // Remplacez par votre URL webhook
+    // Désactivation du webhook Discord pour éviter les problèmes de sécurité
+    this.webhookUrl = null;
     this.serverName = "Elysia";
     this.initialized = true;
   }
@@ -191,34 +191,7 @@ class AntiCheat {
 
   // Vérifiez les modifications système suspectes (hooks, DLL injectées, etc.)
   async scanSystemModifications() {
-    // Cette fonction est plus complexe et varie grandement selon l'OS
-    // Implémentation simple pour Windows
-    if (process.platform === 'win32') {
-      return new Promise((resolve) => {
-        exec('reg query "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run"', (error, stdout) => {
-          if (error) {
-            resolve({ detected: false, details: [] });
-            return;
-          }
-
-          const suspectStartups = [];
-          const output = stdout.toLowerCase();
-          
-          // Vérifiez les programmes suspect au démarrage
-          for (const suspectTerm of this.suspectMods) {
-            if (output.includes(suspectTerm)) {
-              suspectStartups.push(suspectTerm);
-            }
-          }
-
-          resolve({
-            detected: suspectStartups.length > 0,
-            details: suspectStartups
-          });
-        });
-      });
-    }
-    
+    // Fonction désactivée pour éviter les faux positifs avec les antivirus
     return { detected: false, details: [] };
   }
 
@@ -301,7 +274,6 @@ class AntiCheat {
       modsDetection: await this.scanMods(),
       resourcePacksDetection: await this.scanResourcePacks(),
       shadersDetection: await this.scanShaders(),
-      systemDetection: await this.scanSystemModifications(),
       timestamp: new Date().toISOString()
     };
 
@@ -309,8 +281,7 @@ class AntiCheat {
       results.processesDetection.detected || 
       results.modsDetection.detected ||
       results.resourcePacksDetection.detected ||
-      results.shadersDetection.detected ||
-      results.systemDetection.detected;
+      results.shadersDetection.detected;
 
     if (detectionFound && this.webhookUrl) {
       const detections = [];
@@ -329,10 +300,6 @@ class AntiCheat {
       
       if (results.shadersDetection.detected) {
         detections.push(`Shaders suspects: ${results.shadersDetection.details.map(s => s.name).join(', ')}`);
-      }
-      
-      if (results.systemDetection.detected) {
-        detections.push(`Modifications système: ${results.systemDetection.details.join(', ')}`);
       }
       
       await this.sendDiscordAlert('Multiple detections', detections);

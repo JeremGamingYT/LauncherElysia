@@ -7,6 +7,28 @@
     <link rel="stylesheet" href="<%= cssPath %>">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <style>
+        /* Styles pour assurer les bords arrondis */
+        html, body {
+            background: transparent !important;
+            border-radius: 10px !important;
+            overflow: hidden !important;
+        }
+        .container {
+            border-radius: 10px !important;
+            overflow: hidden !important;
+        }
+        .titlebar {
+            border-top-left-radius: 10px !important;
+            border-top-right-radius: 10px !important;
+        }
+        .sidebar {
+            border-bottom-left-radius: 10px !important;
+        }
+        .main {
+            border-bottom-right-radius: 10px !important;
+        }
+    </style>
 </head>
 <body>
     <!-- Titlebar for app window controls -->
@@ -74,6 +96,7 @@
                 <!-- footer links -->
                 <div class="footer">
                     <a href="#"><i class="fa fa-list"></i> DISCORD</a>
+                    <a href="#" id="playtime-btn"><i class="fa fa-clock"></i> <span id="playtime">Temps de jeu: --</span></a>
                     <a href="#"><i class="fa-brands fa-vk"></i> NOTRE SITE</a>
                 </div>
             </div>
@@ -222,6 +245,35 @@
                         </svg>
                         Désinstaller complètement
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Play Time Modal (hidden by default) -->
+    <div class="modal playtime-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <i class="fa fa-clock"></i>
+                    Temps de jeu
+                </h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="playtime-stats">
+                    <div class="playtime-item">
+                        <span class="playtime-label">Temps de jeu total</span>
+                        <span class="playtime-value" id="total-playtime">--:--:--</span>
+                    </div>
+                    <div class="playtime-item">
+                        <span class="playtime-label">Sessions</span>
+                        <span class="playtime-value" id="session-count">0</span>
+                    </div>
+                    <div class="playtime-item">
+                        <span class="playtime-label">Dernière session</span>
+                        <span class="playtime-value" id="last-session">--/--/---- --:--</span>
+                    </div>
                 </div>
             </div>
         </div>
