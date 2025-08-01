@@ -57,7 +57,7 @@ async function buildInstaller() {
     
     // Utiliser electron-builder directement avec l'option nsis
     console.log('Construction de l\'installateur avec electron-builder...');
-    execSync('npx electron-builder --win nsis', { stdio: 'inherit' });
+    execSync('npx electron-builder --win nsis --config.forceCodeSigning=false', { stdio: 'inherit' });
     
     console.log('Installateur créé avec succès!');
     

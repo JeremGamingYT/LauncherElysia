@@ -7,8 +7,8 @@
     "start": "electron .",
     "test": "electron ./src/test.js",
     "dev": "electron . --dev",
-    "build": "electron-builder",
-    "build-simple": "electron-builder --dir --win --x64",
+    "build": "electron-builder --config.forceCodeSigning=false",
+    "build-simple": "electron-builder --dir --win --x64 --config.forceCodeSigning=false",
     "build-installer": "node build-installer.js",
     "create-installer": "node build-installer.js",
     "postinstall": "electron-builder install-app-deps",
@@ -45,7 +45,7 @@
     "undici": "^5.28.2"
   },
   "devDependencies": {
-    "electron": "^25.8.4",
+    "electron": "^28.3.2",
     "electron-builder": "^24.6.4",
     "electron-reloader": "^1.2.3",
     "fs-extra": "^11.2.0",
@@ -53,11 +53,17 @@
     "rimraf": "^5.0.5",
     "sharp": "^0.32.6"
   },
+  "overrides": {
+    "form-data": "^4.0.4",
+    "tar-fs": "^3.0.9",
+    "tough-cookie": "^4.1.3"
+  },
   "build": {
     "appId": "fr.elysia.launcher",
     "productName": "Elysia",
     "copyright": "Copyright © 2026 Elysia",
-    "asar": false,
+    "asar": true,
+    "forceCodeSigning": false,
     "files": [
       "**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
@@ -97,7 +103,10 @@
       ],
       "icon": "src/assets/icon.ico",
       "publisherName": "Elysia",
-      "requestedExecutionLevel": "asInvoker"
+      "requestedExecutionLevel": "asInvoker",
+      "certificateFile": null,
+      "certificatePassword": null,
+      "certificateSubjectName": null
     },
     "nsis": {
       "oneClick": false,
