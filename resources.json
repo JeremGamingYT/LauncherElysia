@@ -45,6 +45,10 @@
     ],
     "mods": [
         {
+            "name": "ElyMod",
+            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/elymod-1.0.0.jar"
+        },
+        {
             "name": "Advancement Plaques",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/AdvancementPlaques-1.21-fabric-1.6.6.jar"
         },
@@ -55,10 +59,6 @@
         {
             "name": "Better Third Person",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/BetterThirdPerson-Fabric-1.21-1.9.0.jar"
-        },
-        {
-            "name": "Better Tridents",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/BetterTridents-v21.0.0-1.21-Fabric.jar.disabled"
         },
         {
             "name": "Biomes O Plenty",
@@ -103,10 +103,6 @@
         {
             "name": "Diagonal Walls",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/DiagonalWalls-v21.1.2-1.21.1-Fabric.jar"
-        },
-        {
-            "name": "Easy Anvils",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/EasyAnvils-v21.0.2-1.21-Fabric.jar.disabled"
         },
         {
             "name": "Forge Config API Port",
@@ -169,10 +165,6 @@
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/OctoLib-FABRIC-0.5.0.1.jar"
         },
         {
-            "name": "Pick Up Notifier",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/PickUpNotifier-v21.0.0-1.21-Fabric.jar.disabled"
-        },
-        {
             "name": "Presence Footsteps",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/PresenceFootsteps-1.10.0%2B1.21.jar"
         },        {
@@ -212,24 +204,12 @@
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/Sounds-2.3.2%2B1.21%2Bfabric.jar"
         },
         {
-            "name": "Stoneworks",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/Stoneworks-v21.0.0-1.21-Fabric.jar.disabled"
-        },
-        {
             "name": "TerraBlender",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/TerraBlender-fabric-1.21.1-4.1.0.8.jar"
         },
         {
             "name": "Terralith",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/Terralith_1.21.x_v2.5.7.jar"
-        },
-        {
-            "name": "TreeChop",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/TreeChop-1.21-fabric-0.19.2.jar.disabled"
-        },
-        {
-            "name": "Universal Bone Meal",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/UniversalBoneMeal-v21.0.0-1.21-Fabric.jar.disabled"
         },
         {
             "name": "Visual Workbench",
@@ -310,10 +290,6 @@
         {
             "name": "Blur",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/blur-fabric-5.0.0%2B1.21.jar"
-        },
-        {
-            "name": "Bookshelf",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/bookshelf-fabric-1.21-21.0.2.jar.disabled"
         },
         {
             "name": "Cave Dust",
@@ -400,10 +376,6 @@
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/entityculling-fabric-1.7.2-mc1.21.jar"
         },
         {
-            "name": "Every Comp",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/everycomp-1.21-2.8.5-fabric.jar"
-        },
-        {
             "name": "Explosive Enhancement",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/explosive-enhancement-1.3.2-1.21-1.21.1.jar"
         },
@@ -450,10 +422,6 @@
         {
             "name": "Jamlib",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/jamlib-fabric-1.2.2-build.2%2B1.21.1.jar"
-        },
-        {
-            "name": "Lamb Dynamic Lights",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/lambdynamiclights-3.0.0%2B1.21.1.jar.disabled"
         },
         {
             "name": "Language Reload",
@@ -538,10 +506,6 @@
         {
             "name": "MVS",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/mvs-4.2.8-1.21.jar"
-        },
-        {
-            "name": "Nifty Carts",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/niftycarts-21.0.0.jar.disabled"
         },
         {
             "name": "Not Enough Animations",
@@ -630,10 +594,6 @@
         {
             "name": "T & T",
             "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/t_and_t-neoforge-fabric-1.13.2.jar"
-        },
-        {
-            "name": "Things",
-            "url": "https://raw.githubusercontent.com/JeremGamingYT/LauncherElysia/main/mods/things-0.4.2%2B1.21.jar"
         },
         {
             "name": "Tooltip Fix",
