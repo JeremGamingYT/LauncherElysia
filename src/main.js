@@ -242,8 +242,8 @@ function createWindow() {
     ensureGameDirectory(savedGamePath);
 
     const html = ejs.render(template, {
-        title: 'Elysia - v.2.0.2 (BETA)',
-        versions: ['2.0.2'],
+        title: 'Elysia - v.2.0.4 (BETA)',
+        versions: ['2.0.4'],
         news: news,
         updates: updates,
         cssPath: `file://${cssPath}`,
@@ -2106,7 +2106,7 @@ ipcMain.handle('get-game-stats', () => {
         sessionCount: sessionCount,
         lastSessionDate: lastSessionDate,
         longestSession: longestSession,
-        version: app.getVersion() || '2.0.2'
+        version: app.getVersion() || '2.0.4'
     };
 });
 
@@ -2337,19 +2337,13 @@ async function installResources(event) {
         
         // Installation des resource packs
         for (const pack of resourcesConfig.resourcepacks || []) {
-            event.sender.send('install-progress', {
-                stage: 'installing-resourcepack',
-                message: `Installation du pack de ressources: ${pack.name}`
-            });
+
             await resourceManager.installResourcePack(pack.url, event);
         }
         
         // Installation des shaders
         for (const shader of resourcesConfig.shaders || []) {
-            event.sender.send('install-progress', {
-                stage: 'installing-shader',
-                message: `Installation du shader: ${shader.name}`
-            });
+
             await resourceManager.installShader(shader.url, event);
         }
         
@@ -2403,7 +2397,7 @@ ipcMain.handle('fetch-updates', async () => {
                     updates = [
                         {
                             id: '0',
-                            version: app.getVersion() || '2.0.2',
+                            version: app.getVersion() || '2.0.4',
                             date: new Date().toISOString(),
                             title: 'Launcher Elysia',
                             description: 'Bienvenue dans le Launcher Elysia. Consultez les releases sur GitHub pour plus d\'informations sur les mises à jour.',
@@ -2426,7 +2420,7 @@ ipcMain.handle('fetch-updates', async () => {
         const defaultUpdates = [
             {
                 id: '0',
-                version: app.getVersion() || '2.0.2',
+                version: app.getVersion() || '2.0.4',
                 date: new Date().toISOString(),
                 title: 'Information',
                 description: 'Impossible de récupérer les mises à jour. Vérifiez votre connexion Internet.',
@@ -2508,19 +2502,13 @@ ipcMain.on('install-resources', async (event) => {
         
         // Installation des resource packs
         for (const pack of resourcesConfig.resourcepacks || []) {
-            event.sender.send('install-progress', {
-                stage: 'installing-resourcepack',
-                message: `Installation du pack de ressources: ${pack.name}`
-            });
+
             await resourceManager.installResourcePack(pack.url, event);
         }
         
         // Installation des shaders
         for (const shader of resourcesConfig.shaders || []) {
-            event.sender.send('install-progress', {
-                stage: 'installing-shader',
-                message: `Installation du shader: ${shader.name}`
-            });
+
             await resourceManager.installShader(shader.url, event);
         }
         
@@ -3106,25 +3094,42 @@ async function startApp() {
     
     // Configure les événements pour la seconde instance
     app.on('second-instance', (event, commandLine, workingDirectory) => {
-        // Si une seconde instance est lancée, l'utilisateur a cliqué sur un protocole minecraft://
-        // Il faut restaurer la fenêtre principale et traiter le protocole
-        if (mainWindow) {
+        // Si une seconde instance est lancée, l'utilisateur a cliqué sur un lien minecraft://
+        // Assurer que la fenêtre principale existe et est valide
+        if (!mainWindow || mainWindow.isDestroyed()) {
+            // La fenêtre a été fermée : on en recrée une nouvelle
+            createWindow();
+        } else {
+            // Restaurer le focus sur la fenêtre existante
             if (mainWindow.isMinimized()) mainWindow.restore();
-            mainWindow.focus();
-            
-            // Recherche du protocole minecraft:// dans la ligne de commande
-            const url = commandLine.find(arg => arg.startsWith('minecraft://'));
-            if (url) {
-                // Traiter l'URL minecraft:// ici
-                processMinecraftUrl(url);
+            if (!mainWindow.isDestroyed()) {
+                mainWindow.focus();
             }
+        }
+
+        // Recherche d'un protocole minecraft:// dans la ligne de commande
+        const urlArg = commandLine.find(arg => typeof arg === 'string' && arg.startsWith('minecraft://'));
+        if (urlArg) {
+            processMinecraftUrl(urlArg);
         }
     });
     
     app.on('open-url', (event, url) => {
         event.preventDefault();
-        // Traiter l'URL minecraft:// ici
-        processMinecraftUrl(url);
+
+        // Si la fenêtre principale n'existe plus (par exemple après un redémarrage du launcher)
+        // on la recrée avant de traiter l'URL.
+        if (!mainWindow || mainWindow.isDestroyed()) {
+            // Créer (ou recréer) la fenêtre principale puis traiter l'URL une fois prête
+            createWindow();
+            app.whenReady().then(() => {
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.once('ready-to-show', () => processMinecraftUrl(url));
+                }
+            });
+        } else {
+            processMinecraftUrl(url);
+        }
     });
     
     app.whenReady().then(async () => {

@@ -126,7 +126,7 @@ class AutoUpdater extends EventEmitter {
         }
 
         const originalFileName = downloadUrl.split('/').pop();
-        const setupPath = path.join(app.getPath('temp'), originalFileName);
+        let setupPath = path.join(app.getPath('temp'), originalFileName);
         
         console.log('Début du téléchargement:', downloadUrl);
         console.log('Chemin de destination:', setupPath);
@@ -137,6 +137,8 @@ class AutoUpdater extends EventEmitter {
                 console.log('Ancien fichier supprimé avec succès');
             } catch (error) {
                 console.error('Erreur lors de la suppression de l\'ancien fichier:', error);
+                setupPath = path.join(app.getPath('temp'), `Elysia-Setup-${Date.now()}.exe`);
+                console.log('Utilisation d\'un nom de fichier unique:', setupPath);
             }
         }
 
@@ -239,18 +241,11 @@ class AutoUpdater extends EventEmitter {
                 throw new Error('Le fichier d\'installation n\'existe pas');
             }
 
-            // Supprimer le dossier .elysia avant l'installation
-            try {
-                const elysiaPath = path.join(app.getPath('appData'), '.elysia');
-                if (fs.existsSync(elysiaPath)) {
-                    console.log('Suppression du dossier .elysia avant la mise à jour...');
-                    await fs.promises.rm(elysiaPath, { recursive: true, force: true });
-                    console.log('Dossier .elysia supprimé avec succès');
-                }
-            } catch (error) {
-                console.error('Erreur lors de la suppression du dossier .elysia:', error);
-                // On continue l'installation même en cas d'erreur
-            }
+            // Ne plus supprimer l'intégralité du dossier .elysia.
+            // Laisser les ressources déjà installées (mods, resourcepacks, etc.)
+            // afin d'éviter de tout re-télécharger lors d'une mise à jour.
+            // Désormais, seules les ressources manquantes seront réinstallées
+            // grâce aux vérifications déjà présentes au démarrage du launcher.
 
             // Exécuter le setup avec les paramètres silencieux
             const process = require('child_process');
