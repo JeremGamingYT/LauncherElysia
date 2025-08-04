@@ -242,8 +242,8 @@ function createWindow() {
     ensureGameDirectory(savedGamePath);
 
     const html = ejs.render(template, {
-        title: 'Elysia - v.2.0.4 (BETA)',
-        versions: ['2.0.4'],
+        title: 'Elysia - v.2.0.5 (BETA)',
+        versions: ['2.0.5'],
         news: news,
         updates: updates,
         cssPath: `file://${cssPath}`,
@@ -2106,7 +2106,7 @@ ipcMain.handle('get-game-stats', () => {
         sessionCount: sessionCount,
         lastSessionDate: lastSessionDate,
         longestSession: longestSession,
-        version: app.getVersion() || '2.0.4'
+        version: app.getVersion() || '2.0.5'
     };
 });
 
@@ -2397,7 +2397,7 @@ ipcMain.handle('fetch-updates', async () => {
                     updates = [
                         {
                             id: '0',
-                            version: app.getVersion() || '2.0.4',
+                            version: app.getVersion() || '2.0.5',
                             date: new Date().toISOString(),
                             title: 'Launcher Elysia',
                             description: 'Bienvenue dans le Launcher Elysia. Consultez les releases sur GitHub pour plus d\'informations sur les mises à jour.',
@@ -2420,7 +2420,7 @@ ipcMain.handle('fetch-updates', async () => {
         const defaultUpdates = [
             {
                 id: '0',
-                version: app.getVersion() || '2.0.4',
+                version: app.getVersion() || '2.0.5',
                 date: new Date().toISOString(),
                 title: 'Information',
                 description: 'Impossible de récupérer les mises à jour. Vérifiez votre connexion Internet.',
